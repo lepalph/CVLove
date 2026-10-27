@@ -1,0 +1,105 @@
+import type { CV, Field, FieldKind, Item, Lang, Section, SectionKind } from './types'
+
+let n = 0
+export const uid = () => `${Date.now().toString(36)}${(n++).toString(36)}${Math.random().toString(36).slice(2, 6)}`
+
+export const emptyItem = (): Item => ({
+  id: uid(), title: '', subtitle: '', place: '', start: '', end: '', current: false, text: '',
+})
+
+export const newSection = (kind: SectionKind): Section => ({
+  id: uid(), kind, title: '', visible: true, items: [emptyItem()],
+})
+
+export const newField = (kind: FieldKind, value = '', label = ''): Field => ({
+  id: uid(), kind, value, label, visible: true,
+})
+
+export const DEFAULT_FIELD_KINDS: FieldKind[] = ['birthDate', 'location', 'email', 'phone', 'website']
+
+export function emptyCV(lang: Lang = 'fr'): CV {
+  return {
+    lang,
+    templateId: 'classique',
+    accent: '#c2410c',
+    personal: {
+      firstName: '', lastName: '', title: '', photo: '',
+      fields: DEFAULT_FIELD_KINDS.map((k) => newField(k)),
+    },
+    sections: [],
+  }
+}
+
+/** Déplace l'élément i de `dir` (-1 haut, +1 bas) ; sans effet aux bornes. */
+export function move<T>(arr: T[], i: number, dir: -1 | 1): T[] {
+  const j = i + dir
+  if (i < 0 || j < 0 || j >= arr.length) return arr
+  const out = arr.slice()
+  ;[out[i], out[j]] = [out[j], out[i]]
+  return out
+}
+
+/** Changer de langue ne touche QUE `lang` : contenu et titres personnalisés restent intacts. */
+export const setLang = (cv: CV, lang: Lang): CV => ({ ...cv, lang })
+
+export const addSection = (cv: CV, kind: SectionKind): CV => ({ ...cv, sections: [...cv.sections, newSection(kind)] })
+export const removeSection = (cv: CV, id: string): CV => ({ ...cv, sections: cv.sections.filter((s) => s.id !== id) })
+export const moveSection = (cv: CV, id: string, dir: -1 | 1): CV => ({
+  ...cv, sections: move(cv.sections, cv.sections.findIndex((s) => s.id === id), dir),
+})
+export const patchSection = (cv: CV, id: string, patch: Partial<Section>): CV => ({
+  ...cv, sections: cv.sections.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+})
+
+export const addItem = (cv: CV, sectionId: string): CV => patchItems(cv, sectionId, (it) => [...it, emptyItem()])
+export const removeItem = (cv: CV, sectionId: string, id: string): CV =>
+  patchItems(cv, sectionId, (it) => it.filter((x) => x.id !== id))
+export const moveItem = (cv: CV, sectionId: string, id: string, dir: -1 | 1): CV =>
+  patchItems(cv, sectionId, (it) => move(it, it.findIndex((x) => x.id === id), dir))
+export const patchItem = (cv: CV, sectionId: string, id: string, patch: Partial<Item>): CV =>
+  patchItems(cv, sectionId, (it) => it.map((x) => (x.id === id ? { ...x, ...patch } : x)))
+
+const patchItems = (cv: CV, sectionId: string, fn: (it: Item[]) => Item[]): CV => ({
+  ...cv, sections: cv.sections.map((s) => (s.id === sectionId ? { ...s, items: fn(s.items) } : s)),
+})
+
+export const patchField = (cv: CV, id: string, patch: Partial<Field>): CV => ({
+  ...cv, personal: { ...cv.personal, fields: cv.personal.fields.map((f) => (f.id === id ? { ...f, ...patch } : f)) },
+})
+export const removeField = (cv: CV, id: string): CV => ({
+  ...cv, personal: { ...cv.personal, fields: cv.personal.fields.filter((f) => f.id !== id) },
+})
+export const addCustomField = (cv: CV): CV => ({
+  ...cv, personal: { ...cv.personal, fields: [...cv.personal.fields, newField('custom')] },
+})
+export const addField = (cv: CV, kind: FieldKind): CV => ({
+  ...cv, personal: { ...cv.personal, fields: [...cv.personal.fields, newField(kind)] },
+})
+
+const itemHasContent = (i: Item) => !!(i.title.trim() || i.subtitle.trim() || i.text.trim() || i.place.trim())
+
+/** Sections à dessiner : visibles et non vides (items vides écartés). Les templates partent de là. */
+export function visibleSections(cv: CV): Section[] {
+  return cv.sections
+    .filter((s) => s.visible)
+    .map((s) => ({ ...s, items: s.items.filter(itemHasContent) }))
+    .filter((s) => s.items.length > 0)
+}
+
+export const visibleFields = (cv: CV): Field[] => cv.personal.fields.filter((f) => f.visible && f.value.trim())
+
+export const fullName = (cv: CV) => `${cv.personal.firstName} ${cv.personal.lastName}`.trim()
+
+export const pdfFileName = (cv: CV) => {
+  const slug = (s: string) => s.trim().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')
+  const parts = [slug(cv.personal.firstName), slug(cv.personal.lastName)].filter(Boolean)
+  return `CV-${parts.join('-') || 'CVLove'}.pdf`
+}
+
+/** Import JSON : garde-fou minimal sur la forme avant d'écraser le CV. */
+export function parseCV(json: string): CV {
+  const d = JSON.parse(json)
+  if (!d || typeof d !== 'object' || !d.personal || !Array.isArray(d.sections) || !Array.isArray(d.personal.fields))
+    throw new Error('invalid')
+  return { ...emptyCV(), ...d }
+}
