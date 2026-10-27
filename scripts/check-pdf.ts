@@ -39,10 +39,11 @@ for (const t of templates) {
     ]
     const hayN = norm(text)
     const missing = expected.flatMap((e) => e.split(/\s+/)).filter((w) => norm(w) && !hayN.includes(norm(w)))
-    const ok = missing.length === 0 && doc.numPages >= 1
+    const ctrl = lang !== 'ar' && /[\u0000-\u0008\u000e-\u001f]/.test(text)
+    const ok = missing.length === 0 && !ctrl && doc.numPages >= 1
     if (!ok) failures++
     count++
-    console.log(`${ok ? 'OK ' : 'KO '} ${t.id}/${lang}  ${doc.numPages} p, ${bytes.length} o${missing.length ? '  manquants : ' + missing.join(' | ') : ''}`)
+    console.log(`${ok ? 'OK ' : 'KO '} ${t.id}/${lang}  ${doc.numPages} p, ${bytes.length} o${missing.length ? '  manquants : ' + missing.join(' | ') : ''}${ctrl ? '  caractères de contrôle dans le texte extrait' : ''}`)
 
     const page = await doc.getPage(1)
     const vp = page.getViewport({ scale: 1.6 })
@@ -64,6 +65,14 @@ for (const t of templates) {
     g.fillRect(0, 0, 64, 64)
     cv.personal.photo = `data:image/png;base64,${photo.toBuffer('image/png').toString('base64')}`
     const doc = await getDocument({ data: (await renderPdf(cv, fonts)).slice(), verbosity: 0 }).promise
+    for (let p = 1; p <= Math.min(doc.numPages, 2); p++) {
+      const page = await doc.getPage(p)
+      const vp = page.getViewport({ scale: 1.2 })
+      const canvas = createCanvas(vp.width, vp.height)
+      // @ts-expect-error contexte napi-rs accepté par pdf.js en Node
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp, canvas }).promise
+      writeFileSync(`${out}long-${t.id}-${lang}-p${p}.png`, canvas.toBuffer('image/png'))
+    }
     const ok = doc.numPages >= 2
     if (!ok) failures++
     count++

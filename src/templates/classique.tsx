@@ -4,30 +4,10 @@ import { fullName, visibleFields, visibleSections } from '../model/cv'
 import { formatDay, formatPeriod, isRtl } from '../model/dates'
 import type { Item, Section } from '../model/types'
 import { bodyStyle, fontFor } from '../pdf/fonts'
+import { Lines, fixBidi } from './shared'
 import type { TemplateProps } from './types'
 
 const MUTED = '#6b645b'
-
-/** Lignes d'une description ; « - » ou « • » en début de ligne = puce. */
-function Lines({ text, rtl }: { text: string; rtl: boolean }) {
-  return (
-    <>
-      {text.split('\n').filter((l) => l.trim()).map((l, i) => {
-        const bullet = /^\s*[-•*]\s+/.test(l)
-        const body = l.replace(/^\s*[-•*]\s+/, '')
-        // RTL : pas de puce. react-pdf (4.9) ne place pas une puce en début de ligne arabe (le paragraphe reste LTR,
-        // la puce se retrouve à gauche) et une rangée inversée mesure mal le texte arabe. Une ligne par point suffit.
-        if (rtl || !bullet) return <Text key={i} style={{ marginTop: 1.5 }}>{body}</Text>
-        return (
-          <View key={i} style={{ flexDirection: 'row', marginTop: 1.5 }}>
-            <Text style={{ width: 10 }}>•</Text>
-            <Text style={{ flex: 1 }}>{body}</Text>
-          </View>
-        )
-      })}
-    </>
-  )
-}
 
 export function Component({ cv, labels }: TemplateProps) {
   const { lang, accent, personal } = cv
@@ -56,7 +36,7 @@ export function Component({ cv, labels }: TemplateProps) {
   }
 
   const body = (s: Section) => {
-    if (s.kind === 'profile') return <Text style={{ marginTop: 4 }}>{s.items.map((i) => i.text).filter(Boolean).join('\n')}</Text>
+    if (s.kind === 'profile') return <Text style={{ marginTop: 4 }}>{fixBidi(s.items.map((i) => i.text).filter(Boolean).join('\n'), isRtl(lang))}</Text>
     if (s.kind === 'interests') return <Text style={{ marginTop: 4 }}>{s.items.map((i) => i.title).filter(Boolean).join('  ·  ')}</Text>
     if (s.kind === 'skills' || s.kind === 'languages')
       return s.items.map((it) => (
