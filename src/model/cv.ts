@@ -1,4 +1,4 @@
-import type { CV, Field, FieldKind, Item, Lang, Section, SectionKind } from './types'
+import type { CV, Design, Field, FieldKind, Item, Lang, Section, SectionKind } from './types'
 
 let n = 0
 export const uid = () => `${Date.now().toString(36)}${(n++).toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -17,11 +17,14 @@ export const newField = (kind: FieldKind, value = '', label = ''): Field => ({
 
 export const DEFAULT_FIELD_KINDS: FieldKind[] = ['birthDate', 'location', 'email', 'phone', 'website']
 
+export const DEFAULT_DESIGN: Design = {
+  templateId: 'classique-1', accent: '#c2410c', fontPair: 'lora', fontScale: 1, lineHeight: 1.4,
+  margins: 'normal', pageSize: 'A4', photoShape: 'circle', skillDisplay: 'text',
+}
+
 export function emptyCV(lang: Lang = 'fr'): CV {
   return {
     lang,
-    templateId: 'classique',
-    accent: '#c2410c',
     personal: {
       firstName: '', lastName: '', title: '', photo: '',
       fields: DEFAULT_FIELD_KINDS.map((k) => newField(k)),
@@ -96,10 +99,6 @@ export const pdfFileName = (cv: CV) => {
   return `CV-${parts.join('-') || 'CVLove'}.pdf`
 }
 
-/** Import JSON : garde-fou minimal sur la forme avant d'écraser le CV. */
-export function parseCV(json: string): CV {
-  const d = JSON.parse(json)
-  if (!d || typeof d !== 'object' || !d.personal || !Array.isArray(d.sections) || !Array.isArray(d.personal.fields))
-    throw new Error('invalid')
-  return { ...emptyCV(), ...d }
-}
+/** Garde-fou minimal sur la forme d'un CV (import JSON). */
+export const isCVData = (d: any): d is CV =>
+  !!d && typeof d === 'object' && !!d.personal && Array.isArray(d.sections) && Array.isArray(d.personal.fields)

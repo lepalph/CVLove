@@ -2,25 +2,29 @@ import { Fragment, useState } from 'react'
 import { cvLabels } from '../i18n/labels'
 import { GITHUB_URL, home } from '../i18n/home'
 import { ui } from '../i18n/ui'
+import { v2 } from '../i18n/v2'
 import { LANGS, type Lang } from '../model/types'
 import { useStore } from '../store'
-import { templates } from '../templates'
+import { layouts } from '../templates'
 import { GithubIcon, LangSelect, Logo } from './bits'
 import { SamplePage } from './SamplePage'
 
 const H2 = 'text-balance text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[2rem]'
 const SECTION = 'py-14 sm:py-20'
 const EDITOR = '#/editeur'
+// La page d'accueil présente les 4 mises en page d'origine (textes « quatre modèles ») ; l'éditeur propose tout le catalogue.
+const HOME_LAYOUTS = ['classique', 'moderne', 'minimal', 'creatif']
+const homeTemplates = layouts.filter((l) => HOME_LAYOUTS.includes(l.layoutId))
 
 export function Home() {
   const uiLang = useStore((s) => s.uiLang)
   const setUiLang = useStore((s) => s.setUiLang)
-  const update = useStore((s) => s.update)
+  const updateDesign = useStore((s) => s.updateDesign)
   const t = home[uiLang]
-  const [demo, setDemo] = useState(templates[0].id)
+  const [demo, setDemo] = useState(homeTemplates[0].id)
 
   const start = (templateId: string) => {
-    update((c) => ({ ...c, templateId }))
+    updateDesign({ ...homeTemplates.find((m) => m.id === templateId)?.preset, templateId })
     location.hash = EDITOR
   }
   const wrap = 'mx-auto w-full max-w-[75rem] px-[var(--m)]'
@@ -35,6 +39,7 @@ export function Home() {
             <a href="#comment" className="btn btn-ghost border-0">{t.navHow}</a>
           </div>
           <div className="ms-auto flex items-center gap-2 sm:gap-3">
+            <a href="#/documents" className="btn btn-ghost whitespace-nowrap border-0 px-2 sm:px-4">{v2[uiLang].docs}</a>
             <a href={GITHUB_URL} className="btn btn-ghost hidden border-0 sm:inline-flex" aria-label={t.navCode} title={t.navCode}><GithubIcon /></a>
             <LangSelect label={ui[uiLang].uiLang} value={uiLang} onChange={(l: Lang) => setUiLang(l)} langs={LANGS} />
             <a href={EDITOR} className="btn btn-primary btn-pill hidden whitespace-nowrap sm:inline-flex">{t.create}</a>
@@ -65,10 +70,10 @@ export function Home() {
 
           <figure className="m-0 w-full">
             <div role="group" aria-label={t.demoLabel} className="mb-3 grid grid-cols-4 gap-1 rounded-ctl border border-edge p-1">
-              {templates.map((tpl) => (
+              {homeTemplates.map((tpl) => (
                 <button key={tpl.id} type="button" aria-pressed={demo === tpl.id} onClick={() => setDemo(tpl.id)}
                   className="min-h-11 rounded-[4px] px-1 text-sm font-medium text-muted transition-colors duration-150 hover:text-ink aria-pressed:bg-ink aria-pressed:text-desk">
-                  {tpl.name[uiLang]}
+                  {tpl.layoutName[uiLang]}
                 </button>
               ))}
             </div>
@@ -93,11 +98,11 @@ export function Home() {
         <section id="modeles" className={`${wrap} ${SECTION} border-t border-line`}>
           <h2 className={H2}>{t.modelsTitle}</h2>
           <ul className="mt-10 grid list-none grid-cols-2 gap-x-4 gap-y-8 p-0 lg:grid-cols-4 lg:gap-x-6">
-            {templates.map((tpl) => (
+            {homeTemplates.map((tpl) => (
               <li key={tpl.id} className="flex flex-col gap-3">
                 <SamplePage lang={uiLang} templateId={tpl.id} />
-                <h3 className="text-lg font-semibold tracking-tight">{tpl.name[uiLang]}</h3>
-                <button type="button" className="btn mt-auto w-full" aria-label={`${t.useTemplate} (${tpl.name[uiLang]})`} onClick={() => start(tpl.id)}>{t.useTemplate}</button>
+                <h3 className="text-lg font-semibold tracking-tight">{tpl.layoutName[uiLang]}</h3>
+                <button type="button" className="btn mt-auto w-full" aria-label={`${t.useTemplate} (${tpl.layoutName[uiLang]})`} onClick={() => start(tpl.id)}>{t.useTemplate}</button>
               </li>
             ))}
           </ul>

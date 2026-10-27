@@ -50,3 +50,17 @@ export const Icon = ({ label, onClick, children, disabled }: { label: string; on
     {children}
   </button>
 )
+
+/** Choix exclusif en boutons (pas de <select> pour 2 à 4 options : tout se voit d'un coup d'œil). */
+export function Seg<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-1 rounded-ctl border border-edge p-1">
+      {options.map(([v, text]) => (
+        <button key={String(v)} type="button" aria-pressed={value === v} onClick={() => onChange(v)}
+          className="min-h-9 flex-1 whitespace-nowrap rounded-[4px] px-2 text-sm font-medium text-muted transition-colors duration-150 hover:text-ink aria-pressed:bg-ink aria-pressed:text-desk">
+          {text}
+        </button>
+      ))}
+    </div>
+  )
+}

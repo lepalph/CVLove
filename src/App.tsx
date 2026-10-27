@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { isRtl } from './model/dates'
 import { useStore } from './store'
 import { Editor } from './ui/Editor'
+import { Documents } from './ui/Documents'
 import { Home } from './ui/Home'
 
-const readView = () => (location.hash.startsWith('#/edit') ? 'edit' : 'home')
+const readView = () => (location.hash.startsWith('#/edit') ? 'edit' : location.hash.startsWith('#/documents') ? 'docs' : 'home')
 
 export function App() {
   const uiLang = useStore((s) => s.uiLang)
@@ -27,5 +28,5 @@ export function App() {
     document.documentElement.dir = isRtl(uiLang) ? 'rtl' : 'ltr'
   }, [uiLang])
 
-  return <div className="flex min-h-dvh flex-col">{view === 'edit' ? <Editor /> : <Home />}</div>
+  return <div className="flex min-h-dvh flex-col">{view === 'edit' ? <Editor /> : view === 'docs' ? <Documents /> : <Home />}</div>
 }

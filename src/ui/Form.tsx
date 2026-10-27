@@ -1,71 +1,74 @@
 import { useRef, useState } from 'react'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { ui, type UI } from '../i18n/ui'
+import { v2 } from '../i18n/v2'
+import { exportDocs } from '../model/documents'
 import {
   addCustomField, addItem, addSection, moveItem, moveSection, patchField, patchItem, patchSection,
   removeField, removeItem, removeSection, setLang, addField,
 } from '../model/cv'
 import { LANGS, SECTION_KINDS, type FieldKind, type Section } from '../model/types'
-import { useStore } from '../store'
-import { ACCENTS } from '../templates/types'
+import { useCvDoc, useStore } from '../store'
 import { Field, Icon, LangSelect } from './bits'
+import { DesignPanel } from './DesignPanel'
 
 const FIELD_ORDER: Exclude<FieldKind, 'custom'>[] = ['birthDate', 'location', 'email', 'phone', 'website']
 
+/** Formulaire complet = ces cartes, dans l'ordre. Chacune est autonome : le mode guidé peut les monter une par une. */
 export function Form() {
-  const cv = useStore((s) => s.cv)
-  const uiLang = useStore((s) => s.uiLang)
-  const { update, clearAll, loadSample, importJson } = useStore()
-  const t = ui[uiLang]
-  const labels = cvLabels[cv.lang]
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [error, setError] = useState('')
+  return (
+    <div className="flex flex-col gap-6">
+      <LanguageCard />
+      <DesignCard />
+      <PersonalCard />
+      <SectionsCard />
+      <DataCard />
+    </div>
+  )
+}
 
-  const onImport = async (f?: File) => {
-    if (!f) return
-    try {
-      importJson(await f.text())
-      setError('')
-    } catch {
-      setError(t.importError)
-    }
-  }
-  const exportJson = () => {
-    const url = URL.createObjectURL(new Blob([JSON.stringify(cv, null, 2)], { type: 'application/json' }))
-    Object.assign(document.createElement('a'), { href: url, download: 'cvlove.json' }).click()
-    setTimeout(() => URL.revokeObjectURL(url), 10_000)
-  }
+export function LanguageCard() {
+  const cv = useCvDoc().data
+  const update = useStore((s) => s.update)
+  const t = ui[useStore((s) => s.uiLang)]
+  return (
+    <Card>
+      <Field label={t.cvLang} hint={t.cvLangHint}>
+        <LangSelect wide label={t.cvLang} value={cv.lang} langs={LANGS} onChange={(l) => update((c) => setLang(c, l))} />
+      </Field>
+    </Card>
+  )
+}
+
+export function DesignCard() {
+  const uiLang = useStore((s) => s.uiLang)
+  return (
+    <Card>
+      <details open className="group">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-xl font-semibold tracking-tight [&::-webkit-details-marker]:hidden">
+          {v2[uiLang].design}
+          <span aria-hidden="true" className="text-muted transition-transform duration-150 group-open:rotate-180">⌄</span>
+        </summary>
+        <div className="mt-4"><DesignPanel /></div>
+      </details>
+    </Card>
+  )
+}
+
+export function PersonalCard() {
+  const cv = useCvDoc().data
+  const update = useStore((s) => s.update)
+  const t = ui[useStore((s) => s.uiLang)]
+  const fileRef = useRef<HTMLInputElement>(null)
   const onPhoto = async (f?: File) => {
     if (!f) return
     const photo = await shrink(f)
     update((c) => ({ ...c, personal: { ...c.personal, photo } }))
   }
   const setPersonal = (patch: Partial<typeof cv.personal>) => update((c) => ({ ...c, personal: { ...c.personal, ...patch } }))
-
   const missingKinds = FIELD_ORDER.filter((k) => !cv.personal.fields.some((f) => f.kind === k))
   const fieldLabel = (k: FieldKind) => (k === 'custom' ? t.customLabel : t[k])
-
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <div>
-          <Field label={t.cvLang} hint={t.cvLangHint}>
-            <LangSelect wide label={t.cvLang} value={cv.lang} langs={LANGS} onChange={(l) => update((c) => setLang(c, l))} />
-          </Field>
-        </div>
-        <fieldset className="mt-4">
-          <legend className="mb-1 text-sm font-medium">{t.accent}</legend>
-          <div className="flex gap-2">
-            {ACCENTS.map((a) => (
-              <button key={a} type="button" aria-label={a} aria-pressed={cv.accent === a} onClick={() => update((c) => ({ ...c, accent: a }))}
-                className="grid size-11 place-items-center rounded-full border border-line bg-panel">
-                <span className={`block size-7 rounded-full transition-shadow duration-150 ${cv.accent === a ? 'ring-2 ring-ink ring-offset-2 ring-offset-panel' : ''}`} style={{ background: a }} />
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      </Card>
-
       <Card title={t.personal}>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label={t.firstName}><input className="inp" value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
@@ -102,7 +105,15 @@ export function Form() {
           <button type="button" className="btn" onClick={() => update(addCustomField)}>+ {t.addCustomField}</button>
         </div>
       </Card>
+  )
+}
 
+export function SectionsCard() {
+  const cv = useCvDoc().data
+  const update = useStore((s) => s.update)
+  const t = ui[useStore((s) => s.uiLang)]
+  const labels = cvLabels[cv.lang]
+  return (
       <Card title={t.sections}>
         {cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
         <ul className="flex flex-col gap-6">
@@ -115,7 +126,29 @@ export function Form() {
           {SECTION_KINDS.map((k) => <button key={k} type="button" className="btn" onClick={() => update((c) => addSection(c, k))}>+ {t.kinds[k]}</button>)}
         </div>
       </Card>
+  )
+}
 
+export function DataCard() {
+  const doc = useCvDoc()
+  const { loadSample, clearAll, importJson } = useStore()
+  const t = ui[useStore((s) => s.uiLang)]
+  const [error, setError] = useState('')
+  const onImport = async (f?: File) => {
+    if (!f) return
+    try {
+      importJson(await f.text())
+      setError('')
+    } catch {
+      setError(t.importError)
+    }
+  }
+  const exportJson = () => {
+    const url = URL.createObjectURL(new Blob([exportDocs([doc])], { type: 'application/json' }))
+    Object.assign(document.createElement('a'), { href: url, download: 'cvlove.json' }).click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
+  return (
       <Card>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn" onClick={loadSample}>{t.loadSample}</button>
@@ -127,7 +160,6 @@ export function Form() {
         {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
         <p className="mt-3 text-sm text-muted">{t.privacy}</p>
       </Card>
-    </div>
   )
 }
 
@@ -138,9 +170,10 @@ const Card = ({ title, children }: { title?: string; children: React.ReactNode }
   </section>
 )
 
-function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; t: UI; std: string }) {
+export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; t: UI; std: string }) {
   const update = useStore((st) => st.update)
-  const labels = cvLabels[useStore((st) => st.cv.lang)]
+  const labels = cvLabels[useCvDoc().data.lang]
+  const tv = v2[useStore((st) => st.uiLang)]
   const [ti, su, tx] = t.kindFields[s.kind]
   const dated = s.kind === 'experience' || s.kind === 'education' || s.kind === 'projects' || s.kind === 'custom'
   const multi = s.kind !== 'profile'
@@ -168,6 +201,14 @@ function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; 
             <li key={it.id} className="border-s-2 border-line ps-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 {ti && <Field label={ti}><input className="inp" value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
+                {(s.kind === 'skills' || s.kind === 'languages') && (
+                  <Field label={tv.level}>
+                    <select className="inp" value={it.level ?? 0} onChange={(e) => set({ level: +e.target.value })}>
+                      <option value={0}>{tv.noLevel}</option>
+                      {labels.levels.map((l, n) => <option key={n} value={n + 1}>{n + 1} · {l}</option>)}
+                    </select>
+                  </Field>
+                )}
                 {su && <Field label={su}><input className="inp" value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
                 {dated && <Field label={t.place}><input className="inp" value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
                 {dated && (
