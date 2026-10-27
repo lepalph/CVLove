@@ -29,14 +29,41 @@ Webapp gratuite et open source (esprit iLovePDF) pour faire un CV en quelques mi
 Chaque template : couleur d'accent réglable (5 propositions), A4, gère texte long, page 2, sections vides masquées, avec/sans photo, LTR/RTL.
 Architecture : `src/templates/<id>.tsx` + un registre ; un template ne reçoit que le CV et le dictionnaire de libellés. Ajouter un template = un fichier + une ligne.
 
-## Direction artistique de l'interface (skill ui-ux-director)
-- Mode Opérer, niveau Mesuré. Idée : la feuille A4 au centre, l'interface s'efface autour comme un bureau calme.
-- Couleur Retenue : fond « bureau » `oklch(0.965 0.004 60)`, panneau `oklch(0.99 0.002 60)`, texte `oklch(0.22 0.01 60)`, filets `oklch(0.9 0.005 60)`, **un accent corail** `oklch(0.62 0.19 22)` (sélection, focus, bouton principal). Ni noir ni blanc purs. Dark mode : pas en v1.
-- Typo interface : police système, échelle rem fixe (12/14/16/19/23). Inputs ≥ 16 px sur mobile.
-- Cartes à plat (bordure OU ton, pas d'ombre) ; seule la feuille A4 a une ombre douce (elle « flotte » sur le bureau). `--radius-card: 8px`.
-- Motion : uniquement l'état (≤ 200 ms, ease `cubic-bezier(0.22,1,0.36,1)`), respect `prefers-reduced-motion`.
-- Focus visible, cibles ≥ 44 px, libellés explicites, états vides qui disent quoi faire.
-- Marque : mot-symbole « CVLove » avec un petit cœur en accent, rien de plus.
+## Direction artistique (v1.1, remplace « papier et encre »)
+Brief utilisateur : vibe Vercel / GitHub, tech et communautaire, mais accessible au plus grand nombre.
+- Accueil = mode Persuader niveau Mesuré ; éditeur = mode Opérer.
+- Jetons (fiche Vercel du skill ui-ux-director) : fond `#fafafa`, surfaces `#ffffff`, panneau `#f2f2f2`, encre `#171717`, corps `#4d4d4d`, atténué `#8f8f8f`, filet 1 px `#ebebeb`, lien/focus `#0070f3`, erreur `#ee0000`. Dark mode via `prefers-color-scheme` (fond `#0a0a0a`, surface `#111`, encre `#ededed`, filet `#262626`) ; la feuille A4 reste blanche.
+- Police : **Geist** (UI et texte) + **Geist Mono** pour les petits labels techniques uniquement, auto-hébergées (OFL). Graisses 400 / 500 / 600. Titre hero 48 px (32 mobile) `letter-spacing -0.05em`, sections 32 px.
+- Rayons : 6 px contrôles, 12 px cartes, pilule pour les CTA marketing. Filet avant ombre ; seule la feuille A4 a une ombre légère.
+- Marque : mot-symbole « CVLove » + petit cœur rouge, seule couleur de marque. Pas de dégradé maillé.
+- Accessible : clair par défaut, cibles ≥ 44 px, contraste AA, aucun jargon, focus visible, `prefers-reduced-motion`.
+- Motion : uniquement l'état (< 200 ms, `cubic-bezier(0.22,1,0.36,1)`).
+
+## Parcours (v1.1)
+1. **Accueil** (`#/`) : présente le concept, boutons rapides vers l'éditeur.
+2. **Éditeur** (`#/editeur`) : on arrive directement sur un modèle par défaut (Classique) avec les données d'exemple ou les données déjà enregistrées. Plus d'étape galerie obligatoire.
+3. Dans l'éditeur, **sélecteur de modèle visuel** bien visible au-dessus de l'aperçu : rangée de vignettes (vrais rendus miniatures), un clic change la mise en page, les données restent. Remplace le `<select>` « Modèle ».
+4. Depuis l'accueil, « Commencer avec ce modèle » ouvre l'éditeur avec ce modèle.
+
+## Accueil : structure et textes (FR, à traduire dans les 7 langues de l'interface)
+- **Nav** (sticky, filet bas) : CVLove ♥ · Modèles · Comment ça marche · Code source (icône GitHub) · [Créer mon CV] (bouton noir) · sélecteur de langue d'interface.
+- **Hero**, deux colonnes (texte à gauche, démo à droite ; empilé en mobile) :
+  - Titre : « Votre CV en PDF, sans compte et sans frais. »
+  - Sous-titre : « Remplissez vos informations une fois, essayez les modèles, puis téléchargez le PDF. Tout se passe sur votre appareil. »
+  - CTA : « Créer mon CV » (pilule noire) · « Voir le code sur GitHub » (pilule blanche à filet).
+  - Méta (Geist Mono, petit) : « Gratuit et open source · 7 langues · Sans inscription »
+  - **Démo (moment signature)** : vrai rendu PDF de l'exemple + 4 boutons de modèles au-dessus ; un clic change la mise en page. Légende : « Mêmes informations, quatre mises en page. »
+- **Comment ça marche** (`#comment`), liste numérotée sur filets, pas de cartes :
+  1. « Remplissez. Nom, expériences, formation : chaque champ peut être masqué, renommé ou déplacé. »
+  2. « Changez de modèle quand vous voulez. Vos informations sont conservées, seule la mise en page change. »
+  3. « Téléchargez. Le PDF est fabriqué dans votre navigateur et prêt à envoyer. »
+- **Modèles** (`#modeles`) : « Quatre modèles pour commencer » ; grille de 4 vignettes réelles, chacune avec son nom et un bouton « Commencer avec ce modèle ».
+- **Vie privée** : titre « Vos données restent chez vous ». Texte : « Vous n'avez pas de compte à créer et aucun serveur ne stocke votre CV : il est enregistré dans votre navigateur, qui fabrique aussi le PDF. Le code est public, n'importe qui peut le vérifier. Pour passer sur un autre appareil, exportez votre CV dans un fichier puis réimportez-le. » Lien « Lire le code » vers GitHub.
+- **Langues** : titre « Un CV en français aujourd'hui, en anglais demain ». Texte : « Changez la langue du CV : les titres de sections et les dates s'adaptent, votre texte reste tel quel. » Illustration typographique : le mot « Formation » dans les 7 langues (Formation · Education · Formación · Ausbildung · Formazione · Formação · التعليم), en vrai texte.
+- **Projet ouvert** : titre « Un projet ouvert ». Texte : « Le code est sous licence MIT. Vous pouvez proposer un modèle, corriger une traduction ou signaler un problème sur GitHub. » CTA « Contribuer sur GitHub ».
+- **Bandeau final** : « Il ne vous manque plus que vos informations. » + « Créer mon CV ».
+- **Footer** : CVLove · Licence MIT · Code source · Aucun cookie.
+Lien GitHub : https://github.com/lepalph/CVLove
 
 ## Hors v1 (plus tard)
 Scraping/import de templates sous licence libre (JSON Resume, Reactive Resume, Typst), vérification ATS locale (pdf.js + mots-clés), dark mode, plusieurs CV enregistrés.

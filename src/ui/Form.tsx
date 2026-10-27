@@ -8,7 +8,6 @@ import {
 import { LANGS, SECTION_KINDS, type FieldKind, type Section } from '../model/types'
 import { useStore } from '../store'
 import { ACCENTS } from '../templates/types'
-import { templates } from '../templates'
 import { Field, Icon, LangSelect } from './bits'
 
 const FIELD_ORDER: Exclude<FieldKind, 'custom'>[] = ['birthDate', 'location', 'email', 'phone', 'website']
@@ -49,14 +48,9 @@ export function Form() {
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div>
           <Field label={t.cvLang} hint={t.cvLangHint}>
             <LangSelect wide label={t.cvLang} value={cv.lang} langs={LANGS} onChange={(l) => update((c) => setLang(c, l))} />
-          </Field>
-          <Field label={t.template}>
-            <select className="inp" value={cv.templateId} onChange={(e) => update((c) => ({ ...c, templateId: e.target.value }))}>
-              {templates.map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.name[uiLang]}</option>)}
-            </select>
           </Field>
         </div>
         <fieldset className="mt-4">
@@ -111,7 +105,7 @@ export function Form() {
 
       <Card title={t.sections}>
         {cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
-        <ul className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-6">
           {cv.sections.map((s, i) => (
             <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} />
           ))}
@@ -128,9 +122,9 @@ export function Form() {
           <button type="button" className="btn" onClick={exportJson}>{t.exportJson}</button>
           <input id="imp" type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
           <label htmlFor="imp" className="btn cursor-pointer">{t.importJson}</label>
-          <button type="button" className="btn text-accent-deep" onClick={() => { if (confirm(t.clearConfirm)) clearAll() }}>{t.clearAll}</button>
+          <button type="button" className="btn text-danger" onClick={() => { if (confirm(t.clearConfirm)) clearAll() }}>{t.clearAll}</button>
         </div>
-        {error && <p role="alert" className="mt-2 text-sm text-accent-deep">{error}</p>}
+        {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
         <p className="mt-3 text-sm text-muted">{t.privacy}</p>
       </Card>
     </div>
@@ -138,8 +132,8 @@ export function Form() {
 }
 
 const Card = ({ title, children }: { title?: string; children: React.ReactNode }) => (
-  <section className="card p-4">
-    {title && <h2 className="mb-3 text-lg font-semibold">{title}</h2>}
+  <section className="border-t border-line pt-6 first:border-t-0 first:pt-0">
+    {title && <h2 className="mb-4 text-xl font-semibold tracking-tight">{title}</h2>}
     {children}
   </section>
 )
@@ -151,7 +145,7 @@ function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; 
   const dated = s.kind === 'experience' || s.kind === 'education' || s.kind === 'projects' || s.kind === 'custom'
   const multi = s.kind !== 'profile'
   return (
-    <li className={`rounded-[8px] border border-line p-3 ${s.visible ? '' : 'bg-desk'}`}>
+    <li className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'}`}>
       <div className="flex items-center gap-1">
         <h3 className="flex-1 text-base font-semibold">
           {sectionTitle(s, labels)}
@@ -171,7 +165,7 @@ function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; 
         {s.items.map((it, k) => {
           const set = (p: Partial<typeof it>) => update((c) => patchItem(c, s.id, it.id, p))
           return (
-            <li key={it.id} className="rounded-[8px] bg-desk p-3">
+            <li key={it.id} className="border-s-2 border-line ps-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 {ti && <Field label={ti}><input className="inp" value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
                 {su && <Field label={su}><input className="inp" value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
@@ -181,7 +175,7 @@ function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; 
                     <Field label={t.start}><input className="inp" type="month" placeholder="AAAA-MM" value={it.start} onChange={(e) => set({ start: e.target.value })} /></Field>
                     <Field label={t.end}><input className="inp" type="month" placeholder="AAAA-MM" value={it.end} disabled={it.current} onChange={(e) => set({ end: e.target.value })} /></Field>
                     <label className="col-span-2 flex min-h-11 items-center gap-2 text-sm">
-                      <input type="checkbox" className="size-5 accent-accent-deep" checked={it.current} onChange={(e) => set({ current: e.target.checked })} />
+                      <input type="checkbox" className="size-5 accent-ink" checked={it.current} onChange={(e) => set({ current: e.target.checked })} />
                       {t.current}
                     </label>
                   </div>

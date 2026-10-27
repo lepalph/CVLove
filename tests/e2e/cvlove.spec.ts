@@ -48,22 +48,37 @@ async function pdfOf(path: string) {
 
 const openEditor = async (page: Page) => {
   await page.goto('/')
-  await page.getByRole('button', { name: /Classique/ }).first().click()
-  await expect(page).toHaveURL(/#\/edit/)
+  await page.getByRole('link', { name: 'Créer mon CV' }).first().click()
+  await expect(page).toHaveURL(/#\/editeur/)
+  await expect(page.getByRole('button', { name: 'Classique', pressed: true })).toBeVisible()
   await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })
 }
-const canvasShot = (page: Page) => page.locator('canvas').first().screenshot()
+const canvasShot = (page: Page) => page.locator('canvas').last().screenshot()
 const download = async (page: Page) => {
   const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Télécharger le PDF' }).click()])
   return d
 }
 
-test('galerie, édition du prénom, aperçu mis à jour', async ({ page }) => {
+test('accueil → éditeur, édition du prénom, aperçu mis à jour', async ({ page }) => {
   await openEditor(page)
   await page.waitForTimeout(1500)
   const before = await canvasShot(page)
   await page.getByLabel('Prénom').fill('Zoé')
   await expect.poll(async () => !(await canvasShot(page)).equals(before), { timeout: 10_000 }).toBe(true)
+})
+
+test('accueil : « Commencer avec ce modèle » (Moderne), puis changement de modèle sans perte du prénom', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Votre CV en PDF, sans compte et sans frais.')
+  await page.getByRole('button', { name: /Commencer avec ce modèle \(Moderne\)/ }).click()
+  await expect(page).toHaveURL(/#\/editeur/)
+  await expect(page.getByRole('button', { name: 'Moderne', pressed: true })).toBeVisible()
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByRole('button', { name: 'Minimal' }).click()
+  await expect(page.getByRole('button', { name: 'Minimal', pressed: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Moderne', pressed: false })).toBeVisible()
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })
 })
 
 test('photo ajoutée : présente dans le PDF', async ({ page }) => {
