@@ -1,7 +1,7 @@
-import { Document, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Page, View } from '@react-pdf/renderer'
 import { cvLabels } from '../../i18n/labels'
-import { ContactRow, onAccent } from '../shared'
-import { Block, Main, ink, placeDate, recipientLines, senderLines } from '../letterShared'
+import { ContactRow, Text, ink, onAccent } from '../shared'
+import { Block, Main, placeDate, recipientLines, senderLines } from '../letterShared'
 import { makeTheme } from '../theme'
 import type { LetterMeta, LetterProps } from '../types'
 
@@ -19,7 +19,7 @@ export function Component({ letter, design, labels }: LetterProps) {
   const { sender } = letter
   const accent = ink(t.accent)
   return (
-    <Document title={letter.subject.trim() || sender.name} author={sender.name}>
+    <Document title={letter.subject.trim() || sender.name} author={sender.name} language={letter.lang}>
       <Page {...t.pageProps} style={t.pageStyle(44, 48)}>
         <View style={{ backgroundColor: bg, borderRadius: 6, paddingVertical: t.m(16), paddingHorizontal: t.m(18) }}>
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(21), lineHeight: 1.2, color: fg }}>{sender.name}</Text>

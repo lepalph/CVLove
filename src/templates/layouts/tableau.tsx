@@ -1,8 +1,8 @@
-import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { Lines, SkillLevel, contactList, entryMeta, fixBidi, shade, tint } from '../shared'
+import { Entry, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -23,18 +23,6 @@ export const meta: LayoutMeta = {
 const MUTED = '#5c564d'
 const LABEL = 112 // largeur de la colonne des libellés
 
-// Contraste WCAG local : assombrit l'accent jusqu'à `min`:1 sur le fond donné (accent libre, très clair compris).
-const lum = (hex: string) => {
-  const n = parseInt(hex.slice(1), 16)
-  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 })
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-const ratio = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
-const ink = (hex: string, bg: string, min = 4.5) => {
-  for (let i = 0; i <= 20; i++) { const c = shade(hex, i * 0.05); if (ratio(c, bg) >= min) return c }
-  return '#000000'
-}
-
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
   const { personal } = cv
@@ -48,14 +36,16 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(6) }}>
-        <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
-          <Text style={{ flex: 1, fontWeight: 700 }}>{it.title}</Text>
-          {!!period && <Text style={{ color: MUTED }}>{period}</Text>}
-        </View>
-        {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
-        {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(6) }}
+        head={<>
+          <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
+            <Text style={{ flex: 1, fontWeight: 700 }}>{it.title}</Text>
+            {!!period && <Text style={{ color: MUTED }}>{period}</Text>}
+          </View>
+          {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+        </>}
+      />
     )
   }
 
@@ -80,7 +70,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     <View key={key} style={{ flexDirection: t.row, marginTop: first ? 0 : t.m(2), borderTopWidth: 0.6, borderTopColor: rule }}>
       <View style={{ width: LABEL, paddingVertical: t.m(7), paddingHorizontal: t.m(8), ...(tinted ? { backgroundColor: labBg } : {}), ...(vline ? { [t.rtl ? 'borderLeftWidth' : 'borderRightWidth']: 1.2, borderColor: acc } : {}) }}>
         {label !== null && (
-          <Text minPresenceAhead={50} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9.5), color: acc, textAlign: t.end, ...(t.rtl ? {} : { textTransform: 'uppercase' as const, letterSpacing: 0.6 }) }}>
+          <Text minPresenceAhead={50} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9.5), color: acc, textAlign: t.end, ...(t.rtl ? {} : { textTransform: 'uppercase' as const }) }}>
             {label}
           </Text>
         )}
@@ -90,7 +80,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   )
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={t.pageStyle(38, 40)}>
         <View style={{ flexDirection: t.row, alignItems: 'center', gap: 16, marginBottom: t.m(10) }}>
           <View style={{ flex: 1 }}>

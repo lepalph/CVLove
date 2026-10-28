@@ -1,8 +1,8 @@
-import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
-import type { Item, Section } from '../../model/types'
-import { Lines, SkillLevel, contactList, entryMeta, fixBidi, onAccent, shade, tint } from '../shared'
+import type { Item, Lang, Section } from '../../model/types'
+import { Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -21,6 +21,7 @@ export const meta: LayoutMeta = {
 }
 
 const MUTED = '#6b645b'
+const CONTACT: Record<Lang, string> = { fr: 'Contact', en: 'Contact', es: 'Contacto', de: 'Kontakt', it: 'Contatto', pt: 'Contacto', ar: 'التواصل' }
 const SIDE = 188 // largeur du bandeau latéral
 const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
@@ -35,31 +36,34 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
   const contacts = contactList(cv, labels)
 
-  const bg = solid ? t.accent : right ? tint('#374151', 0.94) : tint(t.accent, 0.9)
-  const fg = solid ? onAccent(bg) : '#3d382f'
-  const sideHead = solid ? fg : t.accent
-  const track = solid ? (fg === '#ffffff' ? tint(bg, 0.6) : shade(bg, 0.4)) : undefined
-  const levelColor = solid ? fg : t.accent
+  const bg = solid ? ink(t.accent, '#ffffff', 7) : right ? tint('#374151', 0.94) : tint(t.accent, 0.9) // aplat : texte blanc >= 7:1
+  const fg = solid ? '#ffffff' : '#3d382f'
+  const acc = ink(t.accent) // accent en texte sur blanc
+  const sideHead = solid ? fg : ink(t.accent, bg)
+  const track = solid ? tint(bg, 0.6) : undefined
+  const levelColor = solid ? fg : sideHead
 
   const mainTitle = (s: Section) =>
     right ? (
-      <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9.5), color: t.accent, marginBottom: 3, ...(t.rtl ? {} : { letterSpacing: 1.4 }) }}>
+      <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9.5), color: acc, marginBottom: 3 }}>
         {t.rtl ? sectionTitle(s, labels) : sectionTitle(s, labels).toUpperCase()}
       </Text>
     ) : (
       <View style={{ borderBottomWidth: 0.8, borderBottomColor: t.accent, marginBottom: 2 }}>
-        <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(11.5), color: t.accent, marginBottom: 3 }}>{sectionTitle(s, labels)}</Text>
+        <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(11.5), color: acc, marginBottom: 3 }}>{sectionTitle(s, labels)}</Text>
       </View>
     )
 
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(7) }}>
-        <Text style={{ fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
-        {(!!sub || !!period) && <Text style={{ color: MUTED }}>{[sub, period].filter(Boolean).join('  |  ')}</Text>}
-        {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(7) }}
+        head={<>
+          <Text style={{ fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
+          {(!!sub || !!period) && <Text style={{ color: MUTED }}>{[sub, period].filter(Boolean).join('  |  ')}</Text>}
+        </>}
+      />
     )
   }
 
@@ -87,14 +91,19 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     : { [t.rtl ? 'paddingRight' : 'paddingLeft']: side, [t.rtl ? 'paddingLeft' : 'paddingRight']: edge }
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={{ ...pageBase, ...pad }}>
         {/* Fond du bandeau : répété sur chaque page ; son contenu n'est que sur la page 1 */}
         <View fixed style={{ position: 'absolute', top: 0, bottom: 0, [sideAt]: 0, width: SIDE, backgroundColor: bg }} />
         {right && <View fixed style={{ position: 'absolute', top: 0, bottom: 0, [sideAt === 'left' ? 'left' : 'right']: SIDE, width: 1.5, backgroundColor: t.accent }} />}
         <View style={{ position: 'absolute', top: t.m(38), [sideAt]: 0, width: SIDE, paddingHorizontal: 20, color: fg }}>
           {!!personal.photo && <View style={{ alignItems: 'center', marginBottom: 14 }}><Image src={personal.photo} style={t.photo(100)} /></View>}
-          {contacts.length > 0 && <View>{contacts.map((c, i) => <Text key={i} style={{ marginTop: 3, color: fg }}>{c}</Text>)}</View>}
+          {contacts.length > 0 && (
+            <View>
+              <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(11.5), color: sideHead, marginBottom: 3 }}>{CONTACT[cv.lang]}</Text>
+              {contacts.map((c, i) => <Text key={i} style={{ marginTop: 3, color: fg }}>{c}</Text>)}
+            </View>
+          )}
           {sideSections.map((s) => (
             <View key={s.id} style={{ marginTop: t.m(15), color: fg }}>
               <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(11.5), color: sideHead, marginBottom: 3 }}>{sectionTitle(s, labels)}</Text>
@@ -105,13 +114,10 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
 
         <View>
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(26), lineHeight: 1.15 }}>{fullName(cv)}</Text>
-          {!!personal.title.trim() && <Text style={{ fontSize: t.s(12.5), color: t.accent, marginTop: 4 }}>{personal.title}</Text>}
+          {!!personal.title.trim() && <Text style={{ fontSize: t.s(12.5), color: acc, marginTop: 4 }}>{personal.title}</Text>}
         </View>
         {mainSections.map((s) => (
-          <View key={s.id} style={{ marginTop: t.m(18) }}>
-            {mainTitle(s)}
-            {mainBody(s)}
-          </View>
+          <SectionFlow key={s.id} gap={t.m(18)} title={mainTitle(s)}>{mainBody(s)}</SectionFlow>
         ))}
       </Page>
     </Document>

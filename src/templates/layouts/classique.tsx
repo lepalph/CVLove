@@ -1,8 +1,8 @@
-import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Lines, SkillLevel, contactList, entryMeta, fixBidi } from '../shared'
+import { ContactRow, Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -28,18 +28,21 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const centered = variant === 'centered'
   const editorial = variant === 'editorial'
   const contacts = contactList(cv, labels)
+  const acc = ink(t.accent) // accent lisible comme texte sur blanc, même très clair
 
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(6) }}>
-        <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
-          <Text style={{ flex: 1, fontWeight: 700 }}>{it.title}</Text>
-          {!!period && <Text style={{ color: MUTED }}>{period}</Text>}
-        </View>
-        {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
-        {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(6) }}
+        head={<>
+          <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
+            <Text style={{ flex: 1, fontWeight: 700 }}>{it.title}</Text>
+            {!!period && <Text style={{ color: MUTED }}>{period}</Text>}
+          </View>
+          {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+        </>}
+      />
     )
   }
 
@@ -63,7 +66,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     const txt = sectionTitle(s, labels)
     if (centered)
       return (
-        <Text minPresenceAhead={50} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(10.5), color: t.accent, paddingBottom: 3, borderBottomWidth: 0.5, borderBottomColor: '#cfcac2', ...(t.rtl ? {} : { letterSpacing: 1.5 }) }}>
+        <Text minPresenceAhead={50} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(10.5), color: acc, paddingBottom: 3, borderBottomWidth: 0.5, borderBottomColor: '#cfcac2' }}>
           {t.rtl ? txt : txt.toUpperCase()}
         </Text>
       )
@@ -75,7 +78,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
         </View>
       )
     return (
-      <Text minPresenceAhead={50} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(12.5), color: t.accent, paddingBottom: 3, borderBottomWidth: 0.8, borderBottomColor: t.accent }}>
+      <Text minPresenceAhead={50} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(12.5), color: acc, paddingBottom: 3, borderBottomWidth: 0.8, borderBottomColor: acc }}>
         {txt}
       </Text>
     )
@@ -86,13 +89,13 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     <>
       <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(editorial ? 30 : centered ? 27 : 25), lineHeight: 1.2, ...(centered ? { textAlign: 'center' } : {}) }}>{fullName(cv)}</Text>
       {!!personal.title.trim() && (
-        <Text style={{ fontSize: t.s(12), color: t.accent, marginTop: 3, ...(centered ? { textAlign: 'center' } : {}) }}>{personal.title}</Text>
+        <Text style={{ fontSize: t.s(12), color: acc, marginTop: 3, ...(centered ? { textAlign: 'center' } : {}) }}>{personal.title}</Text>
       )}
     </>
   )
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={t.pageStyle(40, 44)}>
         {editorial && <View style={{ height: 4, backgroundColor: t.accent, marginBottom: t.m(14) }} />}
         {centered ? (
@@ -115,10 +118,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
           </>
         )}
         {visibleSections(cv).map((s) => (
-          <View key={s.id} style={{ marginTop: t.m(16) }}>
-            {title(s)}
-            {body(s)}
-          </View>
+          <SectionFlow key={s.id} gap={t.m(16)} title={title(s)}>{body(s)}</SectionFlow>
         ))}
       </Page>
     </Document>

@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react'
+import { modelName } from './lib'
 import { cvLabels } from '../i18n/labels'
 import { GITHUB_URL, home } from '../i18n/home'
 import { ui } from '../i18n/ui'
@@ -6,7 +7,7 @@ import { v2 } from '../i18n/v2'
 import { LANGS, type Lang } from '../model/types'
 import { useStore } from '../store'
 import { layouts, templates } from '../templates'
-import { GithubIcon, LangSelect, Logo } from './bits'
+import { GithubIcon, LangSelect, Logo, SkipLink } from './bits'
 import { useModelFilter } from './DesignPanel'
 import { SamplePage } from './SamplePage'
 
@@ -33,6 +34,7 @@ export function Home() {
 
   return (
     <>
+      <SkipLink />
       <header className="sticky top-0 z-20 border-b border-line bg-desk">
         <nav className={`${wrap} flex h-16 items-center gap-3 sm:gap-6`}>
           <Logo />
@@ -49,7 +51,9 @@ export function Home() {
         </nav>
       </header>
 
-      <main>
+      <main id="main" tabIndex={-1} className="outline-none">
+        {/* Trame de fond : des feuilles A4 (1:1,414) en filet, qui s'effacent vers les bords. */}
+        <div className="trame">
         <section className={`${wrap} grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:gap-16`}>
           <div>
             <h1 className="text-balance text-[2rem] font-semibold leading-[1.05] tracking-[-0.05em] sm:text-5xl">
@@ -83,6 +87,7 @@ export function Home() {
             <figcaption className="mt-3 text-center text-sm text-muted">{t.demoCaption}</figcaption>
           </figure>
         </section>
+        </div>
 
         <section id="comment" className={`${wrap} ${SECTION} border-t border-line`}>
           <h2 className={H2}>{t.howTitle}</h2>
@@ -102,7 +107,7 @@ export function Home() {
           <div className="mt-8">{filters}</div>
           <ul className="mt-10 grid list-none grid-cols-2 gap-x-4 gap-y-8 p-0 lg:grid-cols-4 lg:gap-x-6">
             {shown.map((tpl) => {
-              const name = `${tpl.layoutName[uiLang]} · ${tpl.styleName}`
+              const name = modelName(tpl, uiLang)
               return (
                 <li key={tpl.id} className="flex flex-col gap-3">
                   <SamplePage lang={uiLang} templateId={tpl.id} />

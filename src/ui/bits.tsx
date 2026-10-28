@@ -1,23 +1,55 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { extra } from '../i18n/extra'
+import { exportDocs } from '../model/documents'
 import { LANGS, type Lang } from '../model/types'
+import { useSaveStatus, useStore } from '../store'
+import { logoAccent } from './lib'
 
 /** Noms de langues, chacun dans sa propre langue. */
 export const LANG_NAMES: Record<Lang, string> = {
   fr: 'Français', en: 'English', es: 'Español', de: 'Deutsch', it: 'Italiano', pt: 'Português', ar: 'العربية',
 }
 
-export const Heart = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className="fill-danger">
+export const Heart = ({ color }: { color?: string }) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className="fill-danger" style={color ? { fill: color } : undefined}>
     <path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 5 6.3 5c2.1 0 3.7 1.2 5.7 3.3C14 6.2 15.6 5 17.7 5 21 5 23.1 8.4 21.6 11.8 19.5 16.4 12 21 12 21z" />
   </svg>
 )
 
-export const Logo = () => (
-  <a href="#/" className="inline-flex min-h-11 items-center gap-1.5 text-lg font-semibold tracking-tight" aria-label="CVLove">
-    CVLove
-    <Heart />
-  </a>
-)
+/** `accent` : couleur du document actif (éditeur). Le cœur la prend si elle ressort sur le fond, sinon il garde le rouge de la marque. */
+export function Logo({ accent }: { accent?: string }) {
+  const dark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches
+  return (
+    <a href="#/" className="inline-flex min-h-11 items-center gap-1.5 text-lg font-semibold tracking-tight" aria-label="CVLove">
+      CVLove
+      <Heart color={logoAccent(accent, dark ? '#0a0a0a' : '#fafafa')} />
+    </a>
+  )
+}
+
+/** Lien d'évitement : un bouton (pas une ancre, le hash sert au routage) qui met le focus sur `#main`. */
+export function SkipLink() {
+  const label = extra[useStore((s) => s.uiLang)].skip
+  return (
+    <button type="button" onClick={() => document.getElementById('main')?.focus()}
+      className="sr-only rounded-ctl bg-ink px-4 py-3 text-desk focus:not-sr-only focus:fixed focus:start-2 focus:top-2 focus:z-50">
+      {label}
+    </button>
+  )
+}
+
+/** Vrai quand la fenêtre a la largeur du mode bureau (lg, 64 rem). */
+export function useWide() {
+  const q = '(min-width: 64rem)'
+  const [wide, setWide] = useState(() => matchMedia(q).matches)
+  useEffect(() => {
+    const m = matchMedia(q)
+    const on = () => setWide(m.matches)
+    m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [])
+  return wide
+}
 
 export const GithubIcon = () => (
   <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" className="fill-current">
@@ -61,6 +93,24 @@ export function Seg<T extends string | number>({ label, value, options, onChange
           {text}
         </button>
       ))}
+    </div>
+  )
+}
+
+/** Bandeau (role="alert") quand l'enregistrement local échoue : la saisie reste en mémoire, l'export JSON la sauve. */
+export function SaveBanner() {
+  const error = useSaveStatus((s) => s.error)
+  const x = extra[useStore((s) => s.uiLang)]
+  if (!error) return null
+  const save = () => {
+    const url = URL.createObjectURL(new Blob([exportDocs(useStore.getState().documents)], { type: 'application/json' }))
+    Object.assign(document.createElement('a'), { href: url, download: 'cvlove-documents.json' }).click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
+  return (
+    <div role="alert" className="mx-auto flex w-full max-w-[75rem] flex-wrap items-center gap-3 border-b border-danger px-[var(--m)] py-3 text-sm text-danger">
+      <p className="m-0 flex-1 basis-64 text-pretty">{error === 'quota' ? x.saveQuota : x.saveUnavailable}</p>
+      <button type="button" className="btn" onClick={save}>{x.exportMine}</button>
     </div>
   )
 }

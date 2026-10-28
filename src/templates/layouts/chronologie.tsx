@@ -1,8 +1,8 @@
-import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Lines, SkillLevel, contactList, entryMeta, fixBidi, onAccent, shade, tint } from '../shared'
+import { ContactRow, Entry, Lines, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf, lineNodes, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -31,12 +31,13 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const ring = variant === 'ring'
   const tag = variant === 'tag'
   const contacts = contactList(cv, labels)
-  // accent utilisable comme couleur de texte sur fond blanc, même s'il est très clair
-  const ink = onAccent(t.accent) === '#ffffff' ? t.accent : shade(t.accent, 0.55)
+  const ink = inkOf(t.accent) // accent utilisable comme texte sur blanc (>= 4,5:1), même s'il est très clair
+  const chipBg = tint(t.accent, 0.88)
+  const chipInk = inkOf(t.accent, chipBg) // lisible sur la pastille teintée
 
   const title = (s: Section) => (
     <View minPresenceAhead={60} style={{ flexDirection: t.row, alignItems: 'center', gap: 8, marginBottom: 2 }}>
-      <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(11.5), color: ink, ...(t.rtl ? {} : { letterSpacing: 1.2 }) }}>
+      <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(11.5), color: ink }}>
         {t.rtl ? sectionTitle(s, labels) : sectionTitle(s, labels).toUpperCase()}
       </Text>
       <View style={{ flex: 1, height: 0.6, backgroundColor: tint(t.accent, 0.55) }} />
@@ -49,24 +50,36 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
 
   const timelineItem = (it: Item, i: number, n: number) => {
     const { period, sub } = entryMeta(it, cv, labels)
+    const [first, ...rest] = lineNodes(it.text, t.rtl)
+    const rail = (top: number) => i < n - 1 && <View style={{ position: 'absolute', top, bottom: 0, width: 1, backgroundColor: tint(t.accent, 0.45) }} />
     return (
-      <View key={it.id} wrap={false} style={{ flexDirection: t.row }}>
-        <View style={{ width: DATE_W, paddingTop: 1, paddingBottom: t.m(9) }}>
-          {!!period && (
-            tag
-              ? <Text style={{ alignSelf: t.rtl ? 'flex-start' : 'flex-end', backgroundColor: tint(t.accent, 0.88), color: ink, fontSize: t.s(8.5), paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 2, textAlign: 'center' }}>{period}</Text>
-              : <Text style={{ color: MUTED, fontSize: t.s(8.5), textAlign: t.end }}>{period}</Text>
-          )}
+      <View key={it.id}>
+        <View wrap={false} style={{ flexDirection: t.row }}>
+          <View style={{ width: DATE_W, paddingTop: 1 }}>
+            {!!period && (
+              tag
+                ? <Text style={{ alignSelf: t.rtl ? 'flex-start' : 'flex-end', backgroundColor: chipBg, color: chipInk, fontSize: t.s(8.5), paddingHorizontal: 4, paddingVertical: 1.5, borderRadius: 2, textAlign: 'center' }}>{period}</Text>
+                : <Text style={{ color: MUTED, fontSize: t.s(8.5), textAlign: t.end }}>{period}</Text>
+            )}
+          </View>
+          <View style={{ width: RAIL_W, alignItems: 'center' }}>
+            {rail(5)}
+            <View style={{ marginTop: 2.5, ...dot }} />
+          </View>
+          <View style={{ flex: 1, paddingBottom: rest.length ? 0 : t.m(9) }}>
+            <Text style={{ fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
+            {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+            {first}
+          </View>
         </View>
-        <View style={{ width: RAIL_W, alignItems: 'center' }}>
-          {i < n - 1 && <View style={{ position: 'absolute', top: 5, bottom: 0, width: 1, backgroundColor: tint(t.accent, 0.45) }} />}
-          <View style={{ marginTop: 2.5, ...dot }} />
-        </View>
-        <View style={{ flex: 1, paddingBottom: t.m(9) }}>
-          <Text style={{ fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
-          {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
-          {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
-        </View>
+        {rest.length > 0 && (
+          // suite de la description : peut changer de page, la frise continue à côté
+          <View style={{ flexDirection: t.row }}>
+            <View style={{ width: DATE_W }} />
+            <View style={{ width: RAIL_W, alignItems: 'center' }}>{rail(0)}</View>
+            <View style={{ flex: 1, paddingBottom: t.m(9) }}>{rest}</View>
+          </View>
+        )}
       </View>
     )
   }
@@ -89,16 +102,22 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
         </View>
       )
     if (TIMELINE.includes(s.kind)) return <View style={{ marginTop: t.m(8) }}>{s.items.map((it, i) => timelineItem(it, i, s.items.length))}</View>
-    // projets et sections libres : même alignement que la frise, sans la frise
+    // projets et sections libres : même alignement que la frise, sans la frise ; sans date, pleine largeur
     return s.items.map((it) => {
       const { period, sub } = entryMeta(it, cv, labels)
+      const head = (
+        <>
+          <Text style={{ fontWeight: 700 }}>{it.title}</Text>
+          {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+        </>
+      )
+      if (!period) return <Entry key={it.id} head={head} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(6) }} />
       return (
         <View key={it.id} wrap={false} style={{ flexDirection: t.row, marginTop: t.m(6) }}>
           <Text style={{ width: DATE_W, color: MUTED, fontSize: t.s(8.5), textAlign: t.end }}>{period}</Text>
           <View style={{ width: RAIL_W }} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontWeight: 700 }}>{it.title}</Text>
-            {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+            {head}
             {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
           </View>
         </View>
@@ -116,17 +135,14 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   )
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={t.pageStyle(40, 44)}>
         <View style={{ flexDirection: t.row, alignItems: 'center', gap: 16, paddingBottom: t.m(12), borderBottomWidth: 1.5, borderBottomColor: t.accent }}>
           {head}
           {photo}
         </View>
         {visibleSections(cv).map((s) => (
-          <View key={s.id} style={{ marginTop: t.m(15) }}>
-            {title(s)}
-            {body(s)}
-          </View>
+          <SectionFlow key={s.id} gap={t.m(15)} title={title(s)}>{body(s)}</SectionFlow>
         ))}
       </Page>
     </Document>

@@ -1,7 +1,7 @@
-import { Document, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Page, View } from '@react-pdf/renderer'
 import { cvLabels } from '../../i18n/labels'
-import { tint } from '../shared'
-import { Block, Main, ink, placeDate, recipientLines, senderLines } from '../letterShared'
+import { Text, ink, tint } from '../shared'
+import { Block, Main, placeDate, recipientLines, senderLines } from '../letterShared'
 import { makeTheme } from '../theme'
 import type { LetterMeta, LetterProps } from '../types'
 
@@ -26,7 +26,7 @@ export function Component({ letter, design, labels }: LetterProps) {
   const cap = side === 'left' ? 'Left' : 'Right'
   const capEnd = edge === 'left' ? 'Left' : 'Right'
   return (
-    <Document title={letter.subject.trim() || sender.name} author={sender.name}>
+    <Document title={letter.subject.trim() || sender.name} author={sender.name} language={letter.lang}>
       <Page {...t.pageProps} style={{ ...page, [`padding${cap}`]: SIDE + pad, [`padding${capEnd}`]: t.m(44) }}>
         <View fixed style={{ position: 'absolute', top: 0, bottom: 0, [side]: 0, width: SIDE, backgroundColor: bg }} />
         <View style={{ position: 'absolute', top: t.m(48), [side]: 0, width: SIDE, paddingHorizontal: t.m(16), gap: 8 }}>

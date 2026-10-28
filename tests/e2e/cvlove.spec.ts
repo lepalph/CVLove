@@ -50,12 +50,17 @@ async function pdfOf(path: string) {
   return { text, images, colors: [...colors] }
 }
 
-const openEditor = async (page: Page) => {
+/** Un nouveau CV est vide ; `sample` clique sur « Remplir avec l’exemple » (Camille Marchand) pour les tests qui lisent un document rempli. */
+const openEditor = async (page: Page, sample = false) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Créer mon CV' }).first().click()
   await expect(page).toHaveURL(/#\/editeur/)
   await page.getByRole('button', { name: 'Complet' }).click() // un nouveau document démarre en mode guidé ; ces tests utilisent le formulaire complet
   await expect(page.getByRole('button', { name: 'Classique · Académique', pressed: true })).toBeVisible()
+  if (sample) {
+    await page.getByRole('button', { name: 'Remplir avec l’exemple' }).first().click()
+    await expect(page.getByLabel('Prénom')).toHaveValue('Camille')
+  }
   await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })
 }
 const canvasShot = (page: Page) => page.locator('canvas').last().screenshot()
@@ -108,7 +113,7 @@ test('téléchargement : CV-Prenom-Nom.pdf non vide contenant le prénom', async
 })
 
 test('langue du CV : EN change les titres pas le contenu, AR passe en RTL', async ({ page }) => {
-  await openEditor(page)
+  await openEditor(page, true)
   await page.getByLabel('Prénom').fill('Zoé')
   const sectionTitle = page.locator('h3').filter({ hasText: 'Formation' })
   await expect(sectionTitle).toBeVisible()
@@ -179,27 +184,28 @@ test('migration v1 → v2 : le CV existant devient le premier document', async (
   await expect(page).toHaveURL(/#\/documents/)
   await expect(page.getByRole('listitem').filter({ hasText: 'CV' })).toHaveCount(1)
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cvlove:v2')!).version)).toBe(2)
-  expect(await page.evaluate(() => localStorage.getItem('cvlove:v1'))).not.toBeNull() // filet de sécurité conservé
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('cvlove:v1'))).toBeNull() // migré : le doublon est supprimé
 })
 
 test('Mes documents : dupliquer, modifier la copie, renommer, supprimer', async ({ page }) => {
   await openEditor(page)
   await page.getByLabel('Prénom').fill('Zoé')
   await page.getByRole('link', { name: 'Mes documents' }).click()
-  await page.getByRole('button', { name: 'Dupliquer : CV' }).click()
+  await page.getByRole('button', { name: 'Dupliquer : Zoé' }).click()
   const items = page.locator('li[data-doc]')
   await expect(items).toHaveCount(2)
-  await expect(page.locator('li[data-doc="CV 2"]')).toBeVisible()
+  await expect(page.locator('li[data-doc="Zoé 2"]')).toBeVisible()
   // la copie est active : on l'ouvre, on change son prénom ; l'original ne bouge pas
-  await page.getByRole('button', { name: 'Ouvrir : CV 2' }).click()
+  await page.getByRole('button', { name: 'Ouvrir : Zoé 2' }).click()
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
   await page.getByLabel('Prénom').fill('Copie')
+  await page.getByLabel('Nom', { exact: true }).fill('Durand')
   await page.getByRole('link', { name: 'Mes documents' }).click()
-  await page.getByRole('button', { name: 'Ouvrir : CV', exact: true }).click()
+  await page.getByRole('button', { name: 'Ouvrir : Zoé', exact: true }).click()
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
   // renommer puis supprimer (avec confirmation)
   await page.getByRole('link', { name: 'Mes documents' }).click()
-  await page.getByRole('button', { name: 'Renommer : CV 2' }).click()
+  await page.getByRole('button', { name: 'Renommer : Zoé 2' }).click()
   await page.getByLabel('Nom du document').fill('Candidature Lyon')
   await page.getByLabel('Nom du document').press('Enter')
   await expect(page.locator('li[data-doc="Candidature Lyon"]')).toBeVisible()
@@ -209,7 +215,7 @@ test('Mes documents : dupliquer, modifier la copie, renommer, supprimer', async 
 })
 
 test('design : police et couleur changées se voient dans le PDF téléchargé, texte toujours extractible', async ({ page }) => {
-  await openEditor(page)
+  await openEditor(page, true)
   await page.getByLabel('Police').selectOption('playfair')
   await page.locator('input[type=color]').fill('#0e7490')
   await page.getByRole('button', { name: 'A4' }).click()
@@ -316,7 +322,7 @@ test('lettre : créée depuis un CV (expéditeur repris, indépendant), corps mo
   await page.getByLabel('Nom complet').fill('Autre Nom')
   await page.getByRole('link', { name: 'Mes documents' }).click()
   await expect(page.locator('li[data-doc]')).toHaveCount(2)
-  await page.getByRole('button', { name: 'Ouvrir : CV', exact: true }).click()
+  await page.getByRole('button', { name: 'Ouvrir : Zoé Durand', exact: true }).click()
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
   // et la lettre se rouvre depuis la liste, avec ses modifications
   await page.getByRole('link', { name: 'Mes documents' }).click()
@@ -326,12 +332,13 @@ test('lettre : créée depuis un CV (expéditeur repris, indépendant), corps mo
 })
 
 test('éditeur de CV : « Créer la lettre assortie » reprend le CV, l’accent et la langue ; la langue de la lettre change les formules', async ({ page }) => {
-  await openEditor(page)
+  await openEditor(page, true)
   await page.locator('input[type=color]').fill('#0e7490')
   await page.getByRole('button', { name: 'Créer la lettre assortie' }).click()
   await expect(page).toHaveURL(/#\/lettre/)
   await page.getByRole('button', { name: 'Complet' }).click()
   await expect(page.getByLabel('Nom complet')).toHaveValue('Camille Marchand')
+  await expect(page.getByLabel('Lieu')).toHaveValue('Lyon') // ville du CV
   await expect(page.locator('input[type=color]')).toHaveValue('#0e7490')
   await expect(page.getByLabel('Formule d’appel')).toHaveValue('Madame, Monsieur,')
   await page.getByLabel('Langue de la lettre').selectOption('en')
@@ -339,4 +346,21 @@ test('éditeur de CV : « Créer la lettre assortie » reprend le CV, l’accent
   const pdf = await pdfOf((await (await download(page)).path())!)
   expect(pdf.text).toContain('Dear Sir or Madam,')
   expect(pdf.colors).toContain('#0e7490')
+})
+
+test('nouveau CV vide, nommé d’après la personne, exemple à la demande', async ({ page }) => {
+  await openEditor(page)
+  await expect(page.getByLabel('Prénom')).toHaveValue('')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc="CV sans titre"]')).toBeVisible()
+  await page.getByRole('button', { name: 'Ouvrir : CV sans titre' }).click()
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
+})
+
+test('fichier trop gros : message clair, rien n’est importé', async ({ page }) => {
+  await page.goto('/#/documents')
+  await page.locator('input[type=file][accept^="application/json"]').setInputFiles({ name: 'gros.json', mimeType: 'application/json', buffer: Buffer.alloc(5_100_000, 32) })
+  await expect(page.getByRole('alert')).toContainText('trop volumineux')
 })

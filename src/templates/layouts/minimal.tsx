@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Lines, SkillLevel, contactList, entryMeta, fixBidi } from '../shared'
+import { ContactRow, Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -34,14 +34,16 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(8) }}>
-        <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 10 }}>
-          <View style={{ flex: 1 }}><Text style={{ fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text></View>
-          {!!period && <Text style={{ color: MUTED, fontSize: t.s(8.5) }}>{period}</Text>}
-        </View>
-        {!!sub && <Text style={{ color: MUTED, marginTop: 1 }}>{sub}</Text>}
-        {!!it.text.trim() && <View style={{ marginTop: 3 }}><Lines text={it.text} rtl={t.rtl} /></View>}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(8) }}
+        head={<>
+          <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 10 }}>
+            <View style={{ flex: 1 }}><Text style={{ fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text></View>
+            {!!period && <Text style={{ color: MUTED, fontSize: t.s(8.5) }}>{period}</Text>}
+          </View>
+          {!!sub && <Text style={{ color: MUTED, marginTop: 1, marginBottom: 1.5 }}>{sub}</Text>}
+        </>}
+      />
     )
   }
 
@@ -64,7 +66,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const label = (s: Section) => {
     const txt = sectionTitle(s, labels)
     return (
-      <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9), color: rule ? t.accent : MUTED, ...(t.rtl ? {} : { letterSpacing: 1.2 }) }}>
+      <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9), color: rule ? ink(t.accent) : MUTED }}>
         {t.rtl ? txt : txt.toUpperCase()}
       </Text>
     )
@@ -73,13 +75,13 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const photo = !!personal.photo && <Image src={personal.photo} style={t.photo(gutter ? 72 : 64)} />
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={t.pageStyle(44, 58)}>
         {rule && <View style={{ height: 3, width: 48, backgroundColor: t.accent, marginBottom: t.m(10) }} />}
         <View style={{ flexDirection: t.row, alignItems: 'flex-end', gap: 16 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(28), lineHeight: 1.15 }}>{fullName(cv)}</Text>
-            {!!personal.title.trim() && <Text style={{ fontSize: t.s(12), color: t.accent, marginTop: 5 }}>{personal.title}</Text>}
+            {!!personal.title.trim() && <Text style={{ fontSize: t.s(12), color: ink(t.accent), marginTop: 5 }}>{personal.title}</Text>}
           </View>
           {photo}
         </View>
@@ -92,10 +94,9 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
               <View style={{ flex: 1 }}>{body(s)}</View>
             </View>
           ) : (
-            <View key={s.id} style={{ marginTop: t.m(18) }}>
-              <View style={rule ? { borderBottomWidth: 0.5, borderBottomColor: '#d6d2cb', paddingBottom: 3, marginBottom: 3 } : { marginBottom: 2 }}>{label(s)}</View>
+            <SectionFlow key={s.id} gap={t.m(18)} title={<View style={rule ? { borderBottomWidth: 0.5, borderBottomColor: '#d6d2cb', paddingBottom: 3, marginBottom: 3 } : { marginBottom: 2 }}>{label(s)}</View>}>
               {body(s)}
-            </View>
+            </SectionFlow>
           ),
         )}
       </Page>

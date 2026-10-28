@@ -5,3 +5,4 @@ out
 *.local
 test-results
 playwright-report
+.personas

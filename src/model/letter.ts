@@ -21,6 +21,16 @@ export function normalizeLetter(d: Partial<Letter> | undefined): Letter {
   return { ...b, ...d, lang: b.lang, sender: { ...b.sender, ...d?.sender }, recipient: { ...b.recipient, ...d?.recipient } }
 }
 
+/** Ville d'une adresse : « Lyon, France » -> « Lyon » ; « 12 rue X, 69001 Lyon » -> « Lyon » (vide si rien de tel). */
+export function cityOf(location: string): string {
+  for (const seg of location.split(',').map((x) => x.trim())) {
+    const m = /^\d{4,6}\s+(.+)$/.exec(seg)
+    if (m) return m[1]
+    if (seg && !/^\d/.test(seg)) return seg
+  }
+  return ''
+}
+
 /** Expéditeur repris du CV : nom, titre, premier e-mail / téléphone / lieu visibles. Copie de chaînes : aucun lien avec le CV ensuite. */
 export function letterFromCV(cv: CV): Letter {
   const field = (kind: string) => cv.personal.fields.find((f) => f.kind === kind && f.visible && f.value.trim())?.value.trim() ?? ''
@@ -28,6 +38,7 @@ export function letterFromCV(cv: CV): Letter {
   return {
     ...blankLetter(cv.lang),
     sender: { name, title: cv.personal.title, email: field('email'), phone: field('phone'), address: field('location') },
+    place: cityOf(field('location')),
     signature: name,
   }
 }

@@ -3,7 +3,7 @@ import { letterLabels } from '../i18n/letter'
 import { getLetterLayout, letterLayouts } from '../templates/letterTemplates'
 import { patchField } from './cv'
 import { exportDocs, parseImport } from './documents'
-import { blankLetter, letterDesignFrom, letterFileName, letterFromCV, newLetterDoc, normalizeLetter, paragraphs, patchSender, setLetterLang } from './letter'
+import { blankLetter, cityOf, letterDesignFrom, letterFileName, letterFromCV, newLetterDoc, normalizeLetter, paragraphs, patchSender, setLetterLang } from './letter'
 import { sampleCV } from './sample'
 import { LANGS } from './types'
 
@@ -17,6 +17,13 @@ describe('lettre : création depuis un CV', () => {
     expect(l.signature).toBe('Camille Marchand')
     expect(l.salutation).toBe(letterLabels.fr.salutation)
     expect(l.closing).toBe(letterLabels.fr.closing)
+  })
+
+  it('reprend la ville du CV comme lieu de la lettre', () => {
+    expect(letterFromCV(sampleCV('fr')).place).toBe('Lyon')
+    expect(cityOf('12 rue des Fleurs, 69001 Lyon, France')).toBe('Lyon')
+    expect(cityOf('Casablanca')).toBe('Casablanca')
+    expect(cityOf('')).toBe('')
   })
 
   it('ignore les champs masqués ou vides', () => {

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Lines, SkillLevel, contactList, entryMeta, fixBidi, onAccent, shade, tint } from '../shared'
+import { ContactRow, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, lineNodes, shade, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -33,31 +33,40 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const padV = t.m(38)
   const padH = t.m(44)
 
-  const bg = soft ? tint(t.accent, 0.88) : tags ? shade(t.accent, 0.55) : t.accent
-  const fg = soft ? '#1f1b16' : onAccent(bg)
-  const sub = soft ? shade(t.accent, 0.35) : fg
+  const acc = ink(t.accent) // texte d'accent sur blanc >= 4,5:1
+  const deep = ink(t.accent, '#ffffff', 7) // aplat qui porte du texte blanc >= 7:1
+  const bg = soft ? tint(t.accent, 0.88) : tags ? ink(shade(t.accent, 0.55), '#ffffff', 7) : deep
+  const fg = soft ? '#1f1b16' : '#ffffff'
+  const sub = soft ? ink(t.accent, bg) : fg
 
   // Rangée « métadonnées | contenu » : largeur fixe à gauche (à droite en RTL), le contenu dans une View flex:1.
-  const line = (key: string, meta: ReactNode, content: ReactNode, top = 6) => (
-    <View key={key} wrap={false} style={{ flexDirection: t.row, marginTop: t.m(top), gap: 14 }}>
-      <View style={{ width: META }}>{meta}</View>
-      <View style={{ flex: 1 }}>{content}</View>
+  // `rest` : lignes de description au-delà de la première, sous le contenu et qui peuvent changer de page.
+  const line = (key: string, meta: ReactNode, content: ReactNode, top = 6, rest: ReactNode[] = []) => (
+    <View key={key} style={{ marginTop: t.m(top) }}>
+      <View wrap={false} style={{ flexDirection: t.row, gap: 14 }}>
+        <View style={{ width: META }}>{meta}</View>
+        <View style={{ flex: 1 }}>{content}</View>
+      </View>
+      {rest.length > 0 && <View style={{ [t.rtl ? 'paddingRight' : 'paddingLeft']: META + 14 }}>{rest}</View>}
     </View>
   )
 
   const entry = (it: Item) => {
     const { period } = entryMeta(it, cv, labels)
+    const [first, ...rest] = lineNodes(it.text, t.rtl)
     return line(
       it.id,
       <>
-        {!!period && <Text style={{ color: t.accent, fontSize: t.s(8.5) }}>{period}</Text>}
+        {!!period && <Text style={{ color: acc, fontSize: t.s(8.5) }}>{period}</Text>}
         {!!it.place.trim() && <Text style={{ color: MUTED, fontSize: t.s(8.5), marginTop: 1 }}>{it.place}</Text>}
       </>,
       <>
         <Text style={{ fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
         {!!it.subtitle.trim() && <Text style={{ color: MUTED }}>{it.subtitle}</Text>}
-        {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
+        {first}
       </>,
+      6,
+      rest,
     )
   }
 
@@ -75,20 +84,20 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     const txt = sectionTitle(s, labels)
     if (tags)
       return (
-        <View minPresenceAhead={90} style={{ alignSelf: 'flex-start', backgroundColor: t.accent, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 2 }}>
-          <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(10.5), color: onAccent(t.accent) }}>{txt}</Text>
+        <View minPresenceAhead={90} style={{ alignSelf: 'flex-start', backgroundColor: deep, paddingVertical: 2, paddingHorizontal: 8, borderRadius: 2 }}>
+          <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(10.5), color: '#ffffff' }}>{txt}</Text>
         </View>
       )
     return (
       <View minPresenceAhead={90} style={{ flexDirection: t.row, alignItems: 'center', gap: 8 }}>
         <View style={{ width: 16, height: 4, backgroundColor: t.accent }} />
-        <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(12), color: t.accent }}>{txt}</Text>
+        <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(12), color: acc }}>{txt}</Text>
       </View>
     )
   }
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={t.pageStyle(38, 44)}>
         {/* En-tête en aplat plein format : marges négatives pour ne pas dépendre du padding (la page 2 garde le sien) */}
         <View
@@ -106,10 +115,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
           {!!personal.photo && <Image src={personal.photo} style={t.photo(92)} />}
         </View>
         {visibleSections(cv).map((s) => (
-          <View key={s.id} style={{ marginTop: t.m(13) }}>
-            {title(s)}
-            {body(s)}
-          </View>
+          <SectionFlow key={s.id} gap={t.m(13)} title={title(s)}>{body(s)}</SectionFlow>
         ))}
       </Page>
     </Document>

@@ -12,7 +12,9 @@ export const FONT_PAIR_DEFS: Record<FontPair, { label: string; head: string; bod
 }
 
 /**
- * Police selon la paire et la langue : l'arabe utilise Tajawal partout (titres compris).
+ * Pile de polices selon la paire et la langue : react-pdf prend, glyphe par glyphe, la première police de la pile qui l'a.
+ * Le contenu saisi n'est jamais traduit : un CV arabe passé en français garde son texte arabe, d'où Tajawal en repli derrière
+ * les polices latines (sans lui, Inter affiche des signes sans sens). L'arabe utilise Tajawal partout (titres compris), qui a aussi le latin.
  * Pourquoi pas Noto Sans Arabic : react-pdf (fontkit 2.0.4) ne place pas correctement les points (marques GPOS
  * séparées par ccmp) de Noto : ج initial amputé, points de ي final décalés. Tajawal (points intégrés aux glyphes)
  * s'affiche correctement ; le chaînage des lettres et l'ordre RTL sont bons avec les deux.
@@ -20,4 +22,4 @@ export const FONT_PAIR_DEFS: Record<FontPair, { label: string; head: string; bod
  * copier-coller ni d'ATS fiables en arabe. Rendu visuel OK.
  */
 export const fontFor = (lang: Lang, role: 'head' | 'body', pair: FontPair) =>
-  lang === 'ar' ? 'Tajawal' : FONT_PAIR_DEFS[pair][role]
+  lang === 'ar' ? ['Tajawal'] : [FONT_PAIR_DEFS[pair][role], 'Tajawal']

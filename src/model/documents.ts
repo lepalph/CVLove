@@ -1,10 +1,23 @@
-import { DEFAULT_DESIGN, emptyCV, isCVData, newSection, uid } from './cv'
-import { normalizeLetter } from './letter'
+import { extra } from '../i18n/extra'
+import { DEFAULT_DESIGN, emptyCV, fullName, isCVData, newSection, uid } from './cv'
+import { MAX_IMPORT_BYTES, cleanDesign, sanitizeCV, sanitizeDocs } from './sanitize'
 import type { CV, CVDoc, Design, Doc, Lang } from './types'
 
 /** CV vierge avec les sections de base (une ligne vide chacune), prêt à remplir. */
 export function blankCV(lang: Lang): CV {
   return { ...emptyCV(lang), sections: (['profile', 'experience', 'education', 'skills', 'languages'] as const).map(newSection) }
+}
+
+/** Nom d'un CV pas encore nommé (« CV sans titre » dans la langue de l'interface). */
+export const untitledName = (lang: Lang) => extra[lang].untitled
+
+const UNTITLED = new RegExp(`^(${Object.values(extra).map((e) => e.untitled.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})( \\d+)?$`)
+
+/** Nom du document après un changement de données : un nom automatique (« CV sans titre », ou le nom de la personne avant modification) suit le nom de la personne. */
+export function followName(d: CVDoc, next: CV, lang: Lang): string {
+  const was = fullName(d.data)
+  if (!(UNTITLED.test(d.name) || (was && d.name === was))) return d.name
+  return fullName(next) || untitledName(lang)
 }
 
 export const newCVDoc = (name: string, data: CV, design: Design = DEFAULT_DESIGN): CVDoc => ({
@@ -28,15 +41,16 @@ export const exportDocs = (docs: Doc[]) => JSON.stringify({ app: 'cvlove', versi
 
 /** Import : fichier v2 (documents), ou ancien export v1 (un CV nu). Lève `Error('invalid')` sinon. */
 export function parseImport(json: string): Doc[] {
+  if (json.length > MAX_IMPORT_BYTES) throw new Error('invalid')
   const d = JSON.parse(json)
   if (d && Array.isArray(d.documents)) {
-    const docs = d.documents.filter((x: any) => (x?.kind === 'cv' && isCVData(x.data)) || (x?.kind === 'letter' && x.data))
+    const docs = sanitizeDocs(d.documents.filter((x: any) => (x?.kind === 'cv' && isCVData(x.data)) || (x?.kind === 'letter' && x.data)))
     if (!docs.length) throw new Error('invalid')
-    return docs.map((x: Doc) => ({ ...x, ...(x.kind === 'letter' ? { data: normalizeLetter(x.data) } : {}), id: uid(), design: { ...DEFAULT_DESIGN, ...x.design }, updatedAt: Date.now() }))
+    return docs.map((x) => ({ ...x, id: uid(), updatedAt: Date.now() }))
   }
   if (isCVData(d)) {
     const { templateId, accent, ...data } = d as CV & { templateId?: string; accent?: string }
-    return [{ ...newCVDoc('CV', { ...emptyCV(), ...data }, designFromV1({ templateId, accent })), editorMode: 'full' }]
+    return [{ ...newCVDoc('CV', sanitizeCV(data), cleanDesign(designFromV1({ templateId, accent }))), editorMode: 'full' }]
   }
   throw new Error('invalid')
 }

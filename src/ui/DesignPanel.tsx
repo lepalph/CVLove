@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
+import { modelName } from './lib'
+import { extra } from '../i18n/extra'
 import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { FONT_PAIR_DEFS } from '../pdf/fontPairs'
 import { FONT_PAIRS, type Design } from '../model/types'
+import { isRtl } from '../model/dates'
 import { useCvDoc, useLetterDoc, useStore } from '../store'
 import { templates } from '../templates'
 import { letterLayouts } from '../templates/letterTemplates'
@@ -45,17 +48,27 @@ export function ModelGallery({ tall }: { tall?: boolean }) {
   const uiLang = useStore((s) => s.uiLang)
   const t = v2[uiLang]
   const { shown, filters } = useModelFilter()
+  const rtl = isRtl(uiLang)
+  // Une seule tabulation pour toute la grille (le modèle choisi, sinon le premier) ; les flèches déplacent le focus, Entrée ou Espace choisit.
+  const stop = shown.some((m) => m.id === design.templateId) ? design.templateId : shown[0]?.id
+  const onKeys = (e: React.KeyboardEvent<HTMLUListElement>) => {
+    const step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowDown: 3, ArrowUp: -3 }[e.key]
+    if (!step) return
+    const btns = [...e.currentTarget.querySelectorAll('button')]
+    const to = btns[btns.indexOf(document.activeElement as HTMLButtonElement) + step]
+    if (to) { e.preventDefault(); to.focus() }
+  }
   return (
     <div className="flex flex-col gap-3" role="group" aria-label={t.models}>
       <p className="font-mono text-xs uppercase tracking-wide text-muted">{t.models}</p>
       {filters}
-      <ul className={`m-0 grid list-none grid-cols-3 gap-3 p-1 ${tall ? '' : 'max-h-[28rem] overflow-y-auto'}`}>
+      <ul onKeyDown={onKeys} className={`m-0 grid list-none grid-cols-3 gap-3 p-1 ${tall ? '' : 'max-h-[28rem] overflow-y-auto'}`}>
         {shown.map((m) => {
           const on = design.templateId === m.id
-          const name = `${m.layoutName[uiLang]} · ${m.styleName}`
+          const name = modelName(m, uiLang)
           return (
             <li key={m.id}>
-              <button type="button" aria-pressed={on} aria-label={name} onClick={() => updateDesign({ ...m.preset, templateId: m.id })}
+              <button type="button" aria-pressed={on} aria-label={name} tabIndex={m.id === stop ? 0 : -1} onClick={() => updateDesign({ ...m.preset, templateId: m.id })}
                 className="group flex w-full flex-col gap-1.5 rounded-[4px] bg-transparent p-0 text-start">
                 <SamplePage lang={cv.lang} templateId={m.id}
                   className="!shadow-none outline outline-1 -outline-offset-1 outline-edge transition-shadow duration-150 group-hover:outline-faint group-aria-pressed:!outline-2 group-aria-pressed:outline-ink" />
@@ -87,6 +100,7 @@ export function DesignSettings({ letter }: { letter?: boolean }) {
   const updateDesign = useStore((s) => (letter ? s.updateLetterDesign : s.updateDesign))
   const uiLang = useStore((s) => s.uiLang)
   const t = v2[uiLang]
+  const names = extra[uiLang].colors
   const set = <K extends keyof Design>(k: K, v: Design[K]) => updateDesign({ [k]: v })
 
   return (
@@ -98,8 +112,8 @@ export function DesignSettings({ letter }: { letter?: boolean }) {
       <fieldset>
         <legend className="mb-1 text-sm font-medium">{ui[uiLang].accent}</legend>
         <div className="flex flex-wrap items-center gap-1">
-          {ACCENTS.map((a) => (
-            <button key={a} type="button" aria-label={a} aria-pressed={design.accent === a} onClick={() => set('accent', a)}
+          {ACCENTS.map((a, n) => (
+            <button key={a} type="button" aria-label={names[n]} title={names[n]} aria-pressed={design.accent === a} onClick={() => set('accent', a)}
               className="grid size-11 place-items-center rounded-full border border-line bg-panel">
               <span className={`block size-7 rounded-full transition-shadow duration-150 ${design.accent === a ? 'ring-2 ring-ink ring-offset-2 ring-offset-panel' : ''}`} style={{ background: a }} />
             </button>
@@ -119,10 +133,10 @@ export function DesignSettings({ letter }: { letter?: boolean }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={`${t.fontScale} : ${Math.round(design.fontScale * 100)} %`}>
-          <input type="range" min={0.9} max={1.15} step={0.05} value={design.fontScale} onChange={(e) => set('fontScale', +e.target.value)} className="h-11 w-full accent-ink" />
+          <input type="range" min={0.9} max={1.15} step={0.05} value={design.fontScale} onChange={(e) => set('fontScale', +e.target.value)} aria-valuetext={`${Math.round(design.fontScale * 100)} %`} className="h-11 w-full accent-ink" />
         </Field>
         <Field label={`${t.lineHeight} : ${design.lineHeight.toFixed(2)}`}>
-          <input type="range" min={1.2} max={1.6} step={0.05} value={design.lineHeight} onChange={(e) => set('lineHeight', +e.target.value)} className="h-11 w-full accent-ink" />
+          <input type="range" min={1.2} max={1.6} step={0.05} value={design.lineHeight} onChange={(e) => set('lineHeight', +e.target.value)} aria-valuetext={design.lineHeight.toFixed(2)} className="h-11 w-full accent-ink" />
         </Field>
       </div>
 

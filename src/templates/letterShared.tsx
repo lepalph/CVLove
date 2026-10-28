@@ -1,26 +1,12 @@
-import { Text, View } from '@react-pdf/renderer'
+import { View } from '@react-pdf/renderer'
 import type { LetterLabels } from '../i18n/letter'
 import { formatDay } from '../model/dates'
 import { paragraphs } from '../model/letter'
 import type { Letter } from '../model/types'
-import { fixBidi, shade } from './shared'
+import { Text, fixBidi } from './shared'
 import type { Theme } from './theme'
 
 export const MUTED = '#5c564d'
-
-/** Texte d'accent lisible sur `bg` (accent libre, très clair compris) : assombri jusqu'au contraste demandé. */
-export function ink(hex: string, bg = '#ffffff', min = 4.5) {
-  const lum = (h: string) => {
-    const n = parseInt(h.slice(1), 16)
-    const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 })
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-  }
-  for (let i = 0; i <= 20; i++) {
-    const c = shade(hex, i * 0.05)
-    if ((Math.max(lum(c), lum(bg)) + 0.05) / (Math.min(lum(c), lum(bg)) + 0.05) >= min) return c
-  }
-  return '#000000'
-}
 
 /** Coordonnées de l'expéditeur, une par ligne (vides écartées). */
 export const senderLines = (l: Letter) => [l.sender.address, l.sender.email, l.sender.phone].map((x) => x.trim()).filter(Boolean)

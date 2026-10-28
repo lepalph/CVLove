@@ -1,8 +1,8 @@
-import { Document, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { Lines, SkillLevel, contactList, entryMeta, fixBidi, onAccent, shade, tint } from '../shared'
+import { Entry, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -34,18 +34,17 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
   const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
   const contacts = contactList(cv, labels)
-  const ink = onAccent(t.accent) === '#ffffff' ? t.accent : shade(t.accent, 0.55)
+  const ink = inkOf(t.accent) // accent lisible comme texte sur blanc (>= 4,5:1), même très clair
 
   const spaced = (s: string) => (t.rtl ? s : s.toUpperCase())
-  const trk = t.rtl ? {} : { letterSpacing: 1.3 }
 
   const mainTitle = (s: Section) => (
-    <Text minPresenceAhead={60} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(caps ? 9.5 : 12), color: ink, marginBottom: 2, ...(caps ? trk : {}) }}>
+    <Text minPresenceAhead={60} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(caps ? 9.5 : 12), color: ink, marginBottom: 2 }}>
       {caps ? spaced(sectionTitle(s, labels)) : sectionTitle(s, labels)}
     </Text>
   )
   const sideTitle = (s: Section) => (
-    <Text minPresenceAhead={60} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9), color: ink, marginBottom: 2, ...trk }}>
+    <Text minPresenceAhead={60} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(9), color: ink, marginBottom: 2 }}>
       {spaced(sectionTitle(s, labels))}
     </Text>
   )
@@ -53,14 +52,16 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(8) }}>
-        <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
-          <Text style={{ flex: 1, fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
-          {!!period && <Text style={{ color: MUTED, fontSize: t.s(8.8) }}>{period}</Text>}
-        </View>
-        {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
-        {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(8) }}
+        head={<>
+          <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
+            <Text style={{ flex: 1, fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
+            {!!period && <Text style={{ color: MUTED, fontSize: t.s(8.8) }}>{period}</Text>}
+          </View>
+          {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+        </>}
+      />
     )
   }
 
@@ -83,13 +84,13 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const padH = t.m(40)
   const padV = t.m(40)
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={t.pageStyle(40, 40)}>
         {/* Filet de séparation répété sur chaque page ; la colonne étroite est du côté de fin (droite en LTR, gauche en RTL) */}
         <View fixed style={{ position: 'absolute', top: padV, bottom: padV, [t.end]: padH + COL + GAP, width: 0.8, backgroundColor: tint(t.accent, 0.4) }} />
         <View style={{ flexDirection: t.row, gap: GAP * 2 + 0.8 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(caps ? 22 : 26), lineHeight: 1.15, ...(caps ? trk : {}) }}>{caps ? spaced(fullName(cv)) : fullName(cv)}</Text>
+            <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(caps ? 22 : 26), lineHeight: 1.15 }}>{caps ? spaced(fullName(cv)) : fullName(cv)}</Text>
             {!!personal.title.trim() && <Text style={{ fontSize: t.s(12), color: ink, marginTop: 4 }}>{personal.title}</Text>}
             {mainSections.map((s) => (
               <View key={s.id} style={{ marginTop: t.m(serif ? 16 : 14) }}>

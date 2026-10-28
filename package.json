@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 4173",
     "test": "vitest run",
-    "check:pdf": "tsx scripts/check-pdf.ts",
+    "demo:gif": "tsx scripts/demo-gif.ts",
+    "check:pdf": "tsx scripts/check-pdf.ts && tsx scripts/check-pdf-ats.ts",
     "test:e2e": "pnpm build && playwright test"
   },
   "dependencies": {
@@ -33,5 +34,6 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
-  }
+  },
+  "packageManager": "pnpm@12.15.0"
 }

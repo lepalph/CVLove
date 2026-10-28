@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getTemplate, templates } from '../templates'
 import { patchSection } from './cv'
-import { duplicateDoc, exportDocs, freeName, migrateV1, newCVDoc, parseImport } from './documents'
+import { blankCV, duplicateDoc, exportDocs, followName, freeName, migrateV1, newCVDoc, parseImport, untitledName } from './documents'
 import { sampleCV } from './sample'
 
 // État tel que le store v1 l'écrivait dans localStorage (`cvlove:v1`, zustand persist : { state, version: 1 }).
@@ -99,5 +99,16 @@ describe('registre des modèles', () => {
   })
   it('retombe sur le premier modèle si l’id est inconnu', () => {
     expect(getTemplate('inconnu')).toBe(templates[0])
+  })
+})
+
+describe('nom automatique d’un CV', () => {
+  it('suit le nom de la personne tant qu’il est automatique, puis plus', () => {
+    const d = newCVDoc(untitledName('fr'), blankCV('fr'))
+    const next = { ...d.data, personal: { ...d.data.personal, firstName: 'Zoé' } }
+    expect(followName(d, next, 'fr')).toBe('Zoé')
+    expect(followName({ ...d, name: 'Candidature' }, next, 'fr')).toBe('Candidature')
+    expect(followName({ ...d, name: 'CV sans titre 2' }, next, 'fr')).toBe('Zoé')
+    expect(followName({ ...d, name: 'Zoé', data: next }, d.data, 'en')).toBe('Untitled résumé')
   })
 })

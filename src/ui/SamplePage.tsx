@@ -11,7 +11,11 @@ const cache = new Map<string, Promise<Uint8Array>>()
 const sampleBytes = (lang: Lang, templateId: string) => {
   const key = `${lang}|${templateId}`
   let p = cache.get(key)
-  if (!p) cache.set(key, (p = renderLazy(sampleCV(lang), { ...DEFAULT_DESIGN, ...getTemplate(templateId).preset, templateId })))
+  if (!p) {
+    p = renderLazy(sampleCV(lang), { ...DEFAULT_DESIGN, ...getTemplate(templateId).preset, templateId })
+    p.catch(() => cache.delete(key)) // un échec (réseau coupé pendant le chargement d'un chunk) ne doit pas rester en cache : on réessaiera
+    cache.set(key, p)
+  }
   return p.then((b) => b.slice()) // pdf.js détache le buffer qu'on lui donne
 }
 
@@ -29,7 +33,7 @@ export function SamplePage({ lang, templateId, eager, className = '' }: { lang: 
     return () => io.disconnect()
   }, [near])
   return (
-    <div ref={ref} className={`relative aspect-[210/297] overflow-hidden bg-white shadow-sheet ${className}`}>
+    <div ref={ref} className={`relative aspect-[1/1.414] overflow-hidden bg-white shadow-sheet ${className}`}>
       <div className="skeleton motion-safe:animate-pulse" aria-hidden="true" />
       {near && <PdfCanvas className="relative" make={() => sampleBytes(lang, templateId)} deps={[lang, templateId]} maxPages={1} />}
     </div>

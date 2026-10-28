@@ -59,7 +59,7 @@ const fr: LetterUI = {
     'Votre lettre est prête. Vérifiez l’aperçu, puis téléchargez-la.',
   ],
   name: 'Nom complet', jobTitle: 'Titre', address: 'Adresse', recName: 'Nom du destinataire', company: 'Entreprise', place: 'Lieu', date: 'Date',
-  subject: 'Objet', salutation: 'Formule d’appel', body: 'Corps de la lettre', bodyHint: 'Une ligne vide sépare deux paragraphes.',
+  subject: 'Objet', salutation: 'Formule d’appel', body: 'Corps de la lettre', bodyHint: 'Une ligne vide sépare deux paragraphes. L’appel d’ouverture est déjà ajouté au-dessus : ne le retapez pas.',
   closing: 'Formule de politesse', signature: 'Signature', layout: 'Mise en page', letterLang: 'Langue de la lettre',
   readyText: 'Le PDF est fabriqué sur votre appareil. Vous pouvez revenir modifier la lettre à tout moment.',
 }
@@ -76,7 +76,7 @@ const en: LetterUI = {
     'Your letter is ready. Check the preview, then download it.',
   ],
   name: 'Full name', jobTitle: 'Title', address: 'Address', recName: 'Recipient name', company: 'Company', place: 'Place', date: 'Date',
-  subject: 'Subject', salutation: 'Salutation', body: 'Letter body', bodyHint: 'A blank line separates two paragraphs.',
+  subject: 'Subject', salutation: 'Salutation', body: 'Letter body', bodyHint: 'A blank line separates two paragraphs. Do not retype the salutation: it is already added above.',
   closing: 'Closing', signature: 'Signature', layout: 'Layout', letterLang: 'Letter language',
   readyText: 'The PDF is made on your device. You can come back and edit the letter at any time.',
 }
@@ -93,7 +93,7 @@ const es: LetterUI = {
     'Tu carta está lista. Revisa la vista previa y descárgala.',
   ],
   name: 'Nombre completo', jobTitle: 'Título', address: 'Dirección', recName: 'Nombre del destinatario', company: 'Empresa', place: 'Lugar', date: 'Fecha',
-  subject: 'Asunto', salutation: 'Saludo', body: 'Cuerpo de la carta', bodyHint: 'Una línea en blanco separa dos párrafos.',
+  subject: 'Asunto', salutation: 'Saludo', body: 'Cuerpo de la carta', bodyHint: 'Una línea en blanco separa dos párrafos. No repitas el saludo: ya se añade arriba.',
   closing: 'Despedida', signature: 'Firma', layout: 'Diseño de página', letterLang: 'Idioma de la carta',
   readyText: 'El PDF se crea en tu dispositivo. Puedes volver a editar la carta cuando quieras.',
 }
@@ -110,7 +110,7 @@ const de: LetterUI = {
     'Ihr Anschreiben ist fertig. Prüfen Sie die Vorschau und laden Sie es herunter.',
   ],
   name: 'Vollständiger Name', jobTitle: 'Titel', address: 'Adresse', recName: 'Name des Empfängers', company: 'Unternehmen', place: 'Ort', date: 'Datum',
-  subject: 'Betreff', salutation: 'Anrede', body: 'Text des Anschreibens', bodyHint: 'Eine Leerzeile trennt zwei Absätze.',
+  subject: 'Betreff', salutation: 'Anrede', body: 'Text des Anschreibens', bodyHint: 'Eine Leerzeile trennt zwei Absätze. Die Anrede nicht erneut eintippen: Sie steht schon darüber.',
   closing: 'Grußformel', signature: 'Unterschrift', layout: 'Layout', letterLang: 'Sprache des Anschreibens',
   readyText: 'Das PDF entsteht auf Ihrem Gerät. Sie können das Anschreiben jederzeit weiter bearbeiten.',
 }
@@ -127,7 +127,7 @@ const it: LetterUI = {
     'La tua lettera è pronta. Controlla l’anteprima e scaricala.',
   ],
   name: 'Nome completo', jobTitle: 'Titolo', address: 'Indirizzo', recName: 'Nome del destinatario', company: 'Azienda', place: 'Luogo', date: 'Data',
-  subject: 'Oggetto', salutation: 'Formula di apertura', body: 'Corpo della lettera', bodyHint: 'Una riga vuota separa due paragrafi.',
+  subject: 'Oggetto', salutation: 'Formula di apertura', body: 'Corpo della lettera', bodyHint: 'Una riga vuota separa due paragrafi. Non riscrivere la formula di apertura: è già aggiunta sopra.',
   closing: 'Formula di chiusura', signature: 'Firma', layout: 'Impaginazione', letterLang: 'Lingua della lettera',
   readyText: 'Il PDF viene creato sul tuo dispositivo. Puoi tornare a modificare la lettera quando vuoi.',
 }
@@ -144,7 +144,7 @@ const pt: LetterUI = {
     'A sua carta está pronta. Confira a pré-visualização e transfira-a.',
   ],
   name: 'Nome completo', jobTitle: 'Título', address: 'Morada', recName: 'Nome do destinatário', company: 'Empresa', place: 'Local', date: 'Data',
-  subject: 'Assunto', salutation: 'Saudação', body: 'Corpo da carta', bodyHint: 'Uma linha em branco separa dois parágrafos.',
+  subject: 'Assunto', salutation: 'Saudação', body: 'Corpo da carta', bodyHint: 'Uma linha em branco separa dois parágrafos. Não volte a escrever a saudação: já foi adicionada acima.',
   closing: 'Despedida', signature: 'Assinatura', layout: 'Layout', letterLang: 'Idioma da carta',
   readyText: 'O PDF é criado no seu dispositivo. Pode voltar a editar a carta quando quiser.',
 }
@@ -161,7 +161,7 @@ const ar: LetterUI = {
     'رسالتك جاهزة. راجع المعاينة ثم نزّلها.',
   ],
   name: 'الاسم الكامل', jobTitle: 'المسمى', address: 'العنوان', recName: 'اسم المستلم', company: 'الشركة', place: 'المكان', date: 'التاريخ',
-  subject: 'الموضوع', salutation: 'عبارة الافتتاح', body: 'نص الرسالة', bodyHint: 'سطر فارغ يفصل بين فقرتين.',
+  subject: 'الموضوع', salutation: 'عبارة الافتتاح', body: 'نص الرسالة', bodyHint: 'سطر فارغ يفصل بين فقرتين. لا تُعد كتابة عبارة الافتتاح: فهي مضافة أعلاه.',
   closing: 'عبارة الختام', signature: 'التوقيع', layout: 'التخطيط', letterLang: 'لغة الرسالة',
   readyText: 'يُنشأ ملف PDF على جهازك. يمكنك العودة لتعديل الرسالة متى شئت.',
 }

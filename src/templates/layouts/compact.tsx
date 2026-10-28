@@ -1,8 +1,8 @@
-import { Document, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Lines, SkillLevel, contactList, entryMeta, fixBidi, onAccent, shade, tint } from '../shared'
+import { ContactRow, Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -34,13 +34,13 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const grid = sections.filter((s) => GRID_KINDS.includes(s.kind))
   const cols = [grid.filter((_, i) => i % 2 === 0), grid.filter((_, i) => i % 2 === 1)]
   const contacts = contactList(cv, labels)
-  const ink = onAccent(t.accent) === '#ffffff' ? t.accent : shade(t.accent, 0.55)
+  const ink = inkOf(t.accent) // accent lisible comme texte sur blanc (>= 4,5:1), même très clair
   const fs = t.s(9)
 
   const title = (s: Section) => {
     const txt = sectionTitle(s, labels)
     const caps = t.rtl ? txt : txt.toUpperCase()
-    const base = { fontFamily: t.head, fontWeight: 700 as const, fontSize: t.s(9.5), ...(t.rtl ? {} : { letterSpacing: 1 }) }
+    const base = { fontFamily: t.head, fontWeight: 700 as const, fontSize: t.s(9.5) }
     if (strip)
       return <Text minPresenceAhead={50} style={{ ...base, color: ink, backgroundColor: tint(t.accent, 0.9), paddingHorizontal: 5, paddingVertical: 2 }}>{caps}</Text>
     if (tick)
@@ -56,16 +56,18 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(4.5) }}>
-        <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
-          <Text style={{ flex: 1 }}>
-            <Text style={{ fontWeight: 700 }}>{it.title}</Text>
-            {!!sub && <Text style={{ color: MUTED }}>{'  ·  '}{sub}</Text>}
-          </Text>
-          {!!period && <Text style={{ color: MUTED, fontSize: t.s(8.5) }}>{period}</Text>}
-        </View>
-        {!!it.text.trim() && <View style={{ fontSize: t.s(9) }}><Lines text={it.text} rtl={t.rtl} /></View>}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(4.5) }}
+        head={
+          <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
+            <Text style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 700 }}>{it.title}</Text>
+              {!!sub && <Text style={{ color: MUTED }}>{'  ·  '}{sub}</Text>}
+            </Text>
+            {!!period && <Text style={{ color: MUTED, fontSize: t.s(8.5) }}>{period}</Text>}
+          </View>
+        }
+      />
     )
   }
 
@@ -85,10 +87,13 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     return s.items.map(entry)
   }
 
-  const block = (s: Section, first: boolean) => <View key={s.id} style={{ marginTop: t.m(first ? 0 : 9) }}>{title(s)}{body(s)}</View>
+  // Colonne de la grille : un bloc court ne se coupe pas (titre jamais seul en bas de colonne) ; un bloc long peut passer à la page suivante.
+  const block = (s: Section, first: boolean) => (
+    <View key={s.id} wrap={s.items.reduce((n, i) => n + i.text.length, 0) > 700} style={{ marginTop: t.m(first ? 0 : 9) }}>{title(s)}{body(s)}</View>
+  )
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={{ ...t.pageStyle(28, 34), fontSize: fs }}>
         <Text style={{ lineHeight: 1.3 }}>
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(19) }}>{fullName(cv)}</Text>
@@ -99,7 +104,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
             <ContactRow items={contacts} rtl={t.rtl} style={{ color: MUTED, fontSize: t.s(8.8) }} />
           </View>
         )}
-        {flow.map((s) => <View key={s.id} style={{ marginTop: t.m(9) }}>{title(s)}{body(s)}</View>)}
+        {flow.map((s) => <SectionFlow key={s.id} gap={t.m(9)} title={title(s)}>{body(s)}</SectionFlow>)}
         {grid.length > 0 && (
           <View style={{ flexDirection: t.row, gap: 22, marginTop: t.m(9) }}>
             {cols.map((c, i) => <View key={i} style={{ flex: 1 }}>{c.map((s, j) => block(s, j === 0))}</View>)}

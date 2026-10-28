@@ -1,10 +1,11 @@
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { detectLang } from './i18n/ui'
 import { DEFAULT_DESIGN, emptyCV } from './model/cv'
-import { blankCV, duplicateDoc, freeName, migrateV1, newCVDoc, parseImport, patchDoc } from './model/documents'
+import { blankCV, duplicateDoc, followName, freeName, migrateV1, newCVDoc, parseImport, patchDoc, untitledName } from './model/documents'
 import { blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
 import { sampleCV } from './model/sample'
+import { sanitizeState } from './model/sanitize'
 import type { CV, CVDoc, Design, Doc, EditorMode, Lang, Letter, LetterDoc } from './model/types'
 import { getTemplate } from './templates'
 
@@ -40,7 +41,7 @@ interface State {
 }
 
 const initialLang = detectLang()
-const first = newCVDoc('CV', sampleCV(initialLang)) // données d'exemple pour démarrer
+const first = newCVDoc(untitledName(initialLang), blankCV(initialLang)) // page vide ; l'exemple se charge à la demande (loadSample)
 
 /** CV du document actif ; si c'est une lettre, le premier CV (l'éditeur de CV ne gère que les CV). */
 export const selectCvDoc = (s: Pick<State, 'documents' | 'activeId'>): CVDoc =>
@@ -54,13 +55,46 @@ export const selectLetterDoc = (s: Pick<State, 'documents' | 'activeId'>): Lette
 
 export const useLetterDoc = () => useStore(selectLetterDoc)
 
+/** Résultat de la dernière écriture dans localStorage : `error` = stockage plein ou refusé (la saisie reste en mémoire). */
+export const useSaveStatus = create<{ error: 'quota' | 'unavailable' | null }>(() => ({ error: null }))
+
+const safe = <T,>(fn: () => T): T | null => {
+  try { return fn() } catch { return null }
+}
+let pending: { name: string; value: string } | null = null
+let timer: ReturnType<typeof setTimeout>
+
+/** Écrit tout de suite l'état en attente (appelé après 500 ms de calme, à la fermeture de la page et au démarrage). */
+export function flushSave() {
+  clearTimeout(timer)
+  if (!pending) return
+  const { name, value } = pending
+  try {
+    localStorage.setItem(name, value)
+    pending = null
+    localStorage.removeItem('cvlove:v1') // migré : le doublon (photo comprise) ne doit pas remplir le quota
+    if (useSaveStatus.getState().error) useSaveStatus.setState({ error: null })
+  } catch (e) {
+    useSaveStatus.setState({ error: e instanceof DOMException && e.name === 'QuotaExceededError' ? 'quota' : 'unavailable' })
+  }
+}
+/** Efface les données locales, sans écriture en attente qui les ressusciterait à la fermeture de la page. */
+export function wipeStorage() {
+  clearTimeout(timer)
+  pending = null
+  for (const k of ['cvlove:v2', 'cvlove:v1']) safe(() => localStorage.removeItem(k))
+}
+addEventListener('pagehide', flushSave)
+addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && flushSave())
+
 export const useStore = create<State>()(
   persist(
     (set, get) => {
       const patchActive = (patch: (d: CVDoc) => Partial<CVDoc>) =>
         set((s) => {
           const d = selectCvDoc(s)
-          return { documents: patchDoc(s.documents, d.id, { ...patch(d), updatedAt: Date.now() }) }
+          const p = patch(d)
+          return { documents: patchDoc(s.documents, d.id, { ...p, ...(p.data ? { name: followName(d, p.data, s.uiLang) } : {}), updatedAt: Date.now() }) }
         })
       const patchLetterDoc = (patch: (d: LetterDoc) => Partial<LetterDoc>, touch = true) =>
         set((s) => {
@@ -97,7 +131,7 @@ export const useStore = create<State>()(
         },
         openDoc: (id) => set({ activeId: id }),
         createCV: () => {
-          const doc = newCVDoc(freeName(get().documents, 'CV'), blankCV(get().uiLang), selectCvDoc(get()).design)
+          const doc = newCVDoc(freeName(get().documents, untitledName(get().uiLang)), blankCV(get().uiLang), selectCvDoc(get()).design)
           set((s) => ({ documents: [...s.documents, doc], activeId: doc.id }))
           return doc.id
         },
@@ -112,7 +146,7 @@ export const useStore = create<State>()(
         remove: (id) =>
           set((s) => {
             let documents = s.documents.filter((d) => d.id !== id)
-            if (!documents.some((d) => d.kind === 'cv')) documents = [...documents, newCVDoc('CV', blankCV(s.uiLang))] // jamais sans CV
+            if (!documents.some((d) => d.kind === 'cv')) documents = [...documents, newCVDoc(untitledName(s.uiLang), blankCV(s.uiLang))] // jamais sans CV
             const activeId = documents.some((d) => d.id === s.activeId) ? s.activeId : documents[0].id
             return { documents, activeId }
           }),
@@ -127,19 +161,28 @@ export const useStore = create<State>()(
       name: 'cvlove:v2',
       version: 2,
       partialize: (s) => ({ documents: s.documents, activeId: s.activeId, uiLang: s.uiLang }),
-      // Premier lancement en v2 : le stockage v1 (`cvlove:v1`) est converti à la lecture et laissé en place (filet de sécurité).
       storage: {
-        ...createJSONStorage(() => localStorage)!,
+        // Lecture : toujours un état valide (voir model/sanitize.ts). JSON illisible : copie brute dans `cvlove:corrupt`, on repart d'un CV vierge.
         getItem: (name) => {
+          const raw = safe(() => localStorage.getItem(name))
           try {
-            const raw = localStorage.getItem(name)
-            if (raw) return JSON.parse(raw)
-            const v1 = localStorage.getItem('cvlove:v1')
-            return v1 ? { state: migrateV1(JSON.parse(v1).state), version: 2 } : null
+            // Premier lancement en v2 : le stockage v1 (`cvlove:v1`) est converti à la lecture, puis supprimé après la première écriture v2 réussie.
+            const v1 = raw ? null : safe(() => localStorage.getItem('cvlove:v1'))
+            if (!raw && !v1) return null
+            const state = raw ? JSON.parse(raw).state : migrateV1(JSON.parse(v1!).state)
+            return { state: sanitizeState(state, () => newCVDoc(untitledName(detectLang()), blankCV(detectLang()))), version: 2 }
           } catch {
+            if (raw) safe(() => localStorage.setItem('cvlove:corrupt', raw))
             return null
           }
         },
+        // Écriture différée (500 ms) : la sérialisation de tous les documents ne se fait pas à chaque frappe.
+        setItem: (name, value) => {
+          pending = { name, value: JSON.stringify(value) }
+          clearTimeout(timer)
+          timer = setTimeout(flushSave, 500)
+        },
+        removeItem: (name) => safe(() => localStorage.removeItem(name)),
       },
     },
   ),
@@ -147,3 +190,4 @@ export const useStore = create<State>()(
 
 // Hydratation synchrone (localStorage) : on réécrit tout de suite, pour que le stockage v2 existe dès la migration depuis la v1.
 useStore.setState({})
+flushSave()

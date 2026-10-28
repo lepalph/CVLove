@@ -1,15 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { letterUi, type LetterUI } from '../i18n/letter'
 import { ui } from '../i18n/ui'
-import { v2 } from '../i18n/v2'
 import { letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
 import { LANGS, type LetterDoc } from '../model/types'
 import { renderLetterLazy } from '../pdf/lazy'
-import { PdfCanvas } from '../pdf/PdfCanvas'
 import { useLetterDoc, useStore } from '../store'
 import { getLetterLayout } from '../templates/letterTemplates'
-import { Field, LangSelect, Logo, Seg } from './bits'
+import { Field, LangSelect, SkipLink } from './bits'
+import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
 import { DesignSettings } from './DesignPanel'
 import { Card } from './Form'
 import { Steps, useGuidedProgress } from './Guided'
@@ -24,67 +24,44 @@ export function LetterEditor() {
 function LetterEditorFor({ doc }: { doc: LetterDoc }) {
   const { data: letter, design, editorMode } = doc
   const uiLang = useStore((s) => s.uiLang)
-  const setUiLang = useStore((s) => s.setUiLang)
   const setLetterMode = useStore((s) => s.setLetterMode)
   const mode = editorMode ?? 'full'
-  const g = guide[uiLang]
-  const t = ui[uiLang]
+  const x = extra[uiLang]
   const progress = useGuidedProgress(doc.id)
   const [tab, setTab] = useState<'edit' | 'preview'>('edit')
-  const [state, setState] = useState<'busy' | 'ready' | 'error'>('busy')
   const [downloading, setDownloading] = useState(false)
+  const [said, setSaid] = useState('')
+  const layoutName = getLetterLayout(design.templateId).name[uiLang]
 
   const download = async () => {
+    if (downloading) return
     setDownloading(true)
     try {
       const bytes = await renderLetterLazy(letter, design)
       const url = URL.createObjectURL(new Blob([bytes.slice()], { type: 'application/pdf' }))
-      Object.assign(document.createElement('a'), { href: url, download: letterFileName(letter) }).click()
+      const file = letterFileName(letter)
+      Object.assign(document.createElement('a'), { href: url, download: file }).click()
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
+      setSaid(x.downloaded.replace('{file}', file))
     } finally {
       setDownloading(false)
     }
   }
 
+  const empty = ![letter.sender.name, letter.recipient.name, letter.recipient.company, letter.subject, letter.body].some((v) => v.trim())
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="edbar sticky top-0 z-20 border-b border-line bg-desk px-[var(--m)] py-2">
-        <div className="a-logo flex items-center gap-3">
-          <Logo />
-          <a href="#/documents" className="btn btn-ghost whitespace-nowrap border-0 px-2" aria-label={v2[uiLang].docs} title={v2[uiLang].docs}>
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="fill-none stroke-current stroke-2 sm:hidden"><path d="M8 3h8l4 4v14H8z M4 7v14h4" strokeLinejoin="round" /></svg>
-            <span className="max-sm:hidden">{v2[uiLang].docs}</span>
-          </a>
-        </div>
-        <div className="a-mode">
-          <Seg label={g.mode} value={mode} onChange={setLetterMode} options={[['guided', g.guided], ['full', g.full]]} />
-        </div>
-        <div role="tablist" className="a-tabs flex rounded-ctl border border-edge p-0.5 lg:hidden">
-          {(['edit', 'preview'] as const).map((k) => (
-            <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-              className="min-h-10 flex-1 rounded-[4px] px-3 text-sm font-medium text-muted transition-colors duration-150 aria-selected:bg-ink aria-selected:text-desk">
-              {k === 'edit' ? t.tabEdit : t.tabPreview}
-            </button>
-          ))}
-        </div>
-        <div className="a-lang"><LangSelect label={t.uiLang} value={uiLang} onChange={setUiLang} langs={LANGS} /></div>
-        <button type="button" className="a-dl btn btn-primary whitespace-nowrap" onClick={download} disabled={downloading}>{t.download}</button>
-      </header>
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(26rem,32rem)_1fr]">
-        <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:h-[calc(100dvh-4.5rem)] lg:border-e lg:p-8`}>
+      <SkipLink />
+      <EdHeader mode={mode} onMode={setLetterMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} />
+      <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
+        <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:h-[calc(100dvh-7rem)] lg:border-e lg:p-8`}>
+          <MobileTools mode={mode} onMode={setLetterMode} />
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>
-        <div className={`${tab === 'preview' ? 'block' : 'hidden'} overflow-y-auto p-[var(--m)] lg:block lg:h-[calc(100dvh-4.5rem)] lg:p-8`}>
-          <div className="relative mx-auto w-full max-w-[46rem]">
-            <div className="min-h-[20rem] bg-white shadow-sheet" aria-label={t.tabPreview}>
-              <PdfCanvas make={() => renderLetterLazy(letter, design)} deps={[letter, design]} debounce={300} onState={setState} />
-            </div>
-            <p role="status" className="mt-3 text-center text-sm text-muted">
-              {state === 'busy' ? t.previewBusy : state === 'error' ? t.previewError : ' '}
-            </p>
-          </div>
-        </div>
-      </div>
+        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(letter, design)} deps={[letter, design]} empty={empty} said={said}
+          label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
+      </main>
+      <EdFooter />
     </div>
   )
 }
@@ -204,7 +181,9 @@ function LetterGuided({ doc, progress, onDownload, downloading }: { doc: LetterD
       default: return <Finish doc={doc} L={L} onDownload={onDownload} downloading={downloading} />
     }
   }
-  return <Steps progress={progress} names={L.steps} hints={L.hints}>{body}</Steps>
+  const l = doc.data
+  const filled = (i: number) => [!!l.sender.name.trim(), !!(l.recipient.name.trim() || l.recipient.company.trim()), !!l.subject.trim(), !!l.body.trim()][i] ?? true
+  return <Steps progress={progress} names={L.steps} hints={L.hints} filled={filled}>{body}</Steps>
 }
 
 function Finish({ doc, L, onDownload, downloading }: { doc: LetterDoc; L: LetterUI; onDownload: () => void; downloading: boolean }) {
@@ -234,7 +213,7 @@ function Finish({ doc, L, onDownload, downloading }: { doc: LetterDoc; L: Letter
       <div>
         <p className="text-pretty text-sm text-muted">{L.readyText}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button type="button" className="btn btn-primary" onClick={onDownload} disabled={downloading}>{t.download}</button>
+          <button type="button" className="btn btn-primary" onClick={onDownload} aria-busy={downloading}>{t.download}</button>
           <a href="#/documents" className="btn btn-ghost">{g.docsLink}</a>
         </div>
         <p className="mt-3 text-sm text-muted">{t.privacy}</p>

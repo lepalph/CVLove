@@ -1,8 +1,8 @@
-import { Document, Image, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { Lines, SkillLevel, contactList, entryMeta, fixBidi, shade, tint } from '../shared'
+import { Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -24,18 +24,6 @@ const MUTED = '#5c564d'
 const SIDE = 196
 const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
-// Contraste WCAG local : assombrit l'accent jusqu'à `min`:1 contre le blanc (accent libre, très clair compris).
-const lum = (hex: string) => {
-  const n = parseInt(hex.slice(1), 16)
-  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 })
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-const ratio = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
-const deep = (hex: string, min: number) => {
-  for (let i = 0; i <= 20; i++) { const c = shade(hex, i * 0.05); if (ratio(c, '#ffffff') >= min) return c }
-  return '#000000'
-}
-
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
   const { personal } = cv
@@ -47,23 +35,25 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
   const contacts = contactList(cv, labels)
 
-  const bg = deep(t.accent, 7) // texte blanc >= 7:1 sur l'aplat, quel que soit l'accent
+  const bg = ink(t.accent, '#ffffff', 7) // texte blanc >= 7:1 sur l'aplat, quel que soit l'accent
   const fg = '#ffffff'
   const soft = tint(bg, 0.85) // texte secondaire : reste >= 4.5:1 sur un fond à 7:1
   const track = tint(bg, 0.5)
-  const mainInk = deep(t.accent, 4.5)
+  const mainInk = ink(t.accent)
 
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(7) }}>
-        <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
-          <Text style={{ flex: 1, fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
-          {!!period && <Text style={{ color: MUTED }}>{period}</Text>}
-        </View>
-        {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
-        {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(7) }}
+        head={<>
+          <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 8 }}>
+            <Text style={{ flex: 1, fontWeight: 700, fontSize: t.s(10.5) }}>{it.title}</Text>
+            {!!period && <Text style={{ color: MUTED }}>{period}</Text>}
+          </View>
+          {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+        </>}
+      />
     )
   }
 
@@ -86,7 +76,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     : { [t.rtl ? 'paddingRight' : 'paddingLeft']: side, [t.rtl ? 'paddingLeft' : 'paddingRight']: edge }
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={{ ...pageBase, ...pad }}>
         {/* Aplat : `fixed` + position absolue = pleine hauteur sur CHAQUE page. Son contenu n'est que sur la page 1 (limite : colonne trop longue = débordement). */}
         <View fixed style={{ position: 'absolute', top: 0, bottom: 0, [sideAt]: 0, width: SIDE, backgroundColor: bg }} />
@@ -106,14 +96,18 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
         </View>
 
         {mainSections.map((s, i) => (
-          <View key={s.id} style={{ marginTop: i === 0 ? 0 : t.m(18) }}>
-            <View style={{ borderBottomWidth: 0.8, borderBottomColor: mainInk, marginBottom: 2 }}>
-              <Text minPresenceAhead={90} style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(12), color: mainInk, marginBottom: 3 }}>{sectionTitle(s, labels)}</Text>
-            </View>
+          <SectionFlow
+            key={s.id} gap={i === 0 ? 0 : t.m(18)}
+            title={
+              <View style={{ borderBottomWidth: 0.8, borderBottomColor: mainInk, marginBottom: 2 }}>
+                <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(12), color: mainInk, marginBottom: 3 }}>{sectionTitle(s, labels)}</Text>
+              </View>
+            }
+          >
             {s.kind === 'profile'
               ? <Text style={{ marginTop: 5 }}>{fixBidi(s.items.map((x) => x.text).filter(Boolean).join('\n'), t.rtl)}</Text>
               : s.items.map(entry)}
-          </View>
+          </SectionFlow>
         ))}
       </Page>
     </Document>

@@ -1,8 +1,8 @@
-import { Document, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Lines, SkillLevel, contactList, entryMeta, fixBidi, onAccent, shade } from '../shared'
+import { ContactRow, Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -29,7 +29,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const frame = variant === 'frame'
   const study = variant === 'study'
   const contacts = contactList(cv, labels)
-  const ink = onAccent(t.accent) === '#ffffff' ? t.accent : shade(t.accent, 0.55)
+  const ink = inkOf(t.accent) // accent lisible comme texte sur blanc (>= 4,5:1), même très clair
 
   // Filets doubles fins : deux traits de 0,5 pt espacés de 2 pt
   const double = (style?: { alignSelf?: 'stretch'; marginTop?: number; marginBottom?: number }) => (
@@ -44,7 +44,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     t.rtl ? (
       <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(big), textAlign: 'center', lineHeight: 1.6 }}>{txt}</Text>
     ) : (
-      <Text style={{ fontFamily: t.head, fontSize: t.s(small), letterSpacing: 3.5, textAlign: 'center', lineHeight: 1.3 }}>
+      <Text style={{ fontFamily: t.head, fontSize: t.s(small), textAlign: 'center', lineHeight: 1.3 }}>
         {txt.toUpperCase().split(' ').map((w, i) => (
           <Text key={i}>
             {i > 0 ? '  ' : ''}
@@ -58,7 +58,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const title = (s: Section) => {
     const txt = sectionTitle(s, labels)
     const label = (
-      <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(10), color: ink, textAlign: study ? t.start : 'center', ...(t.rtl ? {} : { letterSpacing: 2.5 }) }}>
+      <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(10), color: ink, textAlign: study ? t.start : 'center' }}>
         {t.rtl ? txt : txt.toUpperCase()}
       </Text>
     )
@@ -72,14 +72,16 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const entry = (it: Item) => {
     const { period, sub } = entryMeta(it, cv, labels)
     return (
-      <View key={it.id} wrap={false} style={{ marginTop: t.m(7) }}>
-        <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 10 }}>
-          <Text style={{ flex: 1, fontWeight: 700 }}>{it.title}</Text>
-          {!!period && <Text style={{ color: MUTED, fontSize: t.s(9) }}>{period}</Text>}
-        </View>
-        {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
-        {!!it.text.trim() && <Lines text={it.text} rtl={t.rtl} />}
-      </View>
+      <Entry
+        key={it.id} text={it.text} rtl={t.rtl} style={{ marginTop: t.m(7) }}
+        head={<>
+          <View style={{ flexDirection: t.row, justifyContent: 'space-between', gap: 10 }}>
+            <Text style={{ flex: 1, fontWeight: 700 }}>{it.title}</Text>
+            {!!period && <Text style={{ color: MUTED, fontSize: t.s(9) }}>{period}</Text>}
+          </View>
+          {!!sub && <Text style={{ color: MUTED }}>{sub}</Text>}
+        </>}
+      />
     )
   }
 
@@ -100,20 +102,17 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   }
 
   return (
-    <Document title={fullName(cv)} author={fullName(cv)}>
+    <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={t.pageStyle(46, 52)}>
         <View style={{ alignItems: 'center' }}>
           {(frame || study) && double({ alignSelf: 'stretch', marginBottom: t.m(12) })}
           {smallCaps(fullName(cv), 26, 19)}
-          {!!personal.title.trim() && <Text style={{ fontSize: t.s(11), color: ink, marginTop: 8, textAlign: 'center', ...(t.rtl ? {} : { letterSpacing: 1 }) }}>{personal.title}</Text>}
+          {!!personal.title.trim() && <Text style={{ fontSize: t.s(11), color: ink, marginTop: 8, textAlign: 'center' }}>{personal.title}</Text>}
           {contacts.length > 0 && <View style={{ marginTop: 8 }}><ContactRow items={contacts} rtl={t.rtl} style={{ color: MUTED, fontSize: t.s(9.2) }} center /></View>}
           {double({ alignSelf: 'stretch', marginTop: t.m(12) })}
         </View>
         {visibleSections(cv).map((s) => (
-          <View key={s.id} style={{ marginTop: t.m(17) }}>
-            {title(s)}
-            {body(s)}
-          </View>
+          <SectionFlow key={s.id} gap={t.m(17)} title={title(s)}>{body(s)}</SectionFlow>
         ))}
       </Page>
     </Document>

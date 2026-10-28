@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { cvLabels, sectionTitle } from '../i18n/labels'
+import { extra } from '../i18n/extra'
 import { ui, type UI } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { exportDocs } from '../model/documents'
@@ -7,11 +8,25 @@ import {
   addCustomField, addItem, addSection, moveItem, moveSection, patchField, patchItem, patchSection,
   removeField, removeItem, removeSection, setLang, addField,
 } from '../model/cv'
-import { LANGS, SECTION_KINDS, type CVDoc, type FieldKind, type Section, type SectionKind } from '../model/types'
+import { MAX_IMPORT_BYTES, MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
+import { sampleCV } from '../model/sample'
+import { LANGS, SECTION_KINDS, type CVDoc, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
 import { useCvDoc, useStore } from '../store'
-import { Field, Icon, LangSelect } from './bits'
+import { Field, Icon, LangSelect, useWide } from './bits'
+import { useClearAll } from './ExampleTools'
+import { isEmptyCV, isExampleCV } from './lib'
 import { DesignPanel } from './DesignPanel'
 import { LetterLink } from './LetterLink'
+
+/** L'exemple (Camille, Laila…) ne sert qu'en gris : champs vides + placeholders de la langue du CV, jamais de valeur écrite à la place de l'utilisateur. */
+const usePlaceholders = () => {
+  const lang = useCvDoc().data.lang
+  return useMemo(() => sampleCV(lang), [lang])
+}
+const phItem = (ph: ReturnType<typeof sampleCV>, kind: SectionKind, k: number): Partial<Item> => {
+  const items = ph.sections.find((s) => s.kind === kind)?.items ?? []
+  return items[k] ?? items[0] ?? {}
+}
 
 const FIELD_ORDER: Exclude<FieldKind, 'custom'>[] = ['birthDate', 'location', 'email', 'phone', 'website']
 
@@ -43,9 +58,11 @@ export function LanguageCard() {
 
 export function DesignCard() {
   const uiLang = useStore((s) => s.uiLang)
+  const wide = useWide()
+  const [open, setOpen] = useState<boolean>() // ouvert par défaut sur grand écran ; replié sur mobile pour que le formulaire passe en premier
   return (
     <Card>
-      <details open className="group">
+      <details open={open ?? wide} onToggle={(e) => setOpen(e.currentTarget.open)} className="group">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-xl font-semibold tracking-tight [&::-webkit-details-marker]:hidden">
           {v2[uiLang].design}
           <span aria-hidden="true" className="text-muted transition-transform duration-150 group-open:rotate-180">⌄</span>
@@ -58,13 +75,22 @@ export function DesignCard() {
 
 export function PersonalCard() {
   const cv = useCvDoc().data
+  const ph = usePlaceholders()
   const update = useStore((s) => s.update)
   const t = ui[useStore((s) => s.uiLang)]
   const fileRef = useRef<HTMLInputElement>(null)
+  const [photoMsg, setPhotoMsg] = useState('')
   const onPhoto = async (f?: File) => {
     if (!f) return
-    const photo = await shrink(f)
-    update((c) => ({ ...c, personal: { ...c.personal, photo } }))
+    const x = extra[useStore.getState().uiLang]
+    if (f.size > MAX_PHOTO_FILE_BYTES) return setPhotoMsg(x.tooBig.replace('{mb}', String(MAX_PHOTO_FILE_BYTES / 1e6)))
+    try {
+      const photo = await shrink(f)
+      setPhotoMsg('')
+      update((c) => ({ ...c, personal: { ...c.personal, photo } }))
+    } catch {
+      setPhotoMsg(x.photoError)
+    }
   }
   const setPersonal = (patch: Partial<typeof cv.personal>) => update((c) => ({ ...c, personal: { ...c.personal, ...patch } }))
   const missingKinds = FIELD_ORDER.filter((k) => !cv.personal.fields.some((f) => f.kind === k))
@@ -72,10 +98,10 @@ export function PersonalCard() {
   return (
       <Card title={t.personal}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={t.firstName}><input className="inp" value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
-          <Field label={t.lastName}><input className="inp" value={cv.personal.lastName} onChange={(e) => setPersonal({ lastName: e.target.value })} autoComplete="family-name" /></Field>
+          <Field label={t.firstName}><input className="inp" placeholder={ph.personal.firstName} value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
+          <Field label={t.lastName}><input className="inp" placeholder={ph.personal.lastName} value={cv.personal.lastName} onChange={(e) => setPersonal({ lastName: e.target.value })} autoComplete="family-name" /></Field>
         </div>
-        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} /></Field></div>
+        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" placeholder={ph.personal.title} value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} /></Field></div>
 
         <div className="mt-3 flex items-center gap-3">
           {cv.personal.photo && <img src={cv.personal.photo} alt="" className="size-14 rounded-full object-cover" />}
@@ -83,6 +109,7 @@ export function PersonalCard() {
           <button type="button" className="btn" onClick={() => fileRef.current?.click()}>{cv.personal.photo ? t.photo : t.addPhoto}</button>
           {cv.personal.photo && <button type="button" className="btn btn-ghost" onClick={() => setPersonal({ photo: '' })}>{t.removePhoto}</button>}
         </div>
+        {photoMsg && <p role="alert" className="mt-2 text-sm text-danger">{photoMsg}</p>}
 
         <ul className="mt-4 flex flex-col gap-3">
           {cv.personal.fields.map((f) => (
@@ -92,7 +119,7 @@ export function PersonalCard() {
               )}
               <div className="flex-1">
                 <Field label={fieldLabel(f.kind)}>
-                  <input className="inp" type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
+                  <input className="inp" placeholder={ph.personal.fields.find((x) => x.kind === f.kind)?.value} type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
                     value={f.value} onChange={(e) => update((c) => patchField(c, f.id, { value: e.target.value }))} />
                 </Field>
               </div>
@@ -116,13 +143,16 @@ export function PersonalCard() {
 export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: readonly SectionKind[]; add?: readonly SectionKind[]; title?: string | false }) {
   const cv = useCvDoc().data
   const update = useStore((s) => s.update)
-  const t = ui[useStore((s) => s.uiLang)]
+  const uiLang = useStore((s) => s.uiLang)
+  const t = ui[uiLang]
+  const x = extra[uiLang]
   const labels = cvLabels[cv.lang]
   const shown = cv.sections.map((s, i) => ({ s, i })).filter(({ s }) => !only || only.includes(s.kind))
   const addable = add.filter((k) => !only || k === 'custom' || !cv.sections.some((s) => s.kind === k))
   return (
       <Card title={title === false ? undefined : (title ?? t.sections)}>
         {!only && cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
+        {shown.length > 0 && <p className="mb-4 text-sm text-muted">{x.visibilityHint}</p>}
         <ul className="flex flex-col gap-6">
           {shown.map(({ s, i }) => (
             <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} />
@@ -149,29 +179,33 @@ export function exportJson(doc: CVDoc) {
 
 export function DataCard() {
   const doc = useCvDoc()
-  const { loadSample, clearAll, importJson } = useStore()
-  const t = ui[useStore((s) => s.uiLang)]
-  const [error, setError] = useState('')
+  const { loadSample, importJson } = useStore()
+  const uiLang = useStore((s) => s.uiLang)
+  const t = ui[uiLang]
+  const clear = useClearAll()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string }>()
   const onImport = async (f?: File) => {
     if (!f) return
+    if (f.size > MAX_IMPORT_BYTES) return setMsg({ ok: false, text: extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)) })
     try {
       importJson(await f.text())
-      setError('')
+      setMsg({ ok: true, text: extra[uiLang].fileImported })
     } catch {
-      setError(t.importError)
+      setMsg({ ok: false, text: t.importError })
     }
   }
   return (
       <Card>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn" onClick={loadSample}>{t.loadSample}</button>
+          <button type="button" className="btn" onClick={() => { if (isEmptyCV(doc.data) || isExampleCV(doc.data) || confirm(t.clearConfirm)) loadSample() }}>{t.loadSample}</button>
           <button type="button" className="btn" onClick={() => exportJson(doc)}>{t.exportJson}</button>
           <LetterLink />
-          <input id="imp" type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
-          <label htmlFor="imp" className="btn cursor-pointer">{t.importJson}</label>
-          <button type="button" className="btn text-danger" onClick={() => { if (confirm(t.clearConfirm)) clearAll() }}>{t.clearAll}</button>
+          <input id="imp" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
+          <button type="button" className="btn" onClick={() => fileRef.current?.click()}>{t.importJson}</button>
+          <button type="button" className="btn text-danger" onClick={clear}>{t.clearAll}</button>
         </div>
-        {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
+        {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${msg.ok ? 'text-muted' : 'text-danger'}`}>{msg.text}</p>}
         <p className="mt-3 text-sm text-muted">{t.privacy}</p>
       </Card>
   )
@@ -188,6 +222,7 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
   const update = useStore((st) => st.update)
   const labels = cvLabels[useCvDoc().data.lang]
   const tv = v2[useStore((st) => st.uiLang)]
+  const ph = usePlaceholders()
   const [ti, su, tx] = t.kindFields[s.kind]
   const dated = s.kind === 'experience' || s.kind === 'education' || s.kind === 'projects' || s.kind === 'custom'
   const multi = s.kind !== 'profile'
@@ -205,16 +240,17 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
       </div>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} « ${std} »`}>
-          <input className="inp" value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
+          <input className="inp" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
         </Field>
       </div>
       <ul className="mt-3 flex flex-col gap-3">
         {s.items.map((it, k) => {
           const set = (p: Partial<typeof it>) => update((c) => patchItem(c, s.id, it.id, p))
+          const eg = phItem(ph, s.kind, k)
           return (
             <li key={it.id} className="border-s-2 border-line ps-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                {ti && <Field label={ti}><input className="inp" value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
+                {ti && <Field label={ti}><input className="inp" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
                 {(s.kind === 'skills' || s.kind === 'languages') && (
                   <Field label={tv.level}>
                     <select className="inp" value={it.level ?? 0} onChange={(e) => set({ level: +e.target.value })}>
@@ -223,8 +259,8 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
                     </select>
                   </Field>
                 )}
-                {su && <Field label={su}><input className="inp" value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
-                {dated && <Field label={t.place}><input className="inp" value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
+                {su && <Field label={su}><input className="inp" placeholder={eg.subtitle} value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
+                {dated && <Field label={t.place}><input className="inp" placeholder={eg.place} value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
                 {dated && (
                   <div className="grid grid-cols-2 gap-2 sm:col-span-2">
                     <Field label={t.start}><input className="inp" type="month" placeholder="AAAA-MM" value={it.start} onChange={(e) => set({ start: e.target.value })} /></Field>
@@ -239,7 +275,7 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
               {tx && (
                 <div className="mt-3">
                   <Field label={tx} hint={dated ? t.bulletsHint : undefined}>
-                    <textarea className="inp" rows={dated || s.kind === 'profile' ? 4 : 2} value={it.text} onChange={(e) => set({ text: e.target.value })} />
+                    <textarea className="inp" rows={dated || s.kind === 'profile' ? 4 : 2} placeholder={eg.text} value={it.text} onChange={(e) => set({ text: e.target.value })} />
                   </Field>
                 </div>
               )}
@@ -266,6 +302,9 @@ async function shrink(file: File, max = 512): Promise<string> {
   const c = document.createElement('canvas')
   c.width = Math.round(bmp.width * r)
   c.height = Math.round(bmp.height * r)
-  c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
+  const g = c.getContext('2d')!
+  g.fillStyle = '#fff' // PNG transparent : fond blanc plutôt que noir en JPEG
+  g.fillRect(0, 0, c.width, c.height)
+  g.drawImage(bmp, 0, 0, c.width, c.height)
   return c.toDataURL('image/jpeg', 0.85)
 }

@@ -1,11 +1,20 @@
 import { useRef, useState } from 'react'
+import { extra } from '../i18n/extra'
 import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
+import { fullName } from '../model/cv'
+import { MAX_IMPORT_BYTES } from '../model/sanitize'
 import { exportDocs } from '../model/documents'
 import { LANGS, type Doc } from '../model/types'
 import { useStore } from '../store'
-import { LangSelect, Logo } from './bits'
+import { LANG_NAMES, LangSelect, Logo, SaveBanner, SkipLink } from './bits'
+
+/** Nom affiché : un nom automatique (« CV », « CV 2 », « Lettre ») est complété par la personne, pour distinguer plusieurs documents. */
+const shownName = (d: Doc) => {
+  const who = d.kind === 'cv' ? fullName(d.data) : d.data.sender.name.trim()
+  return who && /^(CV|Lettre)( \d+)?$/.test(d.name) ? `${d.name} · ${who}` : d.name
+}
 
 const download = (name: string, json: string) => {
   const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
@@ -22,7 +31,7 @@ export function Documents() {
   const [asking, setAsking] = useState(false)
   const [source, setSource] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
-  const [error, setError] = useState('')
+  const [msg, setMsg] = useState<{ ok: boolean; text: string }>()
   const fileRef = useRef<HTMLInputElement>(null)
 
   const open = (id: string) => {
@@ -31,11 +40,12 @@ export function Documents() {
   }
   const onImport = async (f?: File) => {
     if (!f) return
+    if (f.size > MAX_IMPORT_BYTES) return setMsg({ ok: false, text: extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)) })
     try {
-      importDocs(await f.text())
-      setError('')
+      const n = importDocs(await f.text())
+      setMsg({ ok: true, text: extra[uiLang].imported.replace('{n}', String(n)) })
     } catch {
-      setError(t.importError)
+      setMsg({ ok: false, text: t.importError })
     }
   }
   const del = (d: Doc) => {
@@ -45,6 +55,7 @@ export function Documents() {
 
   return (
     <>
+      <SkipLink />
       <header className="sticky top-0 z-20 border-b border-line bg-desk">
         <nav className="mx-auto flex h-16 w-full max-w-[75rem] items-center gap-3 px-[var(--m)]">
           <Logo />
@@ -54,7 +65,8 @@ export function Documents() {
           </div>
         </nav>
       </header>
-      <main className="mx-auto w-full max-w-[75rem] px-[var(--m)] py-10">
+      <SaveBanner />
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[75rem] px-[var(--m)] py-10 outline-none">
         <h1 className="text-balance text-[2rem] font-semibold leading-[1.1] tracking-[-0.04em]">{t.docs}</h1>
         <p className="mt-3 max-w-[34rem] text-pretty text-lg text-muted">{t.docsSub}</p>
         <div className="mt-6 flex flex-wrap gap-2">
@@ -69,7 +81,7 @@ export function Documents() {
             onSubmit={(e) => { e.preventDefault(); open(createLetter(source || undefined)) }}>
             <label className="block min-w-[12rem] flex-1">
               <span className="mb-1 block text-sm font-medium">{L.source}</span>
-              <select className="inp" value={source} onChange={(e) => setSource(e.target.value)}>
+              <select autoFocus className="inp" value={source} onChange={(e) => setSource(e.target.value)}>
                 {cvs.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 <option value="">{L.scratch}</option>
               </select>
@@ -78,7 +90,7 @@ export function Documents() {
             <button type="button" className="btn btn-ghost" onClick={() => setAsking(false)}>{L.cancel}</button>
           </form>
         )}
-        {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
+        {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-3 text-sm ${msg.ok ? 'text-muted' : 'text-danger'}`}>{msg.text}</p>}
 
         <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs}>
           {documents.map((d) => (
@@ -89,10 +101,10 @@ export function Documents() {
                     onBlur={(e) => { rename(d.id, e.target.value); setEditing(null) }}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditing(null) }} />
                 ) : (
-                  <p className="text-lg font-semibold tracking-tight">{d.name}</p>
+                  <p className="text-lg font-semibold tracking-tight">{shownName(d)}</p>
                 )}
                 <p className="mt-0.5 font-mono text-xs text-muted">
-                  {d.kind === 'cv' ? t.kindCV : t.kindLetter} · {t.updated} {date.format(d.updatedAt)}
+                  {d.kind === 'cv' ? t.kindCV : t.kindLetter} · {LANG_NAMES[d.data.lang]} · {t.updated} {date.format(d.updatedAt)}
                   {d.id === activeId && <> · <span className="text-ink">{t.active}</span></>}
                 </p>
               </div>

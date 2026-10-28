@@ -1,7 +1,7 @@
-import { Document, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Page, View } from '@react-pdf/renderer'
 import { cvLabels } from '../../i18n/labels'
-import { ContactRow } from '../shared'
-import { Block, MUTED, Main, ink, placeDate, recipientLines, senderLines } from '../letterShared'
+import { ContactRow, Text, ink } from '../shared'
+import { Block, MUTED, Main, placeDate, recipientLines, senderLines } from '../letterShared'
 import { makeTheme } from '../theme'
 import type { LetterMeta, LetterProps } from '../types'
 
@@ -17,7 +17,7 @@ export function Component({ letter, design, labels }: LetterProps) {
   const accent = ink(t.accent)
   const { sender } = letter
   return (
-    <Document title={letter.subject.trim() || sender.name} author={sender.name}>
+    <Document title={letter.subject.trim() || sender.name} author={sender.name} language={letter.lang}>
       <Page {...t.pageProps} style={t.pageStyle(54, 60)}>
         <View style={{ paddingBottom: t.m(8), borderBottomWidth: 0.8, borderBottomColor: t.accent }}>
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(22), lineHeight: 1.2, color: accent }}>{sender.name}</Text>
@@ -27,8 +27,8 @@ export function Component({ letter, design, labels }: LetterProps) {
           )}
         </View>
         <View style={{ marginTop: t.m(30), fontSize: t.s(10.5) }}>
-          <Block t={t} lines={recipientLines(letter)} bold={1} side="end" />
-          {!!placeDate(letter) && <Text style={{ marginTop: t.m(18), alignSelf: t.rtl ? 'flex-start' : 'flex-end', textAlign: t.start }}>{placeDate(letter)}</Text>}
+          <Block t={t} lines={recipientLines(letter)} bold={1} side={t.rtl ? 'start' : 'end'} />
+          {!!placeDate(letter) && <Text style={{ marginTop: t.m(18), alignSelf: 'flex-end', textAlign: t.start }}>{placeDate(letter)}</Text>}
         </View>
         <Main t={t} letter={letter} labels={labels} accent={accent} />
       </Page>

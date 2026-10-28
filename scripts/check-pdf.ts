@@ -6,7 +6,7 @@
 import { createCanvas } from '@napi-rs/canvas'
 import { spawn } from 'node:child_process'
 import { cpus } from 'node:os'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { cvLabels } from '../src/i18n/labels'
@@ -47,7 +47,8 @@ if (shardArg < 0) {
   )
   lines.sort().forEach((l) => console.log(l))
   console.log(`${ok}/${ok + ko} rendus valides${crashed ? `, ${crashed} processus en erreur` : ''} (${((Date.now() - t0) / 1000).toFixed(0)} s, ${SHARDS} processus)`)
-  process.exit(ko || crashed ? 1 : 0)
+  if (!ok) console.log('KO  aucun rendu valide : registre vide, filtre ONLY sans résultat ou crash au chargement')
+  process.exit(ko || crashed || !ok ? 1 : 0)
 }
 
 // ---- Enfant ----
@@ -153,6 +154,24 @@ async function checkLetter(letter: Letter, design: Design, o: Opts = {}) {
 }
 
 const jobs: Job[] = []
+// Registre : au moins un modèle, ids uniques, `meta.id` = nom du fichier, 3 styles par mise en page (un id qui diffère du fichier casse la sélection)
+jobs.push({
+  name: 'registre',
+  run: async () => {
+    const problems: string[] = []
+    const dup = (ids: string[]) => ids.filter((id, i) => ids.indexOf(id) !== i)
+    if (!templates.length || !letterLayouts.length) problems.push('registre vide')
+    for (const [id, what] of [[dup(templates.map((t: any) => t.id)), 'modèles'], [dup(letterLayouts.map((l: any) => l.id)), 'lettres']] as const)
+      if (id.length) problems.push(`ids en double (${what}) : ${id.join(', ')}`)
+    for (const dir of ['layouts', 'letters'])
+      for (const f of readdirSync(new URL(`../src/templates/${dir}/`, import.meta.url)).filter((f) => f.endsWith('.tsx'))) {
+        const { meta } = await loader.load(`/src/templates/${dir}/${f}?meta`)
+        if (meta.id !== f.replace(/\.tsx$/, '')) problems.push(`${dir}/${f} : meta.id « ${meta.id} » ≠ nom du fichier`)
+        if (dir === 'layouts' && meta.styles?.length !== 3) problems.push(`${f} : ${meta.styles?.length} styles au lieu de 3`)
+      }
+    return { problems, info: `${templates.length} modèles, ${letterLayouts.length} lettres` }
+  },
+})
 for (const t of templates) {
   for (const lang of LANGS)
     jobs.push({ name: `${t.id}/${lang}`, run: () => check(sampleCV(lang), designOf(t), { png: lang === 'fr' || lang === 'ar' ? `${t.id}-${lang}` : undefined }) })
