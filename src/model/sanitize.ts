@@ -27,7 +27,13 @@ export const cleanPhoto = (p: unknown): string =>
 
 export function cleanDesign(d: unknown): Design {
   const o = obj(d)
+  const c = obj(o.custom)
+  const custom = {
+    ...(typeof c.accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(c.accent) ? { accent: c.accent } : {}),
+    ...((FONT_PAIRS as readonly unknown[]).includes(c.fontPair) ? { fontPair: c.fontPair as Design['fontPair'] } : {}),
+  }
   return {
+    ...(Object.keys(custom).length ? { custom } : {}),
     templateId: str(o.templateId).slice(0, 64) || DEFAULT_DESIGN.templateId,
     accent: typeof o.accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(o.accent) ? o.accent : DEFAULT_DESIGN.accent,
     fontPair: oneOf(FONT_PAIRS, o.fontPair, DEFAULT_DESIGN.fontPair),

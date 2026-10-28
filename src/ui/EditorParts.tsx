@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
+import { tips } from '../i18n/tips'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { LANGS, type EditorMode } from '../model/types'
@@ -16,8 +17,10 @@ function ModeSeg({ mode, onMode }: { mode: EditorMode; onMode: (m: EditorMode) =
 }
 
 /** En-tête commun des éditeurs (CV et lettre) : une seule ligne sur mobile, qui ne colle pas quand l'écran est bas (voir `.edbar`). */
-export function EdHeader({ mode, onMode, tab, onTab, onDownload, accent }: {
+export function EdHeader({ mode, onMode, tab, onTab, onDownload, accent, note }: {
   mode: EditorMode; onMode: (m: EditorMode) => void; tab: 'edit' | 'preview'; onTab: (t: 'edit' | 'preview') => void; onDownload: () => void; accent?: string
+  /** Confirmation visible (quelques secondes) sous le bouton Télécharger ; l'annonce vocale passe par la zone role=status de l'aperçu. */
+  note?: string
 }) {
   const uiLang = useStore((s) => s.uiLang)
   const setUiLang = useStore((s) => s.setUiLang)
@@ -47,6 +50,7 @@ export function EdHeader({ mode, onMode, tab, onTab, onDownload, accent }: {
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="fill-none stroke-current stroke-2 sm:hidden"><path d="M12 4v11m-5-4 5 5 5-5M5 20h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
         <span className="max-sm:sr-only">{t.download}</span>
       </button>
+      {note && <p aria-hidden="true" className="absolute end-[var(--m)] top-full z-30 m-0 mt-1 rounded-ctl border border-line bg-panel px-3 py-2 text-sm font-medium shadow-sheet">{note}</p>}
     </header>
   )
 }
@@ -78,22 +82,26 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
   const x = extra[uiLang]
   const wide = useWide()
   const [state, setState] = useState<'busy' | 'ready' | 'error'>('busy')
+  const [pages, setPages] = useState(0)
+  const onState = (s: 'busy' | 'ready' | 'error', n?: number) => { setState(s); if (n) setPages(n) }
   const [zoom, setZoom] = useState(false)
   return (
-    <div className={`${shown ? 'block' : 'hidden'} overflow-y-auto p-[var(--m)] lg:block lg:h-[calc(100dvh-7rem)] lg:p-8`}>
+    <div className={`${shown ? 'block' : 'hidden'} overflow-y-auto p-[var(--m)] lg:block lg:p-8`}>
       <div className="mb-3 flex justify-end lg:hidden">
         <button type="button" className="btn" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{x.zoom}</button>
       </div>
       <div className={zoom ? 'overflow-x-auto' : ''}>
         <div className={`relative mx-auto ${zoom ? 'w-[200%]' : 'w-full max-w-[46rem]'}`}>
           {empty && sample && <p aria-hidden="true" className="mb-3 text-center text-sm text-muted text-balance">{x.samplePreview}</p>}
-          <div role="img" aria-label={label} className="relative min-h-[20rem] bg-white shadow-sheet">
-            {(wide || shown) && <PdfCanvas make={make} deps={[...deps, zoom]} debounce={300} onState={setState} />}
+          {/* Les pages sont séparées par du fond (gap) ; la feuille blanche d'attente n'est là que tant qu'aucune page n'a été rendue. */}
+          <div role="img" aria-label={label} className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'}`}>
+            {(wide || shown) && <PdfCanvas className="grid gap-4 [&_canvas]:shadow-sheet" make={make} deps={[...deps, zoom]} debounce={300} onState={onState} />}
             {empty && !sample && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
           </div>
         </div>
       </div>
       <p aria-hidden="true" className="mt-3 text-center text-sm text-muted">{state === 'busy' ? t.previewBusy : state === 'error' ? t.previewError : ' '}</p>
+      {state === 'ready' && pages > 1 && <p className="mt-1 text-center text-sm text-muted">{tips[uiLang].pages.replace('{n}', String(pages))}</p>}
       <p role="status" className="sr-only">{said}</p>
     </div>
   )

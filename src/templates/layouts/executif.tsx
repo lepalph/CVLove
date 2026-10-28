@@ -39,21 +39,10 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
     </View>
   )
 
-  // Petites capitales : initiale plus grande, reste en capitales plus petites (pas de petites capitales dans react-pdf). Arabe : texte brut.
-  const smallCaps = (txt: string, big: number, small: number) =>
-    t.rtl ? (
-      <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(big), textAlign: 'center', lineHeight: 1.6 }}>{txt}</Text>
-    ) : (
-      <Text style={{ fontFamily: t.head, fontSize: t.s(small), textAlign: 'center', lineHeight: 1.3 }}>
-        {txt.toUpperCase().split(' ').map((w, i) => (
-          <Text key={i}>
-            {i > 0 ? '  ' : ''}
-            <Text style={{ fontSize: t.s(big) }}>{w.slice(0, 1)}</Text>
-            {w.slice(1)}
-          </Text>
-        ))}
-      </Text>
-    )
+  // Capitales simples, d'un seul tenant : des petites capitales simulées (initiale + reste en deux <Text>) éclatent le nom à l'extraction (C|AMILLE).
+  const smallCaps = (txt: string, big: number, small: number) => (
+    <Text style={{ fontFamily: t.head, fontWeight: t.rtl ? 700 : 400, fontSize: t.s(t.rtl ? big : (big + small) / 2), textAlign: 'center', lineHeight: 1.5 }}>{t.rtl ? txt : txt.toUpperCase()}</Text>
+  )
 
   const title = (s: Section) => {
     const txt = sectionTitle(s, labels)

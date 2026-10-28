@@ -31,6 +31,6 @@ export const isExampleCV = (cv: CV) => SAMPLE_NAMES.has(fullName(cv))
 /** Rien à imprimer : ni nom, ni coordonnées, ni section remplie. */
 export const isEmptyCV = (cv: CV) => !fullName(cv) && !cv.personal.title.trim() && !visibleFields(cv).length && !visibleSections(cv).length
 
-/** Nom d'un modèle : en français « Classique · Académique » ; ailleurs « Classic 2 » (les noms de style restent français). */
+/** Nom d'un modèle : « Classique · Académique » ; en arabe, nom de mise en page arabe + nom de style latin (le style n'existe qu'en français). Ailleurs « Classic 2 ». */
 export const modelName = (m: TemplateDef, lang: Lang) =>
-  lang === 'fr' ? `${m.layoutName.fr} · ${m.styleName}` : `${m.layoutName[lang]} ${m.styleNo}`
+  lang === 'fr' || lang === 'ar' ? `${m.layoutName[lang]} · ${m.styleName}` : `${m.layoutName[lang]} ${m.styleNo}`

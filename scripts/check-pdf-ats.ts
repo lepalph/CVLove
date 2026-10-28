@@ -50,6 +50,12 @@ for (const t of templates) {
   // caractère de contrôle dans le texte extrait = table ToUnicode vide pour un glyphe (« Form\u001dtion », « l\u0019équipe »)
   const junk = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\ufffd]/.exec(raw)
   if (junk) fail(`${t.id}/ats`, `caractère parasite U+${junk[0].codePointAt(0)!.toString(16)} dans « ${raw.slice(Math.max(0, junk.index - 6), junk.index + 6).replace(/\n/g, '|')} »`)
+  // nom d'un seul tenant (pas « C|AMILLE ») et avant toute colonne latérale (Contact, Compétences...) dans l'ordre d'extraction
+  const flat = raw.replace(/\s+/g, ' ').toLowerCase()
+  const name = flat.indexOf('sophie')
+  if (!/sophie\s+lefèvre-duchâtel/i.test(raw)) fail(`${t.id}/ats`, 'nom éclaté ou non contigu dans le texte extrait')
+  for (const side of [cvLabels.fr.sections.skills, 'contact'])
+    if (flat.indexOf(side.toLowerCase()) < name && flat.indexOf(side.toLowerCase()) >= 0) fail(`${t.id}/ats`, `« ${side} » sort avant le nom`)
   const words = [...ATS_WORDS, ...cv.sections.map((s) => cvLabels.fr.sections[s.kind])]
   for (const w of words) if (!hay.includes(w.toLowerCase())) fail(`${t.id}/ats`, `mot absent ou éclaté : « ${w} »`)
 }

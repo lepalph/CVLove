@@ -3,14 +3,16 @@ import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { letterUi, type LetterUI } from '../i18n/letter'
 import { ui } from '../i18n/ui'
-import { letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
+import { isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
 import { LANGS, type LetterDoc } from '../model/types'
+import { sampleLetter } from '../model/sample'
 import { renderLetterLazy } from '../pdf/lazy'
 import { useLetterDoc, useStore } from '../store'
 import { getLetterLayout } from '../templates/letterTemplates'
 import { Field, LangSelect, SkipLink } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
 import { DesignSettings } from './DesignPanel'
+import { LetterExampleTools } from './ExampleTools'
 import { Card } from './Form'
 import { Steps, useGuidedProgress } from './Guided'
 
@@ -48,17 +50,18 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
     }
   }
 
-  const empty = ![letter.sender.name, letter.recipient.name, letter.recipient.company, letter.subject, letter.body].some((v) => v.trim())
+  const empty = isEmptyLetter(letter)
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SkipLink />
       <EdHeader mode={mode} onMode={setLetterMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} />
       <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
-        <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:h-[calc(100dvh-7rem)] lg:border-e lg:p-8`}>
+        <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>
           <MobileTools mode={mode} onMode={setLetterMode} />
+          <LetterExampleTools />
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(letter, design)} deps={[letter, design]} empty={empty} said={said}
+        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang) : letter, design)} deps={[letter, design]} empty={empty} sample said={said}
           label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
       </main>
       <EdFooter />

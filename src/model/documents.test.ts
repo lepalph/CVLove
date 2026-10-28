@@ -87,6 +87,7 @@ describe('documents', () => {
   it('choisit un nom libre', () => {
     const docs = [newCVDoc('CV', sampleCV('fr')), newCVDoc('CV 2', sampleCV('fr'))]
     expect(freeName(docs, 'CV')).toBe('CV 3')
+    expect(freeName(docs, 'Lettre')).toBe('Lettre')
   })
 })
 

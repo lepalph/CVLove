@@ -67,7 +67,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
 
   return (
     <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
-      <Page {...t.pageProps} style={t.pageStyle(36, 40)}>
+      <Page {...t.pageProps} style={{ ...t.pageStyle(36, 40), paddingBottom: t.m(24) }}>
         <View style={{ alignItems: 'center', ...(headBg ? { backgroundColor: headBg, borderRadius: 6, paddingVertical: t.m(16), paddingHorizontal: t.m(16) } : {}) }}>
           {!!personal.photo && <View style={{ marginBottom: 8 }}><Image src={personal.photo} style={t.photo(band ? 84 : 92)} /></View>}
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(band ? 25 : 27), lineHeight: 1.2, textAlign: 'center', color: headFg }}>{fullName(cv)}</Text>
@@ -89,7 +89,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
               key={s.id}
               wrap={split}
               style={{
-                marginTop: t.m(8), backgroundColor: block, borderRadius: 6, paddingVertical: t.m(8), paddingHorizontal: t.m(14),
+                marginTop: t.m(7), backgroundColor: block, borderRadius: 6, paddingVertical: t.m(7), paddingHorizontal: t.m(14),
                 ...(edge ? { borderWidth: 0.6, borderColor: tint(accInk, 0.6), [t.rtl ? 'borderRightWidth' : 'borderLeftWidth']: 3, [t.rtl ? 'borderRightColor' : 'borderLeftColor']: accInk } : {}),
               }}
             >

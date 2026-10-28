@@ -17,7 +17,8 @@ interface Props {
   maxPages?: number
   debounce?: number
   className?: string
-  onState?: (s: 'busy' | 'ready' | 'error') => void
+  /** `pages` : nombre total de pages du PDF, donné avec 'ready'. */
+  onState?: (s: 'busy' | 'ready' | 'error', pages?: number) => void
 }
 
 /**
@@ -58,7 +59,7 @@ export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, 
         }
         if (dead) return
         host.current?.replaceChildren(...canvases)
-        onState?.('ready')
+        onState?.('ready', doc.numPages)
       } catch (e) {
         if (!dead && (e as Error).name !== 'RenderingCancelledException') {
           console.error(e)

@@ -340,9 +340,9 @@ test('éditeur de CV : « Créer la lettre assortie » reprend le CV, l’accent
   await expect(page.getByLabel('Nom complet')).toHaveValue('Camille Marchand')
   await expect(page.getByLabel('Lieu')).toHaveValue('Lyon') // ville du CV
   await expect(page.locator('input[type=color]')).toHaveValue('#0e7490')
-  await expect(page.getByLabel('Formule d’appel')).toHaveValue('Madame, Monsieur,')
+  await expect(page.getByLabel('Formule d’appel', { exact: true })).toHaveValue('Madame, Monsieur,')
   await page.getByLabel('Langue de la lettre').selectOption('en')
-  await expect(page.getByLabel('Formule d’appel')).toHaveValue('Dear Sir or Madam,')
+  await expect(page.getByLabel('Formule d’appel', { exact: true })).toHaveValue('Dear Sir or Madam,')
   const pdf = await pdfOf((await (await download(page)).path())!)
   expect(pdf.text).toContain('Dear Sir or Madam,')
   expect(pdf.colors).toContain('#0e7490')

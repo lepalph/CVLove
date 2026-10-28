@@ -80,6 +80,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
       <Page {...t.pageProps} style={{ ...pageBase, ...pad }}>
         {/* Aplat : `fixed` + position absolue = pleine hauteur sur CHAQUE page. Son contenu n'est que sur la page 1 (limite : colonne trop longue = débordement). */}
         <View fixed style={{ position: 'absolute', top: 0, bottom: 0, [sideAt]: 0, width: SIDE, backgroundColor: bg }} />
+
         <View style={{ position: 'absolute', top: 0, [sideAt]: 0, width: SIDE, paddingTop: t.m(38), paddingHorizontal: 20 }}>
           {!!personal.photo && <View style={{ alignItems: 'center', marginBottom: 14 }}><Image src={personal.photo} style={t.photo(112)} /></View>}
           <View style={plate ? { borderTopWidth: 2, borderBottomWidth: 2, borderColor: fg, paddingVertical: 8 } : {}}>

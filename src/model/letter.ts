@@ -1,5 +1,5 @@
 import { letterLabels } from '../i18n/letter'
-import { DEFAULT_DESIGN, fullName, uid } from './cv'
+import { DEFAULT_DESIGN, fullName, slug, uid } from './cv'
 import type { CV, Design, Lang, Letter, LetterDoc } from './types'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -66,8 +66,7 @@ export const patchRecipient = (l: Letter, patch: Partial<Letter['recipient']>): 
 export const paragraphs = (body: string) => body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
 
 export const letterFileName = (l: Letter) => {
-  const slug = l.sender.name.trim().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')
-  return `Lettre-${slug || 'CVLove'}.pdf`
+  return `Lettre-${slug(l.sender.name) || 'CVLove'}.pdf`
 }
 
 /** Mise en page de lettre assortie à un modèle de CV : par catégorie (moderne -> bandeau, créatif -> latéral, sinon classique). */
@@ -80,3 +79,6 @@ export const letterDesignFrom = (cvDesign: Design, category: string): Design => 
 export const newLetterDoc = (name: string, data: Letter, design: Design = { ...DEFAULT_DESIGN, templateId: 'lettre-classique' }): LetterDoc => ({
   id: uid(), kind: 'letter', name, updatedAt: Date.now(), design, data, editorMode: 'guided',
 })
+
+/** Rien d'écrit dans la lettre (même test que l'aperçu vide de l'éditeur). */
+export const isEmptyLetter = (l: Letter) => ![l.sender.name, l.recipient.name, l.recipient.company, l.subject, l.body].some((v) => v.trim())

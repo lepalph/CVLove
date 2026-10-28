@@ -93,8 +93,11 @@ export const visibleFields = (cv: CV): Field[] => cv.personal.fields.filter((f) 
 
 export const fullName = (cv: CV) => `${cv.personal.firstName} ${cv.personal.lastName}`.trim()
 
+/** Pour un nom de fichier : retire les accents latins seulement (U+0300 à U+036F), garde les lettres et marques des autres écritures (arabe…). */
+export const slug = (s: string) =>
+  s.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC').replace(/[^\p{L}\p{N}\p{M}]+/gu, '-').replace(/^-|-$/g, '')
+
 export const pdfFileName = (cv: CV) => {
-  const slug = (s: string) => s.trim().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')
   const parts = [slug(cv.personal.firstName), slug(cv.personal.lastName)].filter(Boolean)
   return `CV-${parts.join('-') || 'CVLove'}.pdf`
 }
@@ -102,3 +105,13 @@ export const pdfFileName = (cv: CV) => {
 /** Garde-fou minimal sur la forme d'un CV (import JSON). */
 export const isCVData = (d: any): d is CV =>
   !!d && typeof d === 'object' && !!d.personal && Array.isArray(d.sections) && Array.isArray(d.personal.fields)
+
+/**
+ * Applique un changement de design. Un réglage manuel de couleur ou de police est mémorisé (`custom`) ;
+ * choisir un modèle (patch avec `templateId`) applique son preset sans écraser ces choix.
+ */
+export function applyDesignPatch(d: Design, patch: Partial<Design>): Design {
+  if (patch.templateId !== undefined) return { ...d, ...patch, ...d.custom }
+  const custom = { ...d.custom, ...(patch.accent ? { accent: patch.accent } : {}), ...(patch.fontPair ? { fontPair: patch.fontPair } : {}) }
+  return { ...d, ...patch, ...(Object.keys(custom).length ? { custom } : {}) }
+}

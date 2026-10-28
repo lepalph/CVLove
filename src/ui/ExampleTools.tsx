@@ -2,7 +2,9 @@ import { extra } from '../i18n/extra'
 import { ui } from '../i18n/ui'
 import { fullName } from '../model/cv'
 import { blankCV } from '../model/documents'
-import { useCvDoc, useStore } from '../store'
+import type { Letter } from '../model/types'
+import { sampleLetter } from '../model/sample'
+import { useCvDoc, useLetterDoc, useStore } from '../store'
 import { isEmptyCV, isExampleCV } from './lib'
 
 /** « Tout effacer » (avec confirmation) : repart de sections vides prêtes à remplir, champs d'exemple en placeholder. Même geste dans les deux modes. */
@@ -36,4 +38,25 @@ export function ExampleTools() {
     return <div className="mb-5"><button type="button" className="btn btn-ghost px-0 underline underline-offset-4" onClick={loadSample}>{ui[uiLang].loadSample}</button></div>
   }
   return null
+}
+
+const fillLetter = (l: Letter): Letter => {
+  const s = sampleLetter(l.lang)
+  const keep = !!l.sender.name.trim()
+  return { ...s, sender: keep ? l.sender : s.sender, signature: keep ? l.signature : s.signature, place: l.place || s.place, date: l.date, salutation: l.salutation, closing: l.closing }
+}
+
+/** Pendant de ExampleTools pour la lettre : tant que destinataire, objet et corps sont vides, propose l'exemple (l'expéditeur déjà saisi est gardé). */
+export function LetterExampleTools() {
+  const letter = useLetterDoc()!.data
+  const update = useStore((s) => s.updateLetter)
+  const uiLang = useStore((s) => s.uiLang)
+  if ([letter.recipient.name, letter.recipient.company, letter.subject, letter.body].some((v) => v.trim())) return null
+  return (
+    <div className="mb-5">
+      <button type="button" className="btn btn-ghost px-0 underline underline-offset-4" onClick={() => update(fillLetter)}>
+        {ui[uiLang].loadSample}
+      </button>
+    </div>
+  )
 }

@@ -101,7 +101,16 @@
     .edbar { grid-template-columns: 1fr auto auto auto; grid-template-areas: "logo mode lang dl"; gap: 0.5rem 0.75rem; }
     .edbar > .a-mode { grid-area: mode; } .edbar > .a-lang { grid-area: lang; }
   }
-  @media (max-height: 600px) { .edbar { position: static; } }
+  @media (max-height: 600px) { .edbar { position: relative; } }
+
+  /* Bureau : l'éditeur (CV et lettre) occupe exactement la fenêtre, la page ne défile jamais ; seuls le panneau gauche et l'aperçu défilent.
+     Cause du défaut d'avant : les panneaux avaient une hauteur « 100dvh - 7rem » supposée égale à en-tête + pied, mais l'en-tête réel est plus haut. */
+  @media (min-width: 64rem) {
+    #root > div:has(.edbar) { position: relative; height: 100dvh; overflow: hidden; } /* relative : les éléments sr-only (absolus) sont rognés au lieu d'allonger la page */
+    #root > div:has(.edbar) > div { min-height: 0; }
+    #main.grid { grid-template-rows: minmax(0, 1fr); }
+    #main.grid > * { min-height: 0; overflow-y: auto; position: relative; }
+  }
 }
 
 /* Trame de l'accueil : feuilles A4 (1:1,414) en filet, estompées vers les bords. */

@@ -30,10 +30,11 @@ export const duplicateDoc = (d: Doc, name: string): Doc => ({ ...structuredClone
 export const patchDoc = (docs: Doc[], id: string, patch: Partial<Doc>): Doc[] =>
   docs.map((d) => (d.id === id ? ({ ...d, ...patch } as Doc) : d))
 
-/** Nom libre « CV 2 », « CV 3 »… qui n'existe pas encore. */
+/** Nom libre : « Lettre » tant qu'il est libre, puis « Lettre 2 », « Lettre 3 »… (numérotation par nom, donc par type). */
 export function freeName(docs: Doc[], base: string): string {
   const names = new Set(docs.map((d) => d.name))
-  for (let i = docs.length + 1; ; i++) if (!names.has(`${base} ${i}`)) return `${base} ${i}`
+  if (!names.has(base)) return base
+  for (let i = 2; ; i++) if (!names.has(`${base} ${i}`)) return `${base} ${i}`
 }
 
 /** Fichier d'export : un ou plusieurs documents. */

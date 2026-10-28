@@ -85,6 +85,8 @@ export interface Design {
   pageSize: PageSize
   photoShape: PhotoShape
   skillDisplay: SkillDisplay
+  /** Choix faits à la main dans Design : ils survivent au changement de modèle (le preset du style ne s'applique que sans eux). */
+  custom?: { accent?: string; fontPair?: FontPair }
 }
 
 /** Lettre de motivation : données minimales (l'UI et les mises en page viennent en phase 4). */

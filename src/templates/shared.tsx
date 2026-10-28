@@ -1,4 +1,4 @@
-import { Children, Fragment, isValidElement, type ReactNode } from 'react'
+import { Children, Fragment, cloneElement, isValidElement, type ReactNode } from 'react'
 import { Text as PdfText, View, type TextProps, type ViewProps } from '@react-pdf/renderer'
 import type { CVLabels } from '../i18n/labels'
 import { visibleFields } from '../model/cv'
@@ -7,13 +7,12 @@ import type { CV, Item } from '../model/types'
 import type { Theme } from './theme'
 
 /**
- * Bidi : en arabe, « 18٪ » ou « 18% » en fin de ligne perd son signe (le % est neutre et ET collé à un chiffre
- * devient un chiffre : il part en début de ligne). Une marque RLM (U+200F) juste après le signe le rattache au nombre.
- * Les mots latins au milieu de l'arabe (« TypeScript و Node ») s'ordonnent bien sans aide. Isolats U+2066..2069 : à éviter, react-pdf affiche des glyphes parasites.
+ * Bidi : pas de marque RLM (U+200F) en arabe : Tajawal n'a pas ce glyphe, la ligne qui la porte devenait plus haute que ses voisines
+ * (ligne « décalée », puces désalignées) ; « 18٪ » en fin de ligne garde son signe sans elle. Isolats U+2066..2069 : à éviter, react-pdf affiche des glyphes parasites.
  */
 // En LTR, espace insécable avant % pour que « 80 % » ne se coupe pas en fin de ligne.
 export const fixBidi = (s: string, rtl: boolean) =>
-  rtl ? s.replace(/(\d\s?[%٪])/g, '$1‏') : s.replace(/(\d) %/g, '$1\u00A0%')
+  rtl ? s : s.replace(/(\d) %/g, '$1\u00A0%')
 
 const textOf = (n: ReactNode): string =>
   Children.toArray(n).map((c) => (isValidElement<{ children?: ReactNode }>(c) ? textOf(c.props.children) : String(c))).join('')
@@ -25,9 +24,14 @@ const textOf = (n: ReactNode): string =>
  */
 const RTL_CHARS = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/
 
+// Tajawal n'a ni le séparateur décimal arabe (U+066B) ni celui des milliers (U+066C) : le repli de react-pdf les rendait en gras et déformés.
+const ar = (n: ReactNode): ReactNode =>
+  typeof n === 'string' ? n.replace(/\u066B/g, '.').replace(/\u066C/g, ',')
+  : isValidElement<{ children?: ReactNode }>(n) ? cloneElement(n, undefined, Children.map(n.props.children, ar)) : n
+
 export function Text(props: TextProps & { children?: ReactNode }) {
   const rtl = RTL_CHARS.test(textOf(props.children))
-  return rtl ? <PdfText {...props} style={[{ direction: 'rtl' }, props.style ?? {}]} /> : <PdfText {...props} />
+  return rtl ? <PdfText {...props} style={[{ direction: 'rtl' }, props.style ?? {}]}>{Children.map(props.children, ar)}</PdfText> : <PdfText {...props} />
 }
 
 /** Contacts en texte, un par champ visible. */
@@ -82,7 +86,7 @@ export const onAccent = (hex: string) => (contrast(hex, '#ffffff') >= contrast(h
 /** Période + « sous-titre · lieu » d'un item. */
 export function entryMeta(it: Item, cv: CV, labels: CVLabels) {
   return {
-    period: formatPeriod(it, cv.lang, labels.present),
+    period: formatPeriod(it, cv.lang, labels.present).replace(/ /g, '\u00A0'), // insécable : « mars 2019 – Présent » ne se coupe jamais
     sub: [it.subtitle, it.place].filter((x) => x.trim()).join(' · '),
   }
 }
@@ -110,15 +114,16 @@ export function SkillLevel({ it, t, color = ink(t.accent), track, width = 54 }: 
   )
 }
 
-/** Lignes d'une description ; « - » ou « • » en début de ligne = puce (jamais en RTL : react-pdf la place à gauche). */
+/** Lignes d'une description ; « - » ou « • » en début de ligne = puce. En RTL la puce est un disque dessiné, côté début (à droite) : le glyphe « • » serait mal placé par react-pdf. */
 export const lineNodes = (text: string, rtl: boolean) =>
   text.split('\n').filter((l) => l.trim()).map((l, i) => {
     const bullet = /^\s*[-•*]\s+/.test(l)
     const body = fixBidi(l.replace(/^\s*[-•*]\s+/, ''), rtl)
-    if (rtl || !bullet || RTL_CHARS.test(l)) return <Text key={i} style={{ marginTop: 1.5 }}>{body}</Text>
+    if (!bullet) return <Text key={i} style={{ marginTop: 1.5 }}>{body}</Text>
+    const arabic = rtl || RTL_CHARS.test(l)
     return (
-      <View key={i} wrap={false} style={{ flexDirection: 'row', marginTop: 1.5 }}>
-        <Text style={{ width: 10 }}>•</Text>
+      <View key={i} wrap={false} style={{ flexDirection: arabic ? 'row-reverse' : 'row', marginTop: 1.5 }}>
+        {arabic ? <View style={{ width: 10, paddingTop: 4.5, alignItems: 'flex-end' }}><View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#1f1b16' }} /></View> : <Text style={{ width: 10 }}>•</Text>}
         <Text style={{ flex: 1 }}>{body}</Text>
       </View>
     )

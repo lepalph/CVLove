@@ -9,6 +9,7 @@ import { useStore } from '../store'
 import { layouts, templates } from '../templates'
 import { GithubIcon, LangSelect, Logo, SkipLink } from './bits'
 import { useModelFilter } from './DesignPanel'
+import { guidedStart } from './Guided'
 import { SamplePage } from './SamplePage'
 
 const H2 = 'text-balance text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[2rem]'
@@ -28,6 +29,7 @@ export function Home() {
 
   const start = (templateId: string) => {
     updateDesign({ ...templates.find((m) => m.id === templateId)?.preset, templateId })
+    guidedStart.afterModel = true
     location.hash = EDITOR
   }
   const wrap = 'mx-auto w-full max-w-[75rem] px-[var(--m)]'

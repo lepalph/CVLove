@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { sectionTitle, cvLabels } from '../i18n/labels'
 import { guide } from '../i18n/guide'
+import { tips } from '../i18n/tips'
 import { ui } from '../i18n/ui'
 import { fullName, visibleSections } from '../model/cv'
 import type { SectionKind } from '../model/types'
@@ -23,18 +24,23 @@ const FILLS: Partial<Record<(typeof STEPS)[number], SectionKind[]>> = {
 
 const fill = (text: string, n: number, total: number) => text.replace('{n}', String(n)).replace('{total}', String(total))
 
+/** Posé par l'accueil quand un modèle y est choisi : le prochain éditeur s'ouvre à l'étape Identité (l'étape Modèle est déjà faite). */
+export const guidedStart = { afterModel: false }
+
 /** Étape en cours et étapes faites, gardées par l'éditeur pour survivre à la bascule Guidé / Complet (repart de zéro si le document change). */
 export function useGuidedProgress(id?: string) {
   const cvId = useCvDoc().id
   const docId = id ?? cvId
-  const [p, setP] = useState({ docId, i: 0, done: new Set<number>() })
+  const [p, setP] = useState(() => (guidedStart.afterModel && !id ? { docId, i: 1, done: new Set([0]) } : { docId, i: 0, done: new Set<number>() }))
+  useEffect(() => { guidedStart.afterModel = false }, [])
   return p.docId === docId ? { p, setP } : { p: { docId, i: 0, done: new Set<number>() }, setP }
 }
 export type GuidedProgress = ReturnType<typeof useGuidedProgress>
 
 /** Mode guidé du CV : une étape à la fois, qui réutilise les cartes du formulaire complet. L'aperçu reste dans l'éditeur. */
-export function Guided({ progress, onDownload, downloading }: { progress: GuidedProgress; onDownload: () => void; downloading: boolean }) {
-  const g = guide[useStore((s) => s.uiLang)]
+export function Guided({ progress, onDownload, downloading, saved }: { progress: GuidedProgress; onDownload: () => void; downloading: boolean; saved?: string }) {
+  const uiLang = useStore((s) => s.uiLang)
+  const g = guide[uiLang]
   const cv = useCvDoc().data
   const kinds = visibleSections(cv).map((s) => s.kind)
   const filled = (i: number) => {
@@ -43,14 +49,14 @@ export function Guided({ progress, onDownload, downloading }: { progress: Guided
     return FILLS[step] ? FILLS[step]!.some((k) => kinds.includes(k)) : true
   }
   return (
-    <Steps progress={progress} names={g.steps} hints={g.hints} filled={filled}>
-      {(i) => <StepBody step={STEPS[i]} onDownload={onDownload} downloading={downloading} />}
+    <Steps progress={progress} names={g.steps} hints={g.hints} tips={tips[uiLang].steps} filled={filled}>
+      {(i) => <StepBody step={STEPS[i]} onDownload={onDownload} downloading={downloading} saved={saved} />}
     </Steps>
   )
 }
 
 /** Cadre commun des modes guidés (CV et lettre) : barre d'étapes, titre, indication, Précédent / Passer / Suivant. `children(i)` = corps de l'étape i. `filled(i)` : l'étape a du contenu (sinon elle n'est jamais « faite »). */
-export function Steps({ progress, names, hints, filled, children }: { progress: GuidedProgress; names: string[]; hints: string[]; filled?: (i: number) => boolean; children: (i: number) => ReactNode }) {
+export function Steps({ progress, names, hints, tips: tipList, filled, children }: { progress: GuidedProgress; names: string[]; hints: string[]; tips?: string[]; filled?: (i: number) => boolean; children: (i: number) => ReactNode }) {
   const uiLang = useStore((s) => s.uiLang)
   const g = guide[uiLang]
   const total = names.length
@@ -66,7 +72,10 @@ export function Steps({ progress, names, hints, filled, children }: { progress: 
   useEffect(() => {
     if (first.current) { first.current = false; return }
     head.current?.focus({ preventScroll: true })
-    top.current?.scrollIntoView({ block: 'start' })
+    // Bureau : le panneau gauche défile seul, on le remet en haut. Mobile (panneau non défilant) : c'est la page.
+    const pane = top.current?.closest<HTMLElement>('.overflow-y-auto')
+    if (pane && pane.scrollHeight > pane.clientHeight) pane.scrollTo({ top: 0 })
+    else top.current?.scrollIntoView({ block: 'start' })
   }, [i])
 
   const num = (k: number) => String(k + 1).padStart(2, '0')
@@ -105,6 +114,7 @@ export function Steps({ progress, names, hints, filled, children }: { progress: 
           <p className="max-sm:hidden font-mono text-xs uppercase tracking-wide text-muted">{fill(g.stepOf, i + 1, total)}</p>
           <h2 id="step-title" ref={head} tabIndex={-1} className="mt-1 text-xl font-semibold tracking-tight outline-none">{names[i]}</h2>
           <p className="mt-1 text-pretty text-base text-muted">{hints[i]}</p>
+          {tipList?.[i] && <p className="mt-2 text-pretty text-sm text-muted">{tipList[i]}</p>}
         </header>
         {children(i)}
       </section>
@@ -122,9 +132,9 @@ export function Steps({ progress, names, hints, filled, children }: { progress: 
   )
 }
 
-function StepBody({ step, onDownload, downloading }: { step: (typeof STEPS)[number]; onDownload: () => void; downloading: boolean }): ReactNode {
+function StepBody({ step, onDownload, downloading, saved }: { step: (typeof STEPS)[number]; onDownload: () => void; downloading: boolean; saved?: string }): ReactNode {
   switch (step) {
-    case 'model': return <ModelGallery tall />
+    case 'model': return <ModelStep />
     case 'identity': return <><LanguageCard /><PersonalCard /></>
     case 'profile': return <SectionsCard only={['profile']} add={['profile']} title={false} />
     case 'experience': return <SectionsCard only={['experience']} add={['experience']} title={false} />
@@ -132,11 +142,25 @@ function StepBody({ step, onDownload, downloading }: { step: (typeof STEPS)[numb
     case 'skills': return <SectionsCard only={['skills', 'languages']} add={['skills', 'languages']} title={false} />
     case 'others': return <SectionsCard only={['projects', 'interests', 'custom']} title={false} />
     case 'design': return <DesignSettings />
-    case 'download': return <Finish onDownload={onDownload} downloading={downloading} />
+    case 'download': return <Finish onDownload={onDownload} downloading={downloading} saved={saved} />
   }
 }
 
-function Finish({ onDownload, downloading }: { onDownload: () => void; downloading: boolean }) {
+/** Étape Modèle : rappelle le modèle choisi (venu de l'accueil ou d'ici) et amène sa vignette dans la vue. */
+function ModelStep() {
+  const uiLang = useStore((s) => s.uiLang)
+  const id = useCvDoc().design.templateId
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => { ref.current?.querySelector('ul [aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' }) }, [])
+  return (
+    <div ref={ref} className="flex flex-col gap-4">
+      <p className="m-0 text-base font-medium">{tips[uiLang].chosen.replace('{name}', modelName(getTemplate(id), uiLang))}</p>
+      <ModelGallery tall />
+    </div>
+  )
+}
+
+function Finish({ onDownload, downloading, saved }: { onDownload: () => void; downloading: boolean; saved?: string }) {
   const doc = useCvDoc()
   const uiLang = useStore((s) => s.uiLang)
   const g = guide[uiLang]
@@ -173,6 +197,7 @@ function Finish({ onDownload, downloading }: { onDownload: () => void; downloadi
           <a href="#/documents" className="btn btn-ghost">{g.docsLink}</a>
           <button type="button" className="btn btn-ghost text-danger" onClick={clear}>{t.clearAll}</button>
         </div>
+        {saved && <p aria-hidden="true" className="mt-3 text-sm font-medium text-ink">{saved}</p>}
         <p className="mt-3 text-sm text-muted">{t.privacy}</p>
       </div>
     </>

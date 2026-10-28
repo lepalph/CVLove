@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { detectLang } from '../i18n/ui'
 import {
-  addItem, addSection, emptyCV, moveItem, moveSection, patchItem, patchSection, pdfFileName, removeItem, removeSection,
+  addItem, addSection, applyDesignPatch, DEFAULT_DESIGN, emptyCV, moveItem, moveSection, patchItem, patchSection, pdfFileName, removeItem, removeSection,
   setLang, visibleSections,
 } from './cv'
+import { cleanDesign } from './sanitize'
 import { formatDay, formatMonth, formatPeriod, isRtl } from './dates'
 import { sampleCV } from './sample'
 import { LANGS } from './types'
@@ -108,6 +109,25 @@ describe('dates', () => {
   })
 })
 
+describe('design', () => {
+  const preset = { accent: '#111111', fontPair: 'lora' as const, margins: 'large' as const }
+  it('applique le preset du style sans choix manuel', () => {
+    const d = applyDesignPatch(DEFAULT_DESIGN, { ...preset, templateId: 'moderne-2' })
+    expect(d.accent).toBe('#111111')
+    expect(d.custom).toBeUndefined()
+  })
+  it('garde la couleur et la police choisies à la main au changement de modèle', () => {
+    let d = applyDesignPatch(DEFAULT_DESIGN, { accent: '#047857' })
+    d = applyDesignPatch(d, { fontPair: 'inter' })
+    d = applyDesignPatch(d, { ...preset, templateId: 'moderne-2' })
+    expect(d).toMatchObject({ accent: '#047857', fontPair: 'inter', margins: 'large', templateId: 'moderne-2' })
+  })
+  it('nettoie le champ custom', () => {
+    expect(cleanDesign({ custom: { accent: 'rouge', fontPair: 'nope' } }).custom).toBeUndefined()
+    expect(cleanDesign({ custom: { accent: '#047857' } }).custom).toEqual({ accent: '#047857' })
+  })
+})
+
 describe('divers', () => {
   it('nomme le fichier CV-Prenom-Nom.pdf', () => {
     const cv = emptyCV()
@@ -115,6 +135,9 @@ describe('divers', () => {
     cv.personal.lastName = 'Dupont-Martin'
     expect(pdfFileName(cv)).toBe('CV-Zoe-Dupont-Martin.pdf')
     expect(pdfFileName(emptyCV())).toBe('CV-CVLove.pdf')
+    const ar = emptyCV('ar')
+    ar.personal.firstName = 'أمينة'; ar.personal.lastName = 'بن علي'
+    expect(pdfFileName(ar)).toBe('CV-أمينة-بن-علي.pdf')
   })
 
   it('détecte la langue de l’interface', () => {

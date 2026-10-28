@@ -12,6 +12,7 @@ import { MAX_IMPORT_BYTES, MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
 import { sampleCV } from '../model/sample'
 import { LANGS, SECTION_KINDS, type CVDoc, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
 import { useCvDoc, useStore } from '../store'
+import { placeholders } from '../i18n/placeholders'
 import { Field, Icon, LangSelect, useWide } from './bits'
 import { useClearAll } from './ExampleTools'
 import { isEmptyCV, isExampleCV } from './lib'
@@ -21,11 +22,13 @@ import { LetterLink } from './LetterLink'
 /** L'exemple (Camille, Laila…) ne sert qu'en gris : champs vides + placeholders de la langue du CV, jamais de valeur écrite à la place de l'utilisateur. */
 const usePlaceholders = () => {
   const lang = useCvDoc().data.lang
-  return useMemo(() => sampleCV(lang), [lang])
+  const ph = useMemo(() => sampleCV(lang), [lang])
+  return useMemo(() => ({ ...ph, personal: { ...ph.personal, title: placeholders[lang].jobTitle }, neutral: placeholders[lang].kinds }), [ph, lang])
 }
-const phItem = (ph: ReturnType<typeof sampleCV>, kind: SectionKind, k: number): Partial<Item> => {
+/** Exemple neutre du premier élément ; les suivants (et les sections sans exemple neutre) reprennent le CV d'exemple. */
+const phItem = (ph: ReturnType<typeof usePlaceholders>, kind: SectionKind, k: number): Partial<Item> => {
   const items = ph.sections.find((s) => s.kind === kind)?.items ?? []
-  return items[k] ?? items[0] ?? {}
+  return { ...(items[k] ?? items[0]), ...ph.neutral[kind] }
 }
 
 const FIELD_ORDER: Exclude<FieldKind, 'custom'>[] = ['birthDate', 'location', 'email', 'phone', 'website']

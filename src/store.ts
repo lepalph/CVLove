@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { detectLang } from './i18n/ui'
-import { DEFAULT_DESIGN, emptyCV } from './model/cv'
+import { DEFAULT_DESIGN, applyDesignPatch, emptyCV } from './model/cv'
 import { blankCV, duplicateDoc, followName, freeName, migrateV1, newCVDoc, parseImport, patchDoc, untitledName } from './model/documents'
 import { blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
 import { sampleCV } from './model/sample'
@@ -106,7 +106,7 @@ export const useStore = create<State>()(
         activeId: first.id,
         uiLang: initialLang,
         update: (fn) => patchActive((d) => ({ data: fn(d.data) })),
-        updateDesign: (patch) => patchActive((d) => ({ design: { ...d.design, ...patch } })),
+        updateDesign: (patch) => patchActive((d) => ({ design: applyDesignPatch(d.design, patch) })),
         setUiLang: (uiLang) => set({ uiLang }),
         setEditorMode: (editorMode) => set((s) => ({ documents: patchDoc(s.documents, selectCvDoc(s).id, { editorMode }) })),
         clearAll: () => patchActive((d) => ({ data: emptyCV(d.data.lang) })),
