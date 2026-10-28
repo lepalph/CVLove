@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { FONT_PAIR_DEFS } from '../pdf/fontPairs'
 import { FONT_PAIRS, type Design } from '../model/types'
-import { useCvDoc, useStore } from '../store'
+import { useCvDoc, useLetterDoc, useStore } from '../store'
 import { templates } from '../templates'
+import { letterLayouts } from '../templates/letterTemplates'
 import { ACCENTS, CATEGORIES, type Category } from '../templates/types'
 import { Field, Seg } from './bits'
 import { SamplePage } from './SamplePage'
@@ -77,16 +79,22 @@ export function DesignPanel() {
   )
 }
 
-/** Réglages du document actif : couleur, police, taille, interligne, marges, format, photo, niveaux. */
-export function DesignSettings() {
-  const design = useCvDoc().design
-  const updateDesign = useStore((s) => s.updateDesign)
+/** Réglages du document actif : couleur, police, taille, interligne, marges, format, photo, niveaux. `letter` : ceux de la lettre (mise en page au lieu de photo et niveaux). */
+export function DesignSettings({ letter }: { letter?: boolean }) {
+  const cvDesign = useCvDoc().design
+  const letterDesign = useLetterDoc()?.design
+  const design = (letter && letterDesign) || cvDesign
+  const updateDesign = useStore((s) => (letter ? s.updateLetterDesign : s.updateDesign))
   const uiLang = useStore((s) => s.uiLang)
   const t = v2[uiLang]
   const set = <K extends keyof Design>(k: K, v: Design[K]) => updateDesign({ [k]: v })
 
   return (
     <div className="flex flex-col gap-5">
+      {letter && (
+        <div><p className="mb-1 text-sm font-medium">{letterUi[uiLang].layout}</p>
+          <Seg label={letterUi[uiLang].layout} value={design.templateId} onChange={(v) => set('templateId', v)} options={letterLayouts.map((l) => [l.id, l.name[uiLang]] as const)} /></div>
+      )}
       <fieldset>
         <legend className="mb-1 text-sm font-medium">{ui[uiLang].accent}</legend>
         <div className="flex flex-wrap items-center gap-1">
@@ -123,10 +131,10 @@ export function DesignSettings() {
           <Seg label={t.margins} value={design.margins} onChange={(v) => set('margins', v)} options={[['compact', t.marginOpts.compact], ['normal', t.marginOpts.normal], ['large', t.marginOpts.large]]} /></div>
         <div><p className="mb-1 text-sm font-medium">{t.pageSize}</p>
           <Seg label={t.pageSize} value={design.pageSize} onChange={(v) => set('pageSize', v)} options={[['A4', 'A4'], ['LETTER', 'Letter']]} /></div>
-        <div><p className="mb-1 text-sm font-medium">{t.photoShape}</p>
+        {!letter && <><div><p className="mb-1 text-sm font-medium">{t.photoShape}</p>
           <Seg label={t.photoShape} value={design.photoShape} onChange={(v) => set('photoShape', v)} options={[['circle', t.shapes.circle], ['rounded', t.shapes.rounded], ['square', t.shapes.square]]} /></div>
         <div><p className="mb-1 text-sm font-medium">{t.skillDisplay}</p>
-          <Seg label={t.skillDisplay} value={design.skillDisplay} onChange={(v) => set('skillDisplay', v)} options={[['text', t.displays.text], ['bars', t.displays.bars], ['dots', t.displays.dots]]} /></div>
+          <Seg label={t.skillDisplay} value={design.skillDisplay} onChange={(v) => set('skillDisplay', v)} options={[['text', t.displays.text], ['bars', t.displays.bars], ['dots', t.displays.dots]]} /></div></>}
       </div>
     </div>
   )

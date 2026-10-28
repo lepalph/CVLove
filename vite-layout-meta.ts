@@ -11,7 +11,7 @@ export function layoutMeta(): Plugin {
     name: 'cvlove-layout-meta',
     enforce: 'pre',
     load(id) {
-      if (!/\/layouts\/[^/]+\.tsx\?meta$/.test(id)) return
+      if (!/\/(layouts|letters)\/[^/]+\.tsx\?meta$/.test(id)) return
       const src = readFileSync(id.slice(0, -'?meta'.length), 'utf8')
       const m = /export const meta[^=\n]*=\s*(\{[\s\S]*?\n\})\n/.exec(src)
       if (!m) throw new Error(`${id} : pas de « export const meta = { ... } » en tête de fichier`)

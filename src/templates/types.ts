@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import type { CVLabels } from '../i18n/labels'
-import type { CV, Design, Lang } from '../model/types'
+import type { LetterLabels } from '../i18n/letter'
+import type { CV, Design, Lang, Letter } from '../model/types'
 
 /**
  * CONTRAT DES TEMPLATES (v2)
@@ -92,3 +93,27 @@ export interface TemplateDef {
 
 /** Pastilles d'accent proposées (la couleur reste libre). */
 export const ACCENTS = ['#c2410c', '#1d4ed8', '#047857', '#7c3aed', '#be185d', '#0e7490', '#374151'] as const
+
+/**
+ * LETTRES DE MOTIVATION : même principe que les mises en page de CV, dans `letters/<id>.tsx` (id = nom du fichier = `design.templateId`,
+ * préfixé `lettre-`), registre automatique `letterTemplates.ts`. Le fichier exporte `meta: LetterMeta` (littéral pur, comme pour les CV)
+ * et `Component: (LetterProps) => <Document>`. Même thème (`makeTheme(letter, design, cvLabels[letter.lang])`) : taille, interligne,
+ * marges, A4 / Letter, RTL. Les morceaux communs (destinataire, objet, paragraphes, politesse) sont dans `letterShared.tsx`.
+ */
+export interface LetterProps {
+  letter: Letter
+  design: Design
+  labels: LetterLabels
+}
+
+export interface LetterMeta {
+  /** Nom du fichier sans extension, = `design.templateId`. */
+  id: string
+  name: Record<Lang, string>
+  order: number
+}
+
+export interface LetterModule {
+  Component: ComponentType<LetterProps>
+  meta: LetterMeta
+}

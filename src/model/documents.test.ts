@@ -94,7 +94,7 @@ describe('registre des modèles', () => {
   it('construit mise en page x 3 styles, id = <mise en page>-<n>', () => {
     expect(templates.length).toBeGreaterThanOrEqual(12)
     expect(templates.length % 3).toBe(0)
-    for (const t of templates) expect(t.id).toMatch(/^[a-z]+-[123]$/)
+    for (const t of templates) expect(t.id).toMatch(/^[a-z-]+-[123]$/)
     expect(new Set(templates.map((t) => t.id)).size).toBe(templates.length)
   })
   it('retombe sur le premier modèle si l’id est inconnu', () => {

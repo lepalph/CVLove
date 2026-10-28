@@ -11,6 +11,7 @@ import { LANGS, SECTION_KINDS, type CVDoc, type FieldKind, type Section, type Se
 import { useCvDoc, useStore } from '../store'
 import { Field, Icon, LangSelect } from './bits'
 import { DesignPanel } from './DesignPanel'
+import { LetterLink } from './LetterLink'
 
 const FIELD_ORDER: Exclude<FieldKind, 'custom'>[] = ['birthDate', 'location', 'email', 'phone', 'website']
 
@@ -165,6 +166,7 @@ export function DataCard() {
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn" onClick={loadSample}>{t.loadSample}</button>
           <button type="button" className="btn" onClick={() => exportJson(doc)}>{t.exportJson}</button>
+          <LetterLink />
           <input id="imp" type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
           <label htmlFor="imp" className="btn cursor-pointer">{t.importJson}</label>
           <button type="button" className="btn text-danger" onClick={() => { if (confirm(t.clearConfirm)) clearAll() }}>{t.clearAll}</button>

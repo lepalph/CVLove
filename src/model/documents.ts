@@ -1,4 +1,5 @@
 import { DEFAULT_DESIGN, emptyCV, isCVData, newSection, uid } from './cv'
+import { normalizeLetter } from './letter'
 import type { CV, CVDoc, Design, Doc, Lang } from './types'
 
 /** CV vierge avec les sections de base (une ligne vide chacune), prêt à remplir. */
@@ -31,7 +32,7 @@ export function parseImport(json: string): Doc[] {
   if (d && Array.isArray(d.documents)) {
     const docs = d.documents.filter((x: any) => (x?.kind === 'cv' && isCVData(x.data)) || (x?.kind === 'letter' && x.data))
     if (!docs.length) throw new Error('invalid')
-    return docs.map((x: Doc) => ({ ...x, id: uid(), design: { ...DEFAULT_DESIGN, ...x.design }, updatedAt: Date.now() }))
+    return docs.map((x: Doc) => ({ ...x, ...(x.kind === 'letter' ? { data: normalizeLetter(x.data) } : {}), id: uid(), design: { ...DEFAULT_DESIGN, ...x.design }, updatedAt: Date.now() }))
   }
   if (isCVData(d)) {
     const { templateId, accent, ...data } = d as CV & { templateId?: string; accent?: string }

@@ -1,14 +1,13 @@
 import type { CVLabels } from '../i18n/labels'
 import { isRtl } from '../model/dates'
-import type { CV, Design } from '../model/types'
+import type { Design, Lang } from '../model/types'
 import { fontFor } from '../pdf/fontPairs'
 
 const MARGIN_FACTOR = { compact: 0.75, normal: 1, large: 1.3 } as const
 const RADIUS_FACTOR = { circle: 0.5, rounded: 0.16, square: 0 } as const
 
 /** Design -> valeurs prêtes pour react-pdf. Voir le contrat dans types.ts. */
-export function makeTheme(cv: CV, design: Design, labels: CVLabels) {
-  const { lang } = cv
+export function makeTheme({ lang }: { lang: Lang }, design: Design, labels: CVLabels) {
   const rtl = isRtl(lang)
   const body = fontFor(lang, 'body', design.fontPair)
   const head = fontFor(lang, 'head', design.fontPair)

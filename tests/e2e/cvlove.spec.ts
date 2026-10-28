@@ -281,3 +281,62 @@ test('accueil : le catalogue liste tous les modèles et se filtre', async ({ pag
   await page.getByRole('group', { name: 'Photo' }).getByRole('button', { name: 'Sans photo' }).click()
   await expect.poll(() => cards.count()).toBeLessThan(total)
 })
+
+// ---- lettre de motivation ----
+
+test('lettre : créée depuis un CV (expéditeur repris, indépendant), corps modifié, PDF téléchargé avec le bon texte', async ({ page }) => {
+  await openEditor(page)
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByLabel('Nom', { exact: true }).fill('Durand')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await page.getByRole('button', { name: 'Nouvelle lettre' }).click()
+  await expect(page.getByLabel('CV source')).toHaveValue(/.+/) // le premier CV est proposé
+  await page.getByRole('button', { name: 'Créer la lettre' }).click()
+  await expect(page).toHaveURL(/#\/lettre/)
+  await expect(page.getByRole('button', { name: 'Guidé', pressed: true })).toBeVisible()
+  await expect(page.getByLabel('Nom complet')).toHaveValue('Zoé Durand') // expéditeur repris du CV
+  await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })
+  // parcours guidé : destinataire, objet, corps
+  await page.getByRole('button', { name: 'Suivant' }).click()
+  await page.getByLabel('Entreprise').fill('Studio Pivoine')
+  await page.getByRole('button', { name: 'Suivant' }).click()
+  await page.getByRole('textbox', { name: 'Objet' }).fill('Candidature développeuse')
+  await page.getByRole('button', { name: 'Suivant' }).click()
+  await page.getByLabel('Corps de la lettre').fill('Bonjour à toute l’équipe.\n\nVoici ma motivation.')
+  // bascule en complet sans perte : tout est sur une page
+  await page.getByRole('button', { name: 'Complet' }).click()
+  await expect(page.getByLabel('Corps de la lettre')).toHaveValue(/Voici ma motivation/)
+  await expect(page.getByLabel('Entreprise')).toHaveValue('Studio Pivoine')
+  await page.getByLabel('Corps de la lettre').fill('Bonjour à toute l’équipe.\n\nVoici ma motivation modifiée.')
+  const d = await download(page)
+  expect(d.suggestedFilename()).toBe('Lettre-Zoe-Durand.pdf')
+  const pdf = await pdfOf((await d.path())!)
+  for (const s of ['Zoé Durand', 'Studio Pivoine', 'Objet', 'Candidature développeuse', 'Madame, Monsieur,', 'Voici ma motivation modifiée.']) expect(pdf.text).toContain(s)
+  // le CV n'a pas bougé quand on édite la lettre
+  await page.getByLabel('Nom complet').fill('Autre Nom')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(2)
+  await page.getByRole('button', { name: 'Ouvrir : CV', exact: true }).click()
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  // et la lettre se rouvre depuis la liste, avec ses modifications
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await page.getByRole('button', { name: /^Ouvrir : Lettre/ }).click()
+  await expect(page).toHaveURL(/#\/lettre/)
+  await expect(page.getByLabel('Nom complet')).toHaveValue('Autre Nom')
+})
+
+test('éditeur de CV : « Créer la lettre assortie » reprend le CV, l’accent et la langue ; la langue de la lettre change les formules', async ({ page }) => {
+  await openEditor(page)
+  await page.locator('input[type=color]').fill('#0e7490')
+  await page.getByRole('button', { name: 'Créer la lettre assortie' }).click()
+  await expect(page).toHaveURL(/#\/lettre/)
+  await page.getByRole('button', { name: 'Complet' }).click()
+  await expect(page.getByLabel('Nom complet')).toHaveValue('Camille Marchand')
+  await expect(page.locator('input[type=color]')).toHaveValue('#0e7490')
+  await expect(page.getByLabel('Formule d’appel')).toHaveValue('Madame, Monsieur,')
+  await page.getByLabel('Langue de la lettre').selectOption('en')
+  await expect(page.getByLabel('Formule d’appel')).toHaveValue('Dear Sir or Madam,')
+  const pdf = await pdfOf((await (await download(page)).path())!)
+  expect(pdf.text).toContain('Dear Sir or Madam,')
+  expect(pdf.colors).toContain('#0e7490')
+})

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { exportDocs } from '../model/documents'
@@ -14,15 +15,19 @@ const download = (name: string, json: string) => {
 
 /** #/documents : liste des CV (et lettres) ; créer, ouvrir, dupliquer, renommer, supprimer, exporter / importer en JSON. */
 export function Documents() {
-  const { documents, activeId, uiLang, setUiLang, openDoc, createCV, duplicate, rename, remove, importDocs } = useStore()
+  const { documents, activeId, uiLang, setUiLang, openDoc, createCV, createLetter, duplicate, rename, remove, importDocs } = useStore()
   const t = v2[uiLang]
+  const L = letterUi[uiLang]
+  const cvs = documents.filter((d) => d.kind === 'cv')
+  const [asking, setAsking] = useState(false)
+  const [source, setSource] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const open = (id: string) => {
     openDoc(id)
-    location.hash = '#/editeur'
+    location.hash = useStore.getState().documents.find((d) => d.id === id)?.kind === 'letter' ? '#/lettre' : '#/editeur'
   }
   const onImport = async (f?: File) => {
     if (!f) return
@@ -54,10 +59,25 @@ export function Documents() {
         <p className="mt-3 max-w-[34rem] text-pretty text-lg text-muted">{t.docsSub}</p>
         <div className="mt-6 flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary" onClick={() => open(createCV())}>{t.newCV}</button>
+          <button type="button" className="btn" aria-expanded={asking} onClick={() => { setAsking(!asking); setSource(cvs[0]?.id ?? '') }}>{L.newLetter}</button>
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
           <button type="button" className="btn" onClick={() => fileRef.current?.click()}>{t.importFile}</button>
           <button type="button" className="btn" onClick={() => download('cvlove-documents.json', exportDocs(documents))}>{t.exportAll}</button>
         </div>
+        {asking && (
+          <form className="mt-4 flex max-w-[34rem] flex-wrap items-end gap-2 rounded-card border border-line p-4" aria-label={L.newLetter}
+            onSubmit={(e) => { e.preventDefault(); open(createLetter(source || undefined)) }}>
+            <label className="block min-w-[12rem] flex-1">
+              <span className="mb-1 block text-sm font-medium">{L.source}</span>
+              <select className="inp" value={source} onChange={(e) => setSource(e.target.value)}>
+                {cvs.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                <option value="">{L.scratch}</option>
+              </select>
+            </label>
+            <button type="submit" className="btn btn-primary">{L.create}</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setAsking(false)}>{L.cancel}</button>
+          </form>
+        )}
         {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
 
         <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs}>
@@ -77,7 +97,7 @@ export function Documents() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">
-                {d.kind === 'cv' && <button type="button" className="btn" aria-label={`${t.open} : ${d.name}`} onClick={() => open(d.id)}>{t.open}</button>}
+                <button type="button" className="btn" aria-label={`${t.open} : ${d.name}`} onClick={() => open(d.id)}>{t.open}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.duplicate} : ${d.name}`} onClick={() => duplicate(d.id)}>{t.duplicate}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.rename} : ${d.name}`} onClick={() => setEditing(d.id)}>{t.rename}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.exportDoc} : ${d.name}`} onClick={() => download(`${d.name.replace(/[^\p{L}\p{N}]+/gu, '-')}.json`, exportDocs([d]))}>{t.exportDoc}</button>

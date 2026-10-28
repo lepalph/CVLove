@@ -1,10 +1,12 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { detectLang } from './i18n/ui'
-import { emptyCV } from './model/cv'
+import { DEFAULT_DESIGN, emptyCV } from './model/cv'
 import { blankCV, duplicateDoc, freeName, migrateV1, newCVDoc, parseImport, patchDoc } from './model/documents'
+import { blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
 import { sampleCV } from './model/sample'
-import type { CV, CVDoc, Design, Doc, EditorMode, Lang } from './model/types'
+import type { CV, CVDoc, Design, Doc, EditorMode, Lang, Letter, LetterDoc } from './model/types'
+import { getTemplate } from './templates'
 
 interface State {
   documents: Doc[]
@@ -21,6 +23,12 @@ interface State {
   loadSample: () => void
   /** Remplace le contenu et le design du document actif par le premier CV du fichier. */
   importJson: (json: string) => void
+  /** Lettre du document actif (voir `selectLetterDoc`). */
+  updateLetter: (fn: (l: Letter) => Letter) => void
+  updateLetterDesign: (patch: Partial<Design>) => void
+  setLetterMode: (m: EditorMode) => void
+  /** Crée une lettre (expéditeur copié du CV `cvId`, sinon vierge), la rend active et renvoie son id. */
+  createLetter: (cvId?: string) => string
   // Mes documents
   openDoc: (id: string) => void
   createCV: () => string
@@ -40,6 +48,12 @@ export const selectCvDoc = (s: Pick<State, 'documents' | 'activeId'>): CVDoc =>
 
 export const useCvDoc = () => useStore(selectCvDoc)
 
+/** Lettre du document actif ; si c'est un CV, la première lettre (absente : undefined). */
+export const selectLetterDoc = (s: Pick<State, 'documents' | 'activeId'>): LetterDoc | undefined =>
+  (s.documents.find((d) => d.id === s.activeId && d.kind === 'letter') ?? s.documents.find((d) => d.kind === 'letter')) as LetterDoc | undefined
+
+export const useLetterDoc = () => useStore(selectLetterDoc)
+
 export const useStore = create<State>()(
   persist(
     (set, get) => {
@@ -47,6 +61,11 @@ export const useStore = create<State>()(
         set((s) => {
           const d = selectCvDoc(s)
           return { documents: patchDoc(s.documents, d.id, { ...patch(d), updatedAt: Date.now() }) }
+        })
+      const patchLetterDoc = (patch: (d: LetterDoc) => Partial<LetterDoc>, touch = true) =>
+        set((s) => {
+          const d = selectLetterDoc(s)
+          return d ? { documents: patchDoc(s.documents, d.id, { ...patch(d), ...(touch ? { updatedAt: Date.now() } : {}) }) } : s
         })
       return {
         documents: [first],
@@ -62,6 +81,19 @@ export const useStore = create<State>()(
           const imported = parseImport(json).find((d) => d.kind === 'cv') as CVDoc | undefined
           if (!imported) throw new Error('invalid')
           patchActive(() => ({ data: imported.data, design: imported.design }))
+        },
+        updateLetter: (fn) => patchLetterDoc((d) => ({ data: fn(d.data) })),
+        updateLetterDesign: (patch) => patchLetterDoc((d) => ({ design: { ...d.design, ...patch } })),
+        setLetterMode: (editorMode) => patchLetterDoc(() => ({ editorMode }), false),
+        createLetter: (cvId) => {
+          const s = get()
+          const src = s.documents.find((d): d is CVDoc => d.id === cvId && d.kind === 'cv')
+          const name = freeName(s.documents, 'Lettre')
+          const doc = src
+            ? newLetterDoc(name, letterFromCV(src.data), letterDesignFrom(src.design, getTemplate(src.design.templateId).category))
+            : newLetterDoc(name, blankLetter(s.uiLang), { ...DEFAULT_DESIGN, templateId: 'lettre-classique' })
+          set((st) => ({ documents: [...st.documents, doc], activeId: doc.id }))
+          return doc.id
         },
         openDoc: (id) => set({ activeId: id }),
         createCV: () => {
