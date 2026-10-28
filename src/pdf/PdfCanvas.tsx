@@ -27,17 +27,16 @@ interface Props {
  */
 export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, onState }: Props) {
   const host = useRef<HTMLDivElement>(null)
-  const job = useRef(0)
 
   useEffect(() => {
-    const id = ++job.current
+    let dead = false // posé au nettoyage (démontage ou nouveau rendu) : ce rendu n'a plus le droit de peindre ni de signaler une erreur
     const tasks: RenderTask[] = []
     let loading: PDFDocumentLoadingTask | undefined
     const timer = setTimeout(async () => {
       onState?.('busy')
       try {
         const [lib, bytes] = await Promise.all([loadPdfjs(), make()])
-        if (id !== job.current) return
+        if (dead) return
         loading = lib.getDocument({ data: bytes })
         const doc = await loading.promise
         const width = host.current?.clientWidth || 600
@@ -45,7 +44,7 @@ export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, 
         const canvases: HTMLCanvasElement[] = []
         for (let n = 1; n <= Math.min(doc.numPages, maxPages); n++) {
           const page = await doc.getPage(n)
-          if (id !== job.current) return
+          if (dead) return
           const base = page.getViewport({ scale: 1 })
           const viewport = page.getViewport({ scale: (width / base.width) * dpr })
           const canvas = document.createElement('canvas')
@@ -57,20 +56,21 @@ export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, 
           await task.promise
           canvases.push(canvas)
         }
-        if (id !== job.current) return
+        if (dead) return
         host.current?.replaceChildren(...canvases)
         onState?.('ready')
       } catch (e) {
-        if (id === job.current && (e as Error).name !== 'RenderingCancelledException') {
+        if (!dead && (e as Error).name !== 'RenderingCancelledException') {
           console.error(e)
           onState?.('error')
         }
       }
     }, debounce)
     return () => {
+      dead = true
       clearTimeout(timer)
       tasks.forEach((t) => t.cancel())
-      if (id === job.current) void loading?.destroy()
+      void loading?.destroy()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
