@@ -4,7 +4,7 @@ import { detectLang } from './i18n/ui'
 import { emptyCV } from './model/cv'
 import { blankCV, duplicateDoc, freeName, migrateV1, newCVDoc, parseImport, patchDoc } from './model/documents'
 import { sampleCV } from './model/sample'
-import type { CV, CVDoc, Design, Doc, Lang } from './model/types'
+import type { CV, CVDoc, Design, Doc, EditorMode, Lang } from './model/types'
 
 interface State {
   documents: Doc[]
@@ -15,6 +15,8 @@ interface State {
   /** Modifie le design du document actif (un modèle choisi = `{ ...preset, templateId }`). */
   updateDesign: (patch: Partial<Design>) => void
   setUiLang: (l: Lang) => void
+  /** Mode guidé / complet du document actif (mémorisé avec lui, sans toucher à sa date de modification). */
+  setEditorMode: (m: EditorMode) => void
   clearAll: () => void
   loadSample: () => void
   /** Remplace le contenu et le design du document actif par le premier CV du fichier. */
@@ -53,6 +55,7 @@ export const useStore = create<State>()(
         update: (fn) => patchActive((d) => ({ data: fn(d.data) })),
         updateDesign: (patch) => patchActive((d) => ({ design: { ...d.design, ...patch } })),
         setUiLang: (uiLang) => set({ uiLang }),
+        setEditorMode: (editorMode) => set((s) => ({ documents: patchDoc(s.documents, selectCvDoc(s).id, { editorMode }) })),
         clearAll: () => patchActive((d) => ({ data: emptyCV(d.data.lang) })),
         loadSample: () => patchActive((d) => ({ data: sampleCV(d.data.lang) })),
         importJson: (json) => {

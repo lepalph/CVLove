@@ -101,11 +101,15 @@ export interface Letter {
   signature: string
 }
 
+/** Mode d'édition d'un CV : absent (documents migrés ou importés) = complet ; un nouveau document démarre en guidé. */
+export type EditorMode = 'guided' | 'full'
+
 interface DocBase {
   id: string
   name: string
   updatedAt: number // ms depuis epoch
   design: Design
+  editorMode?: EditorMode
 }
 export type CVDoc = DocBase & { kind: 'cv'; data: CV }
 export type LetterDoc = DocBase & { kind: 'letter'; data: Letter }

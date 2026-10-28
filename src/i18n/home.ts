@@ -17,6 +17,7 @@ export interface Home {
   howTitle: string
   /** [mot d'ordre, explication] */
   steps: [string, string][]
+  /** `{n}` = nombre de modèles du catalogue. */
   modelsTitle: string
   useTemplate: string
   privacyTitle: string
@@ -46,7 +47,7 @@ const fr: Home = {
     ['Changez de modèle quand vous voulez.', 'Vos informations sont conservées, seule la mise en page change.'],
     ['Téléchargez.', 'Le PDF est fabriqué dans votre navigateur et prêt à envoyer.'],
   ],
-  modelsTitle: 'Quatre modèles pour commencer', useTemplate: 'Commencer avec ce modèle',
+  modelsTitle: 'Un catalogue de {n} modèles', useTemplate: 'Commencer avec ce modèle',
   privacyTitle: 'Vos données restent chez vous',
   privacyText: 'Vous n’avez pas de compte à créer et aucun serveur ne stocke votre CV : il est enregistré dans votre navigateur, qui fabrique aussi le PDF. Le code est public, n’importe qui peut le vérifier. Pour passer sur un autre appareil, exportez votre CV dans un fichier puis réimportez-le.',
   readCode: 'Lire le code',
@@ -72,7 +73,7 @@ const en: Home = {
     ['Switch templates whenever you like.', 'Your details are kept, only the layout changes.'],
     ['Download.', 'The PDF is built in your browser and ready to send.'],
   ],
-  modelsTitle: 'Four templates to start with', useTemplate: 'Start with this template',
+  modelsTitle: 'A catalogue of {n} templates', useTemplate: 'Start with this template',
   privacyTitle: 'Your data stays with you',
   privacyText: 'You don’t need an account and no server stores your CV: it is saved in your browser, which also builds the PDF. The code is public, anyone can check it. To move to another device, export your CV to a file and import it again.',
   readCode: 'Read the code',
@@ -98,7 +99,7 @@ const es: Home = {
     ['Cambia de plantilla cuando quieras.', 'Tus datos se conservan, solo cambia el diseño.'],
     ['Descarga.', 'El PDF se crea en tu navegador y queda listo para enviar.'],
   ],
-  modelsTitle: 'Cuatro plantillas para empezar', useTemplate: 'Empezar con esta plantilla',
+  modelsTitle: 'Un catálogo de {n} plantillas', useTemplate: 'Empezar con esta plantilla',
   privacyTitle: 'Tus datos se quedan contigo',
   privacyText: 'No tienes que crear ninguna cuenta y ningún servidor guarda tu CV: se guarda en tu navegador, que también crea el PDF. El código es público y cualquiera puede comprobarlo. Para pasar a otro dispositivo, exporta tu CV a un archivo y vuelve a importarlo.',
   readCode: 'Leer el código',
@@ -124,7 +125,7 @@ const de: Home = {
     ['Wechseln Sie die Vorlage, wann Sie möchten.', 'Ihre Angaben bleiben erhalten, nur das Layout ändert sich.'],
     ['Herunterladen.', 'Das PDF wird in Ihrem Browser erstellt und ist sofort versandbereit.'],
   ],
-  modelsTitle: 'Vier Vorlagen für den Start', useTemplate: 'Mit dieser Vorlage beginnen',
+  modelsTitle: 'Ein Katalog mit {n} Vorlagen', useTemplate: 'Mit dieser Vorlage beginnen',
   privacyTitle: 'Ihre Daten bleiben bei Ihnen',
   privacyText: 'Sie brauchen kein Konto, und kein Server speichert Ihren Lebenslauf: Er wird in Ihrem Browser gespeichert, der auch das PDF erstellt. Der Code ist öffentlich, jeder kann ihn überprüfen. Für den Wechsel auf ein anderes Gerät exportieren Sie Ihren Lebenslauf in eine Datei und importieren ihn dort wieder.',
   readCode: 'Code lesen',
@@ -150,7 +151,7 @@ const it: Home = {
     ['Cambia modello quando vuoi.', 'I tuoi dati restano, cambia solo l’impaginazione.'],
     ['Scarica.', 'Il PDF viene creato nel tuo browser ed è pronto da inviare.'],
   ],
-  modelsTitle: 'Quattro modelli per iniziare', useTemplate: 'Inizia con questo modello',
+  modelsTitle: 'Un catalogo di {n} modelli', useTemplate: 'Inizia con questo modello',
   privacyTitle: 'I tuoi dati restano con te',
   privacyText: 'Non devi creare nessun account e nessun server conserva il tuo CV: è salvato nel tuo browser, che crea anche il PDF. Il codice è pubblico, chiunque può verificarlo. Per passare a un altro dispositivo, esporta il CV in un file e importalo di nuovo.',
   readCode: 'Leggi il codice',
@@ -176,7 +177,7 @@ const pt: Home = {
     ['Mude de modelo quando quiser.', 'Os seus dados são mantidos, só o layout muda.'],
     ['Descarregue.', 'O PDF é criado no seu navegador e fica pronto a enviar.'],
   ],
-  modelsTitle: 'Quatro modelos para começar', useTemplate: 'Começar com este modelo',
+  modelsTitle: 'Um catálogo de {n} modelos', useTemplate: 'Começar com este modelo',
   privacyTitle: 'Os seus dados ficam consigo',
   privacyText: 'Não precisa de criar conta e nenhum servidor guarda o seu CV: ele fica guardado no seu navegador, que também cria o PDF. O código é público, qualquer pessoa o pode verificar. Para mudar de dispositivo, exporte o seu CV para um ficheiro e importe-o de novo.',
   readCode: 'Ler o código',
@@ -202,7 +203,7 @@ const ar: Home = {
     ['غيّر القالب متى شئت.', 'تبقى معلوماتك كما هي، ويتغير التصميم فقط.'],
     ['نزّل.', 'يُنشأ ملف PDF داخل متصفحك وهو جاهز للإرسال.'],
   ],
-  modelsTitle: 'أربعة قوالب للبدء', useTemplate: 'ابدأ بهذا القالب',
+  modelsTitle: 'كتالوج من {n} قالبًا', useTemplate: 'ابدأ بهذا القالب',
   privacyTitle: 'بياناتك تبقى عندك',
   privacyText: 'لا حاجة إلى إنشاء حساب، ولا يخزّن أي خادم سيرتك الذاتية: تُحفظ في متصفحك الذي ينشئ ملف PDF أيضًا. الشيفرة علنية ويمكن لأي شخص التحقق منها. للانتقال إلى جهاز آخر، صدّر سيرتك الذاتية إلى ملف ثم استورده من جديد.',
   readCode: 'اقرأ الشيفرة',

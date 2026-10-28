@@ -5,14 +5,15 @@ import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { LANGS, type Lang } from '../model/types'
 import { useStore } from '../store'
-import { layouts } from '../templates'
+import { layouts, templates } from '../templates'
 import { GithubIcon, LangSelect, Logo } from './bits'
+import { useModelFilter } from './DesignPanel'
 import { SamplePage } from './SamplePage'
 
 const H2 = 'text-balance text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[2rem]'
 const SECTION = 'py-14 sm:py-20'
 const EDITOR = '#/editeur'
-// La page d'accueil présente les 4 mises en page d'origine (textes « quatre modèles ») ; l'éditeur propose tout le catalogue.
+// La démo du hero garde les 4 mises en page d'origine (légende « quatre mises en page ») ; le catalogue en dessous liste tout le registre.
 const HOME_LAYOUTS = ['classique', 'moderne', 'minimal', 'creatif']
 const homeTemplates = layouts.filter((l) => HOME_LAYOUTS.includes(l.layoutId))
 
@@ -22,9 +23,10 @@ export function Home() {
   const updateDesign = useStore((s) => s.updateDesign)
   const t = home[uiLang]
   const [demo, setDemo] = useState(homeTemplates[0].id)
+  const { shown, filters } = useModelFilter(true)
 
   const start = (templateId: string) => {
-    updateDesign({ ...homeTemplates.find((m) => m.id === templateId)?.preset, templateId })
+    updateDesign({ ...templates.find((m) => m.id === templateId)?.preset, templateId })
     location.hash = EDITOR
   }
   const wrap = 'mx-auto w-full max-w-[75rem] px-[var(--m)]'
@@ -96,15 +98,19 @@ export function Home() {
         </section>
 
         <section id="modeles" className={`${wrap} ${SECTION} border-t border-line`}>
-          <h2 className={H2}>{t.modelsTitle}</h2>
+          <h2 className={H2}>{t.modelsTitle.replace('{n}', String(templates.length))}</h2>
+          <div className="mt-8">{filters}</div>
           <ul className="mt-10 grid list-none grid-cols-2 gap-x-4 gap-y-8 p-0 lg:grid-cols-4 lg:gap-x-6">
-            {homeTemplates.map((tpl) => (
-              <li key={tpl.id} className="flex flex-col gap-3">
-                <SamplePage lang={uiLang} templateId={tpl.id} />
-                <h3 className="text-lg font-semibold tracking-tight">{tpl.layoutName[uiLang]}</h3>
-                <button type="button" className="btn mt-auto w-full" aria-label={`${t.useTemplate} (${tpl.layoutName[uiLang]})`} onClick={() => start(tpl.id)}>{t.useTemplate}</button>
-              </li>
-            ))}
+            {shown.map((tpl) => {
+              const name = `${tpl.layoutName[uiLang]} · ${tpl.styleName}`
+              return (
+                <li key={tpl.id} className="flex flex-col gap-3">
+                  <SamplePage lang={uiLang} templateId={tpl.id} />
+                  <h3 className="text-lg font-semibold tracking-tight">{name}</h3>
+                  <button type="button" className="btn mt-auto w-full" aria-label={`${t.useTemplate} (${name})`} onClick={() => start(tpl.id)}>{t.useTemplate}</button>
+                </li>
+              )
+            })}
           </ul>
         </section>
 

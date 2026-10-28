@@ -7,7 +7,7 @@ import {
   addCustomField, addItem, addSection, moveItem, moveSection, patchField, patchItem, patchSection,
   removeField, removeItem, removeSection, setLang, addField,
 } from '../model/cv'
-import { LANGS, SECTION_KINDS, type FieldKind, type Section } from '../model/types'
+import { LANGS, SECTION_KINDS, type CVDoc, type FieldKind, type Section, type SectionKind } from '../model/types'
 import { useCvDoc, useStore } from '../store'
 import { Field, Icon, LangSelect } from './bits'
 import { DesignPanel } from './DesignPanel'
@@ -108,25 +108,42 @@ export function PersonalCard() {
   )
 }
 
-export function SectionsCard() {
+/**
+ * Sections du CV. Sans `only`, toutes (mode complet) ; avec `only`, seulement ces types (une étape du mode guidé) : les boutons d'ajout
+ * proposent alors les types de `add` qui n'existent pas encore (les sections libres restent toujours ajoutables). `title === false` : pas de titre.
+ */
+export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: readonly SectionKind[]; add?: readonly SectionKind[]; title?: string | false }) {
   const cv = useCvDoc().data
   const update = useStore((s) => s.update)
   const t = ui[useStore((s) => s.uiLang)]
   const labels = cvLabels[cv.lang]
+  const shown = cv.sections.map((s, i) => ({ s, i })).filter(({ s }) => !only || only.includes(s.kind))
+  const addable = add.filter((k) => !only || k === 'custom' || !cv.sections.some((s) => s.kind === k))
   return (
-      <Card title={t.sections}>
-        {cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
+      <Card title={title === false ? undefined : (title ?? t.sections)}>
+        {!only && cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
         <ul className="flex flex-col gap-6">
-          {cv.sections.map((s, i) => (
+          {shown.map(({ s, i }) => (
             <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} />
           ))}
         </ul>
-        <p className="mb-2 mt-5 text-sm font-medium">{t.addSection}</p>
-        <div className="flex flex-wrap gap-2">
-          {SECTION_KINDS.map((k) => <button key={k} type="button" className="btn" onClick={() => update((c) => addSection(c, k))}>+ {t.kinds[k]}</button>)}
-        </div>
+        {addable.length > 0 && (
+          <>
+            <p className="mb-2 mt-5 text-sm font-medium">{t.addSection}</p>
+            <div className="flex flex-wrap gap-2">
+              {addable.map((k) => <button key={k} type="button" className="btn" onClick={() => update((c) => addSection(c, k))}>+ {t.kinds[k]}</button>)}
+            </div>
+          </>
+        )}
       </Card>
   )
+}
+
+/** Télécharge le document en JSON (`cvlove.json`). */
+export function exportJson(doc: CVDoc) {
+  const url = URL.createObjectURL(new Blob([exportDocs([doc])], { type: 'application/json' }))
+  Object.assign(document.createElement('a'), { href: url, download: 'cvlove.json' }).click()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
 export function DataCard() {
@@ -143,16 +160,11 @@ export function DataCard() {
       setError(t.importError)
     }
   }
-  const exportJson = () => {
-    const url = URL.createObjectURL(new Blob([exportDocs([doc])], { type: 'application/json' }))
-    Object.assign(document.createElement('a'), { href: url, download: 'cvlove.json' }).click()
-    setTimeout(() => URL.revokeObjectURL(url), 10_000)
-  }
   return (
       <Card>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn" onClick={loadSample}>{t.loadSample}</button>
-          <button type="button" className="btn" onClick={exportJson}>{t.exportJson}</button>
+          <button type="button" className="btn" onClick={() => exportJson(doc)}>{t.exportJson}</button>
           <input id="imp" type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
           <label htmlFor="imp" className="btn cursor-pointer">{t.importJson}</label>
           <button type="button" className="btn text-danger" onClick={() => { if (confirm(t.clearConfirm)) clearAll() }}>{t.clearAll}</button>
@@ -163,7 +175,7 @@ export function DataCard() {
   )
 }
 
-const Card = ({ title, children }: { title?: string; children: React.ReactNode }) => (
+export const Card = ({ title, children }: { title?: string; children: React.ReactNode }) => (
   <section className="border-t border-line pt-6 first:border-t-0 first:pt-0">
     {title && <h2 className="mb-4 text-xl font-semibold tracking-tight">{title}</h2>}
     {children}

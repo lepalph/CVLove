@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { guide } from '../i18n/guide'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { pdfFileName } from '../model/cv'
@@ -6,11 +7,16 @@ import { LANGS } from '../model/types'
 import { renderLazy } from '../pdf/lazy'
 import { PdfCanvas } from '../pdf/PdfCanvas'
 import { useCvDoc, useStore } from '../store'
-import { LangSelect, Logo } from './bits'
+import { LangSelect, Logo, Seg } from './bits'
 import { Form } from './Form'
+import { Guided, useGuidedProgress } from './Guided'
 
 export function Editor() {
-  const { data: cv, design } = useCvDoc()
+  const { data: cv, design, editorMode } = useCvDoc()
+  const setEditorMode = useStore((s) => s.setEditorMode)
+  const mode = editorMode ?? 'full' // documents migrés : complet
+  const g = guide[useStore((s) => s.uiLang)]
+  const progress = useGuidedProgress()
   const uiLang = useStore((s) => s.uiLang)
   const setUiLang = useStore((s) => s.setUiLang)
   const t = ui[uiLang]
@@ -41,6 +47,9 @@ export function Editor() {
             <span className="max-sm:hidden">{v2[uiLang].docs}</span>
           </a>
         </div>
+        <div className="a-mode">
+          <Seg label={g.mode} value={mode} onChange={setEditorMode} options={[['guided', g.guided], ['full', g.full]]} />
+        </div>
         <div role="tablist" className="a-tabs flex rounded-ctl border border-edge p-0.5 lg:hidden">
           {(['edit', 'preview'] as const).map((k) => (
             <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
@@ -54,7 +63,7 @@ export function Editor() {
       </header>
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(26rem,32rem)_1fr]">
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:h-[calc(100dvh-4.5rem)] lg:border-e lg:p-8`}>
-          <Form />
+          {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} /> : <Form />}
         </div>
         <div className={`${tab === 'preview' ? 'block' : 'hidden'} overflow-y-auto p-[var(--m)] lg:block lg:h-[calc(100dvh-4.5rem)] lg:p-8`}>
           <div className="relative mx-auto w-full max-w-[46rem]">

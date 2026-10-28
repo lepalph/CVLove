@@ -45,6 +45,11 @@ describe('migration v1 -> v2', () => {
     expect(templates.map((t) => t.id)).toContain(doc.design.templateId) // le modèle existe dans le registre
   })
 
+  it('mode d’édition : guidé pour un nouveau document, complet pour un document migré', () => {
+    expect(newCVDoc('CV', sampleCV('fr')).editorMode).toBe('guided')
+    expect(migrateV1(v1.state as never).documents[0].editorMode).toBe('full')
+  })
+
   it('un état v1 illisible donne un CV vierge plutôt qu’une erreur', () => {
     expect(migrateV1({} as never).documents).toHaveLength(1)
   })

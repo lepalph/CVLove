@@ -12,51 +12,81 @@ import { SamplePage } from './SamplePage'
 type Cols = 'all' | '1' | '2'
 type Photo = 'all' | 'yes' | 'no'
 
-/** Panneau Design : modèles (vignettes + filtres) et réglages du document actif. Réutilisable tel quel dans le mode guidé. */
-export function DesignPanel() {
-  const { data: cv, design } = useCvDoc()
-  const updateDesign = useStore((s) => s.updateDesign)
-  const uiLang = useStore((s) => s.uiLang)
-  const t = v2[uiLang]
+/** Filtres du catalogue (catégorie, colonnes, photo) : `shown` = modèles retenus, `filters` = les contrôles. Partagé par l'éditeur et l'accueil. */
+export function useModelFilter(wide?: boolean) {
+  const t = v2[useStore((s) => s.uiLang)]
   const [cat, setCat] = useState<Category | 'all'>('all')
   const [cols, setCols] = useState<Cols>('all')
   const [photo, setPhoto] = useState<Photo>('all')
-  const set = <K extends keyof Design>(k: K, v: Design[K]) => updateDesign({ [k]: v })
-
   const shown = useMemo(
     () => templates.filter((m) => (cat === 'all' || m.category === cat) && (cols === 'all' || String(m.columns) === cols) && (photo === 'all' || m.photo === (photo === 'yes'))),
     [cat, cols, photo],
   )
+  const filters = (
+    <div className="flex flex-col gap-3">
+      <Seg label={t.category} value={cat} onChange={setCat}
+        options={[['all', t.all], ...CATEGORIES.map((c) => [c, t.cats[c]] as const)]} />
+      <div className={`grid gap-3 ${wide ? 'sm:grid-cols-2' : ''}`}>
+        <Seg label={t.columns} value={cols} onChange={setCols} options={[['all', t.all], ['1', t.oneCol], ['2', t.twoCols]]} />
+        <Seg label={t.photoFilter} value={photo} onChange={setPhoto} options={[['all', t.all], ['yes', t.withPhoto], ['no', t.withoutPhoto]]} />
+      </div>
+      {shown.length === 0 && <p className="text-sm text-muted">{t.noModel}</p>}
+    </div>
+  )
+  return { shown, filters }
+}
+
+/** Modèles : filtres + vignettes (vrais rendus). `tall` = sans hauteur maximale (étape « Modèle » du mode guidé). */
+export function ModelGallery({ tall }: { tall?: boolean }) {
+  const { data: cv, design } = useCvDoc()
+  const updateDesign = useStore((s) => s.updateDesign)
+  const uiLang = useStore((s) => s.uiLang)
+  const t = v2[uiLang]
+  const { shown, filters } = useModelFilter()
+  return (
+    <div className="flex flex-col gap-3" role="group" aria-label={t.models}>
+      <p className="font-mono text-xs uppercase tracking-wide text-muted">{t.models}</p>
+      {filters}
+      <ul className={`m-0 grid list-none grid-cols-3 gap-3 p-1 ${tall ? '' : 'max-h-[28rem] overflow-y-auto'}`}>
+        {shown.map((m) => {
+          const on = design.templateId === m.id
+          const name = `${m.layoutName[uiLang]} · ${m.styleName}`
+          return (
+            <li key={m.id}>
+              <button type="button" aria-pressed={on} aria-label={name} onClick={() => updateDesign({ ...m.preset, templateId: m.id })}
+                className="group flex w-full flex-col gap-1.5 rounded-[4px] bg-transparent p-0 text-start">
+                <SamplePage lang={cv.lang} templateId={m.id}
+                  className="!shadow-none outline outline-1 -outline-offset-1 outline-edge transition-shadow duration-150 group-hover:outline-faint group-aria-pressed:!outline-2 group-aria-pressed:outline-ink" />
+                <span className={`text-xs leading-tight ${on ? 'font-semibold text-ink' : 'text-muted'}`}>{name}</span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
+/** Panneau Design complet (mode complet) : modèles + réglages. */
+export function DesignPanel() {
+  return (
+    <div className="flex flex-col gap-5">
+      <ModelGallery />
+      <DesignSettings />
+    </div>
+  )
+}
+
+/** Réglages du document actif : couleur, police, taille, interligne, marges, format, photo, niveaux. */
+export function DesignSettings() {
+  const design = useCvDoc().design
+  const updateDesign = useStore((s) => s.updateDesign)
+  const uiLang = useStore((s) => s.uiLang)
+  const t = v2[uiLang]
+  const set = <K extends keyof Design>(k: K, v: Design[K]) => updateDesign({ [k]: v })
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-3" role="group" aria-label={t.models}>
-        <p className="font-mono text-xs uppercase tracking-wide text-muted">{t.models}</p>
-        <Seg label={t.category} value={cat} onChange={setCat}
-          options={[['all', t.all], ...CATEGORIES.map((c) => [c, t.cats[c]] as const)]} />
-        <div className="grid gap-3">
-          <Seg label={t.columns} value={cols} onChange={setCols} options={[['all', t.all], ['1', t.oneCol], ['2', t.twoCols]]} />
-          <Seg label={t.photoFilter} value={photo} onChange={setPhoto} options={[['all', t.all], ['yes', t.withPhoto], ['no', t.withoutPhoto]]} />
-        </div>
-        {shown.length === 0 && <p className="text-sm text-muted">{t.noModel}</p>}
-        <ul className="m-0 grid max-h-[28rem] list-none grid-cols-3 gap-3 overflow-y-auto p-1">
-          {shown.map((m) => {
-            const on = design.templateId === m.id
-            const name = `${m.layoutName[uiLang]} · ${m.styleName}`
-            return (
-              <li key={m.id}>
-                <button type="button" aria-pressed={on} aria-label={name} onClick={() => updateDesign({ ...m.preset, templateId: m.id })}
-                  className="group flex w-full flex-col gap-1.5 rounded-[4px] bg-transparent p-0 text-start">
-                  <SamplePage lang={cv.lang} templateId={m.id}
-                    className="!shadow-none outline outline-1 -outline-offset-1 outline-edge transition-shadow duration-150 group-hover:outline-faint group-aria-pressed:!outline-2 group-aria-pressed:outline-ink" />
-                  <span className={`text-xs leading-tight ${on ? 'font-semibold text-ink' : 'text-muted'}`}>{name}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-
       <fieldset>
         <legend className="mb-1 text-sm font-medium">{ui[uiLang].accent}</legend>
         <div className="flex flex-wrap items-center gap-1">

@@ -7,7 +7,7 @@ export function blankCV(lang: Lang): CV {
 }
 
 export const newCVDoc = (name: string, data: CV, design: Design = DEFAULT_DESIGN): CVDoc => ({
-  id: uid(), kind: 'cv', name, updatedAt: Date.now(), design, data,
+  id: uid(), kind: 'cv', name, updatedAt: Date.now(), design, data, editorMode: 'guided',
 })
 
 /** Copie profonde avec de nouveaux identifiants de document (les ids internes peuvent rester : ils ne sont uniques que dans un document). */
@@ -35,7 +35,7 @@ export function parseImport(json: string): Doc[] {
   }
   if (isCVData(d)) {
     const { templateId, accent, ...data } = d as CV & { templateId?: string; accent?: string }
-    return [newCVDoc('CV', { ...emptyCV(), ...data }, designFromV1({ templateId, accent }))]
+    return [{ ...newCVDoc('CV', { ...emptyCV(), ...data }, designFromV1({ templateId, accent })), editorMode: 'full' }]
   }
   throw new Error('invalid')
 }
@@ -45,7 +45,7 @@ export function parseImport(json: string): Doc[] {
 export function migrateV1(state: { cv?: unknown; uiLang?: Lang }): { documents: Doc[]; activeId: string; uiLang?: Lang } {
   const [doc] = isCVData(state?.cv) ? parseImport(JSON.stringify(state.cv)) : []
   const d = doc ?? newCVDoc('CV', blankCV(state?.uiLang ?? 'fr'))
-  return { documents: [{ ...d, name: 'CV' }], activeId: d.id, uiLang: state?.uiLang }
+  return { documents: [{ ...d, name: 'CV', editorMode: 'full' }], activeId: d.id, uiLang: state?.uiLang }
 }
 
 export function designFromV1(cv: { templateId?: string; accent?: string }): Design {

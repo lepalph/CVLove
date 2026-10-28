@@ -54,6 +54,7 @@ const openEditor = async (page: Page) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Créer mon CV' }).first().click()
   await expect(page).toHaveURL(/#\/editeur/)
+  await page.getByRole('button', { name: 'Complet' }).click() // un nouveau document démarre en mode guidé ; ces tests utilisent le formulaire complet
   await expect(page.getByRole('button', { name: 'Classique · Académique', pressed: true })).toBeVisible()
   await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })
 }
@@ -71,11 +72,12 @@ test('accueil → éditeur, édition du prénom, aperçu mis à jour', async ({ 
   await expect.poll(async () => !(await canvasShot(page)).equals(before), { timeout: 10_000 }).toBe(true)
 })
 
-test('accueil : « Commencer avec ce modèle » (Moderne), puis changement de modèle sans perte du prénom', async ({ page }) => {
+test('accueil : « Commencer avec ce modèle » (Moderne · Bandeau), puis changement de modèle sans perte du prénom', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Votre CV en PDF, sans compte et sans frais.')
-  await page.getByRole('button', { name: /Commencer avec ce modèle \(Moderne\)/ }).click()
+  await page.getByRole('button', { name: 'Commencer avec ce modèle (Moderne · Bandeau)' }).click()
   await expect(page).toHaveURL(/#\/editeur/)
+  await page.getByRole('button', { name: 'Complet' }).click()
   await expect(page.getByRole('button', { name: 'Moderne · Bandeau', pressed: true })).toBeVisible()
   await page.getByLabel('Prénom').fill('Zoé')
   await page.getByRole('button', { name: 'Minimal · Gouttière' }).click()
@@ -169,6 +171,7 @@ test('migration v1 → v2 : le CV existant devient le premier document', async (
   }, v1State)
   await page.goto('/#/editeur')
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  await expect(page.getByRole('button', { name: 'Complet', pressed: true })).toBeVisible() // document migré : mode complet
   await expect(page.getByRole('button', { name: 'Moderne · Bandeau', pressed: true })).toBeVisible()
   await expect(page.locator('h3').filter({ hasText: 'Mon parcours' })).toBeVisible()
   await expect(page.locator('input[type=color]')).toHaveValue('#1d4ed8')
@@ -220,4 +223,61 @@ test('design : police et couleur changées se voient dans le PDF téléchargé, 
   expect(pdf.colors).toContain('#0e7490') // couleur d'accent
   const doc = await getDocument({ data: new Uint8Array(readFileSync(path)), verbosity: 0 }).promise
   expect((await doc.getPage(1)).view.slice(2)).toEqual([612, 792]) // Letter
+})
+
+// ---- mode guidé et catalogue d'accueil ----
+
+test('mode guidé : parcours complet, passer une étape, retour, bascule en Complet sans perte, téléchargement', async ({ page }) => {
+  await page.goto('/#/editeur')
+  await expect(page.getByRole('button', { name: 'Guidé', pressed: true })).toBeVisible()
+  const bar = page.getByRole('navigation', { name: 'Étapes' })
+  const current = (name: string) => expect(bar.getByRole('button', { name, exact: true })).toHaveAttribute('aria-current', 'step')
+  await current('Modèle')
+  await page.getByRole('button', { name: 'Minimal · Gouttière' }).click()
+  await page.getByRole('button', { name: 'Suivant' }).click()
+  await current('Identité')
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByLabel('Nom', { exact: true }).fill('Durand')
+  await page.getByRole('button', { name: 'Suivant' }).click()
+  await current('Profil')
+  await page.getByRole('button', { name: 'Passer cette étape' }).click()
+  await current('Expérience')
+  await expect(bar.getByRole('button', { name: 'Identité (faite)' })).toBeVisible()
+  await expect(bar.getByRole('button', { name: 'Profil', exact: true })).toBeVisible() // passée, pas « faite »
+  await page.getByRole('button', { name: 'Précédent' }).click()
+  await current('Profil')
+  // bascule en Complet : rien n'est perdu, et on retrouve l'étape en revenant
+  await page.getByRole('button', { name: 'Complet' }).click()
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  await expect(page.getByRole('button', { name: 'Minimal · Gouttière', pressed: true })).toBeVisible()
+  await page.getByLabel('Nom', { exact: true }).fill('Martin')
+  await page.getByRole('button', { name: 'Guidé' }).click()
+  await current('Profil')
+  await bar.getByRole('button', { name: 'Télécharger', exact: true }).click()
+  await current('Télécharger')
+  const final = page.getByRole('region', { name: 'Télécharger' })
+  await expect(final).toContainText('Zoé Martin')
+  await expect(final.getByRole('link', { name: 'Voir mes documents' })).toHaveAttribute('href', '#/documents')
+  const [d] = await Promise.all([page.waitForEvent('download'), final.getByRole('button', { name: 'Télécharger le PDF' }).click()])
+  expect(d.suggestedFilename()).toBe('CV-Zoe-Martin.pdf')
+  expect((await pdfOf((await d.path())!)).text).toContain('Zoé')
+  // le choix est mémorisé avec le document
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Guidé', pressed: true })).toBeVisible()
+})
+
+test('accueil : le catalogue liste tous les modèles et se filtre', async ({ page }) => {
+  await page.goto('/')
+  const cards = page.getByRole('button', { name: /^Commencer avec ce modèle \(/ })
+  const total = await cards.count()
+  expect(total).toBeGreaterThanOrEqual(12)
+  await expect(page.getByRole('heading', { level: 2, name: `Un catalogue de ${total} modèles` })).toBeVisible()
+  await page.getByRole('group', { name: 'Catégorie' }).getByRole('button', { name: 'Créatif' }).click()
+  await expect.poll(() => cards.count()).toBeLessThan(total)
+  expect(await cards.count()).toBeGreaterThan(0)
+  await page.getByRole('group', { name: 'Catégorie' }).getByRole('button', { name: 'Tous' }).click()
+  await expect.poll(() => cards.count()).toBe(total)
+  await page.getByRole('group', { name: 'Colonnes' }).getByRole('button', { name: '2 colonnes' }).click()
+  await page.getByRole('group', { name: 'Photo' }).getByRole('button', { name: 'Sans photo' }).click()
+  await expect.poll(() => cards.count()).toBeLessThan(total)
 })

@@ -89,10 +89,10 @@
   }
 
   /* Barre de l'éditeur : mobile sur deux lignes, bureau sur une. */
-  .edbar { display: grid; align-items: center; gap: 0.5rem 0.75rem; grid-template-columns: 1fr auto; grid-template-areas: "logo dl" "tabs lang"; }
-  .edbar > .a-logo { grid-area: logo; } .edbar > .a-dl { grid-area: dl; }
+  .edbar { display: grid; align-items: center; gap: 0.5rem 0.75rem; grid-template-columns: 1fr auto; grid-template-areas: "logo dl" "mode lang" "tabs tabs"; }
+  .edbar > .a-logo { grid-area: logo; } .edbar > .a-dl { grid-area: dl; } .edbar > .a-mode { grid-area: mode; }
   .edbar > .a-tabs { grid-area: tabs; } .edbar > .a-lang { grid-area: lang; }
   @media (min-width: 64rem) {
-    .edbar { grid-template-columns: 1fr auto auto; grid-template-areas: "logo lang dl"; }
+    .edbar { grid-template-columns: 1fr auto auto auto; grid-template-areas: "logo mode lang dl"; }
   }
 }
