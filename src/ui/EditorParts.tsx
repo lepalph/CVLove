@@ -68,8 +68,10 @@ export function MobileTools({ mode, onMode }: { mode: EditorMode; onMode: (m: Ed
  * Colonne de l'aperçu : la feuille (nommée pour les lecteurs d'écran), un message quand le document est vide, un zoom sur mobile,
  * et la zone `role=status` où l'on annonce ce qui vient de changer (`said`). Le PDF n'est fabriqué que si l'aperçu est visible.
  */
-export function PreviewPane({ make, deps, label, shown, empty, said }: {
+export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
   make: () => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
+  /** Document vide : `make` rend l'exemple, signalé par une étiquette au lieu du message centré. */
+  sample?: boolean
 }) {
   const uiLang = useStore((s) => s.uiLang)
   const t = ui[uiLang]
@@ -84,9 +86,10 @@ export function PreviewPane({ make, deps, label, shown, empty, said }: {
       </div>
       <div className={zoom ? 'overflow-x-auto' : ''}>
         <div className={`relative mx-auto ${zoom ? 'w-[200%]' : 'w-full max-w-[46rem]'}`}>
+          {empty && sample && <p aria-hidden="true" className="mb-3 text-center text-sm text-muted text-balance">{x.samplePreview}</p>}
           <div role="img" aria-label={label} className="relative min-h-[20rem] bg-white shadow-sheet">
             {(wide || shown) && <PdfCanvas make={make} deps={[...deps, zoom]} debounce={300} onState={setState} />}
-            {empty && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
+            {empty && !sample && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
           </div>
         </div>
       </div>

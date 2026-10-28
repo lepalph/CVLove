@@ -55,3 +55,13 @@ test('vignettes au ratio A4 et grille de modèles à une seule tabulation', asyn
   const tabbable = await page.locator('main ul button[aria-pressed]').evaluateAll((bs) => bs.filter((b) => (b as HTMLElement).tabIndex === 0).length)
   expect(tabbable).toBe(1)
 })
+
+test('CV vide : l’aperçu montre l’exemple, signalé, jusqu’à la première saisie', async ({ page }) => {
+  await page.goto('/#/editeur')
+  const note = page.getByText('Exemple. Vos informations le remplacent dès que vous commencez à écrire.')
+  await expect(note).toBeVisible()
+  await expect(page.locator('main canvas').last()).toBeVisible()
+  await page.getByRole('navigation', { name: 'Étapes' }).getByRole('button', { name: 'Identité', exact: true }).click()
+  await page.getByLabel('Prénom').fill('Ralph')
+  await expect(note).toBeHidden()
+})

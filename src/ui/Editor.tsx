@@ -11,6 +11,7 @@ import { ExampleTools } from './ExampleTools'
 import { Form } from './Form'
 import { Guided, useGuidedProgress } from './Guided'
 import { isEmptyCV, modelName } from './lib'
+import { sampleCV } from '../model/sample'
 
 export function Editor() {
   const { data: cv, design, editorMode } = useCvDoc()
@@ -62,7 +63,7 @@ export function Editor() {
           <ExampleTools />
           {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} /> : <Form />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLazy(cv, design)} deps={[cv, design]} empty={isEmptyCV(cv)} said={said}
+        <PreviewPane shown={tab === 'preview'} make={() => renderLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design)} deps={[cv, design]} empty={isEmptyCV(cv)} sample said={said}
           label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />
       </main>
       <EdFooter />

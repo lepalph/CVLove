@@ -12,6 +12,8 @@ export interface Extra {
   /** `{model}` et `{who}`. */
   previewAlt: string
   emptyPreview: string
+  /** Étiquette posée sur l'aperçu quand un CV vide montre l'exemple. */
+  samplePreview: string
   zoom: string
   /** Noms des 7 accents proposés, dans l'ordre de ACCENTS. */
   colors: string[]
@@ -40,7 +42,7 @@ export interface Extra {
 const fr: Extra = {
   skip: 'Aller au contenu',
   modelApplied: 'Modèle {name} appliqué', colorApplied: 'Couleur {name} appliquée', downloaded: 'PDF téléchargé : {file}',
-  previewAlt: 'Aperçu du document, modèle {model}. {who}', emptyPreview: 'Votre document est vide. Remplissez l’étape Identité : l’aperçu se construit au fil de la saisie.',
+  previewAlt: 'Aperçu du document, modèle {model}. {who}', emptyPreview: 'Votre document est vide. Remplissez l’étape Identité : l’aperçu se construit au fil de la saisie.', samplePreview: 'Exemple. Vos informations le remplacent dès que vous commencez à écrire.',
   zoom: 'Agrandir l’aperçu',
   colors: ['Orange brûlé', 'Bleu', 'Vert', 'Violet', 'Rose', 'Turquoise', 'Ardoise'],
   netOne: '{n} requête vers un autre site', netMany: '{n} requêtes vers d’autres sites', netHow: 'Comment le vérifier',
@@ -55,7 +57,7 @@ const fr: Extra = {
 const en: Extra = {
   skip: 'Skip to content',
   modelApplied: 'Template {name} applied', colorApplied: 'Colour {name} applied', downloaded: 'PDF downloaded: {file}',
-  previewAlt: 'Document preview, template {model}. {who}', emptyPreview: 'Your document is empty. Fill in the Identity step: the preview builds as you type.',
+  previewAlt: 'Document preview, template {model}. {who}', emptyPreview: 'Your document is empty. Fill in the Identity step: the preview builds as you type.', samplePreview: 'Sample. Your details replace it as soon as you start typing.',
   zoom: 'Enlarge the preview',
   colors: ['Burnt orange', 'Blue', 'Green', 'Purple', 'Pink', 'Teal', 'Slate'],
   netOne: '{n} request to another site', netMany: '{n} requests to other sites', netHow: 'How to check',
@@ -70,7 +72,7 @@ const en: Extra = {
 const es: Extra = {
   skip: 'Ir al contenido',
   modelApplied: 'Plantilla {name} aplicada', colorApplied: 'Color {name} aplicado', downloaded: 'PDF descargado: {file}',
-  previewAlt: 'Vista previa del documento, plantilla {model}. {who}', emptyPreview: 'Tu documento está vacío. Rellena el paso Identidad: la vista previa se construye mientras escribes.',
+  previewAlt: 'Vista previa del documento, plantilla {model}. {who}', emptyPreview: 'Tu documento está vacío. Rellena el paso Identidad: la vista previa se construye mientras escribes.', samplePreview: 'Ejemplo. Tus datos lo sustituyen en cuanto empiezas a escribir.',
   zoom: 'Ampliar la vista previa',
   colors: ['Naranja tostado', 'Azul', 'Verde', 'Violeta', 'Rosa', 'Turquesa', 'Pizarra'],
   netOne: '{n} solicitud a otro sitio', netMany: '{n} solicitudes a otros sitios', netHow: 'Cómo comprobarlo',
@@ -85,7 +87,7 @@ const es: Extra = {
 const de: Extra = {
   skip: 'Zum Inhalt springen',
   modelApplied: 'Vorlage {name} angewendet', colorApplied: 'Farbe {name} angewendet', downloaded: 'PDF heruntergeladen: {file}',
-  previewAlt: 'Dokumentvorschau, Vorlage {model}. {who}', emptyPreview: 'Ihr Dokument ist leer. Füllen Sie den Schritt Identität aus: Die Vorschau entsteht beim Tippen.',
+  previewAlt: 'Dokumentvorschau, Vorlage {model}. {who}', emptyPreview: 'Ihr Dokument ist leer. Füllen Sie den Schritt Identität aus: Die Vorschau entsteht beim Tippen.', samplePreview: 'Beispiel. Ihre Angaben ersetzen es, sobald Sie zu schreiben beginnen.',
   zoom: 'Vorschau vergrößern',
   colors: ['Gebranntes Orange', 'Blau', 'Grün', 'Violett', 'Rosa', 'Türkis', 'Schiefer'],
   netOne: '{n} Anfrage an eine andere Website', netMany: '{n} Anfragen an andere Websites', netHow: 'So prüfen Sie es',
@@ -100,7 +102,7 @@ const de: Extra = {
 const it: Extra = {
   skip: 'Vai al contenuto',
   modelApplied: 'Modello {name} applicato', colorApplied: 'Colore {name} applicato', downloaded: 'PDF scaricato: {file}',
-  previewAlt: 'Anteprima del documento, modello {model}. {who}', emptyPreview: 'Il documento è vuoto. Compila il passo Identità: l’anteprima si costruisce mentre scrivi.',
+  previewAlt: 'Anteprima del documento, modello {model}. {who}', emptyPreview: 'Il documento è vuoto. Compila il passo Identità: l’anteprima si costruisce mentre scrivi.', samplePreview: 'Esempio. I tuoi dati lo sostituiscono appena inizi a scrivere.',
   zoom: 'Ingrandisci l’anteprima',
   colors: ['Arancio bruciato', 'Blu', 'Verde', 'Viola', 'Rosa', 'Turchese', 'Ardesia'],
   netOne: '{n} richiesta verso un altro sito', netMany: '{n} richieste verso altri siti', netHow: 'Come verificarlo',
@@ -115,7 +117,7 @@ const it: Extra = {
 const pt: Extra = {
   skip: 'Ir para o conteúdo',
   modelApplied: 'Modelo {name} aplicado', colorApplied: 'Cor {name} aplicada', downloaded: 'PDF descarregado: {file}',
-  previewAlt: 'Pré-visualização do documento, modelo {model}. {who}', emptyPreview: 'O documento está vazio. Preencha o passo Identidade: a pré-visualização constrói-se enquanto escreve.',
+  previewAlt: 'Pré-visualização do documento, modelo {model}. {who}', emptyPreview: 'O documento está vazio. Preencha o passo Identidade: a pré-visualização constrói-se enquanto escreve.', samplePreview: 'Exemplo. Os seus dados substituem-no assim que começar a escrever.',
   zoom: 'Ampliar a pré-visualização',
   colors: ['Laranja queimado', 'Azul', 'Verde', 'Violeta', 'Rosa', 'Turquesa', 'Ardósia'],
   netOne: '{n} pedido a outro site', netMany: '{n} pedidos a outros sites', netHow: 'Como verificar',
@@ -130,7 +132,7 @@ const pt: Extra = {
 const ar: Extra = {
   skip: 'انتقل إلى المحتوى',
   modelApplied: 'تم تطبيق القالب {name}', colorApplied: 'تم تطبيق اللون {name}', downloaded: 'تم تنزيل ملف PDF: {file}',
-  previewAlt: 'معاينة المستند، القالب {model}. {who}', emptyPreview: 'مستندك فارغ. املأ خطوة الهوية: تُبنى المعاينة أثناء الكتابة.',
+  previewAlt: 'معاينة المستند، القالب {model}. {who}', emptyPreview: 'مستندك فارغ. املأ خطوة الهوية: تُبنى المعاينة أثناء الكتابة.', samplePreview: 'مثال. تحلّ بياناتك محلّه بمجرد أن تبدأ الكتابة.',
   zoom: 'تكبير المعاينة',
   colors: ['برتقالي محروق', 'أزرق', 'أخضر', 'بنفسجي', 'وردي', 'فيروزي', 'رمادي أردوازي'],
   netOne: '{n} طلب إلى موقع آخر', netMany: '{n} طلبات إلى مواقع أخرى', netHow: 'كيف تتحقق',
