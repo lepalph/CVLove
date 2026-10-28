@@ -1,0 +1,43 @@
+name: New template proposal
+description: Propose a CV layout or a cover letter
+labels: [template]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Layout name and id
+      placeholder: Timeline, timeline
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options: [CV layout, Cover letter]
+    validations:
+      required: true
+  - type: dropdown
+    id: columns
+    attributes:
+      label: Columns
+      options: ["1", "2"]
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Structure, header, how the 3 styles differ, who it is for.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Sketch or reference
+      description: A drawing or an image you made. No copyrighted layouts.
+  - type: checkboxes
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      options:
+        - label: I read the Template acceptance criteria in CONTRIBUTING.md.
+          required: true
+        - label: I plan to implement it myself.

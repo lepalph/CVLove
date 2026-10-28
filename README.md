@@ -1,111 +1,85 @@
+[Français](README.fr.md) | English
+
 # CVLove
 
-Free, open source résumé builder in the spirit of iLovePDF: pick a template, fill in your details, download a PDF. No account, no ads.
+CVLove is a free, open source résumé builder. You pick a template, fill in your details and download a PDF. There is no account, no ads and no backend.
 
-**Everything stays on your device.** There is no backend.
+![CVLove walkthrough: pick a template, fill with the sample, change color, download](docs/images/demo.gif)
 
-- Your data lives in your browser's `localStorage` (key `cvlove:v1`) and nowhere else.
-- The PDF is generated in the browser with `@react-pdf/renderer`. The live preview is that same PDF, drawn with pdf.js.
-- The server (static hosting) only serves the app's files. The app makes no request that carries your data, and the end-to-end tests fail if the app contacts any host other than localhost.
-- Photos are resized in the browser and stored as a data URL. Fonts are self-hosted.
-- Export and import of your résumé is a plain JSON file you keep.
+## Screenshots
+
+| Home | Template catalog |
+| --- | --- |
+| ![Home page](docs/images/home.png) | ![Catalog of 36 templates](docs/images/templates.png) |
+
+| Guided editor | Dark mode |
+| --- | --- |
+| ![Guided editor with a filled résumé](docs/images/editor-guided.png) | ![Editor in dark mode](docs/images/editor-dark.png) |
+
+Mobile layout (Edit and Preview tabs): ![Mobile preview](docs/images/mobile-preview.png)
+
+## Privacy
+
+Everything stays on your device.
+
+- Your documents are stored in your browser's `localStorage`. Nothing is sent to a server.
+- The PDF is generated in the browser with `@react-pdf/renderer`. The live preview is the same PDF, drawn with pdf.js.
+- The host only serves static files. The Content Security Policy in `vercel.json` limits the app to its own origin (`connect-src 'self' data:`).
+- Photos are resized in the browser and kept as data URLs. Fonts are self-hosted.
+- Export and import use a plain JSON file that you keep.
+
+To check it yourself, open the browser developer tools (F12, or Cmd+Option+I on a Mac), go to the Network tab and reload the page. Every line comes from the address you opened. The editor also shows a counter at the bottom, "0 requests to other sites", that reads the same list live. The end-to-end tests fail if the app contacts any host other than localhost.
 
 ## Features
 
-- Template gallery with real previews, switchable without losing data; 5 accent colors
-- Live PDF preview, download as `CV-FirstName-LastName.pdf`
-- Personal details with optional photo, hideable or custom fields
-- Sections: profile, experience, education, skills, languages, projects, interests, free section; add, hide, rename, reorder
-- JSON export / import, sample data, "clear everything"
-- Works on mobile (Edit / Preview tabs)
+- Home at `#/`, editor at `#/editeur`, document list at `#/documents`, cover letter at `#/lettre`.
+- Editor with two modes: Guided (9 steps) or Full (one form).
+- 36 templates, made of 12 layouts with 3 styles each. Switching template keeps your data.
+- 7 accent colors plus a free color picker, 6 font pairs, text size, line height, margins, A4 or Letter, photo shape, skill level display.
+- Sections: profile, experience, education, skills, languages, projects, interests, free section. You can add, hide, rename and reorder them.
+- Optional photo, hideable or custom personal fields.
+- My documents: several résumés and letters, with duplicate, rename, delete, and JSON export and import.
+- Cover letter with 3 layouts.
+- Live PDF preview. The download is named `CV-FirstName-LastName.pdf`.
+- Dark mode, keyboard navigation, mobile layout.
 
 ## Languages
 
-Résumé language and interface language are independent: French, English, Spanish, German, Italian, Portuguese, Arabic (right-to-left layout). Changing the résumé language changes labels and date formats, never what you typed.
+Résumé language and interface language are independent. Seven languages are available for both: French, English, Spanish, German, Italian, Portuguese and Arabic (right-to-left). Changing the résumé language changes labels and date formats. It never changes what you typed.
 
 ## Run locally
 
+You need Node and pnpm.
+
 ```sh
 pnpm install
-pnpm dev            # http://localhost:5173
+pnpm dev            # development server, http://localhost:5173
+pnpm build          # type check, then production build in dist/
+pnpm preview        # serve dist/ on http://localhost:4173
 pnpm test           # unit tests (Vitest)
-pnpm check:pdf      # renders every template x language, checks text, PNGs in out/
-pnpm test:e2e       # builds, serves the preview, runs Playwright (Chromium)
+pnpm check:pdf      # renders every template in every language, checks the extracted text, writes PNGs to out/
+pnpm test:e2e       # builds, then runs the Playwright tests (Chromium)
+pnpm demo:gif       # records the walkthrough GIF (needs preview running and ffmpeg)
 ```
 
-First e2e run: `pnpm exec playwright install chromium`.
+On the first end-to-end run, install the browser with `pnpm exec playwright install chromium`.
 
 ## Add a template
 
-1. Create `src/templates/<id>.tsx` exporting `Component`, which receives `{ cv, labels }` (see `TemplateProps` in `src/templates/types.ts`) and renders a react-pdf `<Document>` (A4). `classique.tsx` is a working example.
-2. Add one entry (`id`, `name` per language, `load: () => import('./<id>')`) to the registry `src/templates/index.ts`.
-3. Run `pnpm check:pdf`: every language, including Arabic RTL, must render.
+Contributions are welcome: new templates, new features, fixes and translations. A new layout is one file.
 
-## Fonts
+1. Copy the closest file in `src/templates/layouts/` (`classique.tsx` for one column, `moderne.tsx` for two).
+2. Edit its `meta` (id equal to the file name, names per language, category, columns, 3 styles) and the layout itself. Use `makeTheme` so that your layout follows the user's design options.
+3. The registry picks the file up automatically through `import.meta.glob`. You do not edit it.
+4. Run `pnpm check:pdf` and look at the PNGs in `out/`.
 
-Fonts are in `public/fonts`, under the SIL Open Font License 1.1 (license texts next to them): Inter (`OFL-Inter.txt`), Lora, renamed "CVLove Serif" as its Reserved Font Name requires (`OFL-Lora.txt`), Tajawal for Arabic (`OFL-Tajawal.txt`). The code is MIT.
+The full rules and the acceptance criteria are in [CONTRIBUTING.md](CONTRIBUTING.md). The template contract is documented in `src/templates/types.ts`.
 
-## Deploy on Vercel
+## Known limits
 
-Import the GitHub repository in Vercel. The Vite preset is detected (build `pnpm build`, output `dist`); no configuration needed.
+- Text extracted from a PDF in Arabic is not correct. This comes from `@react-pdf/renderer`. The page looks right, but copy and paste or ATS parsers get wrong text.
+- In the Moderne and Colonne pleine layouts, the side column appears on page 1 only.
 
 ## License
 
-MIT, see `LICENSE`.
-
----
-
-# CVLove (français)
-
-Générateur de CV gratuit et open source, dans l'esprit d'iLovePDF : on choisit un modèle, on remplit, on télécharge le PDF. Pas de compte, pas de publicité.
-
-**Tout reste sur votre appareil.** Il n'y a pas de backend.
-
-- Vos données sont dans le `localStorage` de votre navigateur (clé `cvlove:v1`), nulle part ailleurs.
-- Le PDF est généré dans le navigateur avec `@react-pdf/renderer`. L'aperçu est ce même PDF, affiché avec pdf.js.
-- Le serveur (hébergement statique) ne fait que servir les fichiers de l'application. Elle n'envoie aucune requête contenant vos données, et les tests de bout en bout échouent si elle contacte un autre hôte que localhost.
-- Les photos sont réduites dans le navigateur et gardées en data URL. Les polices sont auto-hébergées.
-- L'export / import de votre CV est un simple fichier JSON, que vous gardez.
-
-## Fonctionnalités
-
-- Galerie de modèles avec vrais aperçus, changement de modèle sans perte de données, 5 couleurs d'accent
-- Aperçu PDF en direct, téléchargement sous `CV-Prenom-Nom.pdf`
-- Infos personnelles avec photo facultative, champs masquables ou libres
-- Sections : profil, expérience, formation, compétences, langues, projets, centres d'intérêt, section libre ; ajout, masquage, renommage, réordonnancement
-- Export / import JSON, données d'exemple, « Tout effacer »
-- Utilisable sur mobile (onglets Modifier / Aperçu)
-
-## Langues
-
-La langue du CV et celle de l'interface sont indépendantes : français, anglais, espagnol, allemand, italien, portugais, arabe (mise en page de droite à gauche). Changer la langue du CV change les libellés et le format des dates, jamais votre texte.
-
-## Lancer en local
-
-```sh
-pnpm install
-pnpm dev            # http://localhost:5173
-pnpm test           # tests unitaires (Vitest)
-pnpm check:pdf      # rend chaque modèle x langue, vérifie le texte, PNG dans out/
-pnpm test:e2e       # build, serveur de preview, Playwright (Chromium)
-```
-
-Premier lancement e2e : `pnpm exec playwright install chromium`.
-
-## Ajouter un modèle
-
-1. Créer `src/templates/<id>.tsx` qui exporte `Component`, lequel reçoit `{ cv, labels }` (voir `TemplateProps` dans `src/templates/types.ts`) et rend un `<Document>` react-pdf (A4). `classique.tsx` sert d'exemple.
-2. Ajouter une entrée (`id`, `name` par langue, `load: () => import('./<id>')`) au registre `src/templates/index.ts`.
-3. Lancer `pnpm check:pdf` : toutes les langues, arabe RTL compris, doivent s'afficher.
-
-## Polices
-
-Les polices sont dans `public/fonts`, sous licence SIL Open Font License 1.1 (textes de licence à côté) : Inter (`OFL-Inter.txt`), Lora, renommée « CVLove Serif » comme l'exige son Reserved Font Name (`OFL-Lora.txt`), Tajawal pour l'arabe (`OFL-Tajawal.txt`). Le code est sous MIT.
-
-## Déployer sur Vercel
-
-Importer le dépôt GitHub dans Vercel. Le preset Vite est détecté (build `pnpm build`, sortie `dist`) ; aucune configuration n'est nécessaire.
-
-## Licence
-
-MIT, voir `LICENSE`.
+The code is under the MIT license (see `LICENSE`). Fonts in `public/fonts` are under the SIL Open Font License 1.1, with the license texts next to them.
