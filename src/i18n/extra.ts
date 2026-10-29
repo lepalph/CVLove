@@ -67,7 +67,7 @@ const en: Extra = {
   visibilityHint: 'Hide keeps the section for later without printing it. Delete erases it.',
   imported: '{n} document(s) imported.', fileImported: 'File imported.',
   saveQuota: 'Browser storage is full: your latest changes are not saved. Export your documents before closing the page.', saveUnavailable: 'Saving is not possible on this device (private browsing or blocked storage). Export your documents before closing the page.', exportMine: 'Export my documents',
-  tooBig: 'File too large (maximum {mb} MB).', photoError: 'Unreadable image: try a JPEG or PNG file.', untitled: 'Untitled résumé',
+  tooBig: 'File too large (maximum {mb} MB).', photoError: 'Unreadable image: try a JPEG or PNG file.', untitled: 'Untitled CV',
 }
 const es: Extra = {
   skip: 'Ir al contenido',

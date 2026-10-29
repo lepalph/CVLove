@@ -34,12 +34,29 @@ export function Text(props: TextProps & { children?: ReactNode }) {
   return rtl ? <PdfText {...props} style={[{ direction: 'rtl' }, props.style ?? {}]}>{Children.map(props.children, ar)}</PdfText> : <PdfText {...props} />
 }
 
-/** Contacts en texte, un par champ visible. */
-export const contactList = (cv: CV, labels: CVLabels) =>
+/** Séparateur « libellé : valeur » : espace insécable avant les deux-points en français seulement. */
+export const colon = (lang: string) => (lang === 'fr' ? '\u00A0: ' : ': ')
+
+const URL_RE = /^(https?:\/\/\S+|(www\.)?[\w-]+(\.[\w-]+)+\/\S*)$/i
+
+/** Valeur cliquable (mailto:, tel:, lien) sans changer l'apparence du texte ; `kind` absent = détection sur la valeur. */
+// <Text src> = annotation Link sans le style bleu souligné de <Link> (la couleur du texte parent est héritée) ; absent des types de react-pdf.
+export function linked(value: string, kind?: string): ReactNode {
+  const v = value.trim()
+  let href = ''
+  if (kind === 'email' || (!kind && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))) href = `mailto:${v}`
+  else if (kind === 'phone' || (!kind && /^\+?[\d\s().-]{7,}$/.test(v))) { const d = v.replace(/[^\d+]/g, ''); if (d) href = `tel:${d}` }
+  else if ((kind === 'website' || kind === 'custom' || !kind) && URL_RE.test(v)) href = /^https?:/i.test(v) ? v : `https://${v}`
+  else if (kind === 'website' && /^[\w-]+(\.[\w-]+)+$/.test(v)) href = `https://${v}`
+  return href ? <PdfText {...({ src: href } as object)}>{value}</PdfText> : value
+}
+
+/** Contacts, un par champ visible (valeur cliquable si e-mail, téléphone ou lien). */
+export const contactList = (cv: CV, labels: CVLabels): ReactNode[] =>
   visibleFields(cv).map((f) =>
     f.kind === 'birthDate' ? `${labels.born} ${formatDay(f.value, cv.lang)}`
-    : f.kind === 'custom' && f.label?.trim() ? `${f.label.trim()} : ${f.value}`
-    : f.value,
+    : f.kind === 'custom' && f.label?.trim() ? <>{f.label.trim()}{colon(cv.lang)}{linked(f.value, 'custom')}</>
+    : linked(f.value, f.kind),
   )
 
 /** Mélange hex -> blanc (t = part de blanc, 0..1) : fond teinté dérivé de l'accent. */
@@ -157,7 +174,7 @@ export const SectionFlow = ({ gap, title, children }: { gap: number; title: Reac
 )
 
 /** Contacts en rangée qui passe à la ligne sans casser un élément ; `color` pour les fonds colorés. */
-export function ContactRow({ items, rtl, style, center }: { items: string[]; rtl: boolean; style: { color: string; fontSize: number }; center?: boolean }) {
+export function ContactRow({ items, rtl, style, center }: { items: ReactNode[]; rtl: boolean; style: { color: string; fontSize: number }; center?: boolean }) {
   return (
     <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 2, ...(center ? { justifyContent: 'center' } : {}) }}>
       {items.map((c, i) => <Text key={i} style={{ ...style, textAlign: rtl ? 'right' : 'left' }}>{c}</Text>)}

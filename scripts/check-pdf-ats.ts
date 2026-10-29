@@ -8,7 +8,7 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { cvLabels } from '../src/i18n/labels'
 import { DEFAULT_DESIGN } from '../src/model/cv'
 import { sampleCV } from '../src/model/sample'
-import type { CV, Design, Lang } from '../src/model/types'
+import type { CV, Design, Field, Lang } from '../src/model/types'
 import { startLoader } from './vite-load'
 
 const fonts = fileURLToPath(new URL('../public/fonts/', import.meta.url))
@@ -36,7 +36,7 @@ const fail = (name: string, msg: string) => { problems.push(`KO  ${name}  ${msg}
 
 // ---- 1. ATS : mots entiers, ligature, apostrophe ----
 function atsCV(): CV {
-  const cv = sampleCV('fr')
+  const cv = sampleCV('fr', 'dev')
   cv.personal.firstName = 'Sophie'
   cv.personal.lastName = 'Lefèvre-Duchâtel'
   cv.sections.find((s) => s.kind === 'profile')!.items[0].text = 'Responsable ﬁnancier : pilotage de l’équipe commerciale, coût d’offre réduit, œuvre à l’efﬁcacité des échanges.'
@@ -79,7 +79,7 @@ for (const t of templates) {
 
 // ---- 2. Pagination : CV long, Letter, 115 %, marges larges, accent très clair ----
 function longCV(): CV {
-  const cv = sampleCV('fr')
+  const cv = sampleCV('fr', 'dev')
   const exp = cv.sections.find((s) => s.kind === 'experience')!
   const bullet = (j: number, k: number) => `- Poste${j}×${k} Pilotage de l’équipe commerciale et définition de la stratégie d’offre ; coût réduit de 12 € par dossier, taux de réussite à 87 %, œuvre à l’efficacité des échanges.`
   exp.items = Array.from({ length: 6 }, (_, j) => ({ ...exp.items[0], id: `p${j}`, title: `Poste ${j + 1} Responsable développement`, text: [1, 2, 3, 4, 5].map((k) => bullet(j + 1, k)).join('\n'), current: false, start: `20${10 + j}-01`, end: `20${11 + j}-12` }))
@@ -102,7 +102,7 @@ for (const t of templates.filter((x: { id: string }) => x.id.endsWith('-1'))) {
 
 // ---- 3. Arabe sous une langue latine : chaque glyphe arabe doit avoir une police ----
 for (const lang of ['fr', 'en'] as Lang[]) {
-  const cv = sampleCV('ar')
+  const cv = sampleCV('ar', 'dev')
   cv.lang = lang
   for (const t of templates.filter((x: { id: string }) => x.id.endsWith('-1'))) {
     const { raw } = await extract(await renderPdf(cv, designOf(t), fonts))
@@ -110,7 +110,25 @@ for (const lang of ['fr', 'en'] as Lang[]) {
   }
 }
 
+// ---- 4. Deux-points : pas d'espace avant « : » hors français ; liens (mailto:, tel:, https:) présents en annotations ----
+for (const t of templates) {
+  const cv = sampleCV('en', 'dev')
+  const { raw } = await extract(await renderPdf(cv, designOf(t), fonts))
+  const m = /[ \u00A0\u202F]:/.exec(raw)
+  if (m) fail(`${t.id}/deux-points`, `espace avant « : » en anglais : « ${raw.slice(Math.max(0, m.index - 10), m.index + 4).replace(/\n/g, '|')} »`)
+
+  const fr = sampleCV('fr', 'dev')
+  const fields = fr.personal.fields
+  const set = (kind: Field['kind'], value: string, label?: string) => { const f = fields.find((x) => x.kind === kind && (kind !== 'custom' || x.label === label)); if (f) { f.value = value; f.visible = true } else fields.push({ id: `chk-${kind}`, kind, label, value, visible: true }) }
+  set('email', 'sophie@example.com'); set('phone', '+33 6 12 34 56 78'); set('website', 'sophie.example.com'); set('custom', 'github.com/sophie/cv', 'GitHub')
+  const doc = await getDocument({ data: (await renderPdf(fr, designOf(t), fonts)).slice(), useSystemFonts: false, verbosity: 0 }).promise
+  const urls = new Set<string>()
+  for (let p = 1; p <= doc.numPages; p++) for (const a of await (await doc.getPage(p)).getAnnotations()) if (a.url) urls.add(a.url.replace(/\/$/, ''))
+  for (const u of ['mailto:sophie@example.com', 'tel:+33612345678', 'https://sophie.example.com', 'https://github.com/sophie/cv'])
+    if (!urls.has(u)) fail(`${t.id}/liens`, `lien absent du PDF : ${u}`)
+}
+
 await loader.close()
 for (const p of problems) console.log(p)
-console.log(problems.length ? `${problems.length} problème(s)` : 'OK  check:pdf:b : ATS, pagination, arabe')
+console.log(problems.length ? `${problems.length} problème(s)` : 'OK  check:pdf:b : ATS, pagination, arabe, deux-points, liens')
 process.exit(problems.length ? 1 : 0)

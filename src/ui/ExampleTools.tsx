@@ -3,7 +3,7 @@ import { ui } from '../i18n/ui'
 import { fullName } from '../model/cv'
 import { blankCV } from '../model/documents'
 import type { Letter } from '../model/types'
-import { sampleLetter } from '../model/sample'
+import { SAMPLE_PROFILES, sampleLetter } from '../model/sample'
 import { useCvDoc, useLetterDoc, useStore } from '../store'
 import { isEmptyCV, isExampleCV } from './lib'
 
@@ -35,7 +35,15 @@ export function ExampleTools() {
     )
   }
   if (isEmptyCV(cv)) {
-    return <div className="mb-5"><button type="button" className="btn btn-ghost px-0 underline underline-offset-4" onClick={loadSample}>{ui[uiLang].loadSample}</button></div>
+    const t = ui[uiLang]
+    return (
+      <div role="group" aria-label={t.sampleIntro} className="mb-5">
+        <p className="m-0 mb-2 text-sm font-medium">{t.sampleIntro}</p>
+        <div className="flex flex-wrap gap-2">
+          {SAMPLE_PROFILES.map((p) => <button key={p} type="button" className="btn" onClick={() => loadSample(p)}>{t.samples[p]}</button>)}
+        </div>
+      </div>
+    )
   }
   return null
 }
@@ -54,7 +62,7 @@ export function LetterExampleTools() {
   if ([letter.recipient.name, letter.recipient.company, letter.subject, letter.body].some((v) => v.trim())) return null
   return (
     <div className="mb-5">
-      <button type="button" className="btn btn-ghost px-0 underline underline-offset-4" onClick={() => update(fillLetter)}>
+      <button type="button" className="btn" onClick={() => update(fillLetter)}>
         {ui[uiLang].loadSample}
       </button>
     </div>

@@ -40,7 +40,7 @@ describe('sections', () => {
   })
 
   it('masque les sections cachées et vides', () => {
-    let cv = sampleCV('fr')
+    let cv = sampleCV('fr', 'dev')
     const n = visibleSections(cv).length
     cv = patchSection(cv, cv.sections[0].id, { visible: false })
     expect(visibleSections(cv)).toHaveLength(n - 1)
@@ -51,7 +51,7 @@ describe('sections', () => {
 
 describe('langue du CV', () => {
   it('ne touche ni au contenu ni aux titres personnalisés', () => {
-    let cv = sampleCV('fr')
+    let cv = sampleCV('fr', 'dev')
     cv = patchSection(cv, cv.sections[1].id, { title: 'Mon parcours' })
     const before = JSON.stringify({ ...cv, lang: undefined })
     for (const lang of LANGS) {
@@ -62,7 +62,7 @@ describe('langue du CV', () => {
   })
 
   it('garde le titre personnalisé, sinon prend le libellé de la langue', () => {
-    let cv = sampleCV('fr')
+    let cv = sampleCV('fr', 'dev')
     cv = patchSection(cv, cv.sections[1].id, { title: 'Mon parcours' })
     const [custom, plain] = [cv.sections[1], cv.sections[2]]
     for (const lang of LANGS) {

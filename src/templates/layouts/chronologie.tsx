@@ -2,7 +2,7 @@ import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Entry, Lines, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf, lineNodes, tint } from '../shared'
+import { colon, ContactRow, Entry, Lines, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf, lineNodes, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -93,7 +93,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
           {s.items.map((it) => (
             <View key={it.id} wrap={false} style={{ width: '47%', flexDirection: t.row, justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: t.m(4) }}>
               <Text style={{ flex: 1 }}>
-                {it.title && <Text style={{ fontWeight: 700 }}>{it.title}{it.text ? ' : ' : ''}</Text>}
+                {it.title && <Text style={{ fontWeight: 700 }}>{it.title}{it.text ? colon(cv.lang) : ''}</Text>}
                 {fixBidi(it.text, t.rtl)}
               </Text>
               <SkillLevel it={it} t={t} color={ink} width={50} />

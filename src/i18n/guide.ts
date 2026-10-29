@@ -51,9 +51,9 @@ const en: Guide = {
     'What you can do and the languages you speak, with a level if you like.',
     'Projects, interests, or a section of your own.',
     'Colour, font, margins: adjust how the document looks.',
-    'Your résumé is ready. Check the preview, then download it.',
+    'Your CV is ready. Check the preview, then download it.',
   ],
-  recap: 'Summary', readyText: 'The PDF is built on your device. You can come back and edit your résumé whenever you like.',
+  recap: 'Summary', readyText: 'The PDF is built on your device. You can come back and edit your CV whenever you like.',
   docsLink: 'See my documents',
 }
 

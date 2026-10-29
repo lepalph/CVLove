@@ -50,7 +50,7 @@ async function pdfOf(path: string) {
   return { text, images, colors: [...colors] }
 }
 
-/** Un nouveau CV est vide ; `sample` clique sur « Remplir avec l’exemple » (Camille Marchand) pour les tests qui lisent un document rempli. */
+/** Un nouveau CV est vide ; `sample` clique sur « Informatique » (exemple Camille Marchand) pour les tests qui lisent un document rempli. */
 const openEditor = async (page: Page, sample = false) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Créer mon CV' }).first().click()
@@ -58,7 +58,7 @@ const openEditor = async (page: Page, sample = false) => {
   await page.getByRole('button', { name: 'Complet' }).click() // un nouveau document démarre en mode guidé ; ces tests utilisent le formulaire complet
   await expect(page.getByRole('button', { name: 'Classique · Académique', pressed: true })).toBeVisible()
   if (sample) {
-    await page.getByRole('button', { name: 'Remplir avec l’exemple' }).first().click()
+    await page.getByRole('button', { name: 'Informatique' }).click()
     await expect(page.getByLabel('Prénom')).toHaveValue('Camille')
   }
   await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })

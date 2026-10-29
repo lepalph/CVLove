@@ -1,7 +1,9 @@
 import { Fragment, useState } from 'react'
-import { modelName } from './lib'
+import { isEmptyCV, modelName } from './lib'
+import { fullName } from '../model/cv'
 import { cvLabels } from '../i18n/labels'
 import { GITHUB_URL, home } from '../i18n/home'
+import { formatDate, shell } from '../i18n/shell'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { LANGS, type Lang } from '../model/types'
@@ -26,6 +28,12 @@ export function Home() {
   const t = home[uiLang]
   const [demo, setDemo] = useState(homeTemplates[0].id)
   const { shown, filters } = useModelFilter(true)
+  // CV à reprendre : l'actif s'il est rempli, sinon le plus récemment modifié.
+  const mine = useStore((s) => {
+    const cvs = s.documents.filter((d) => d.kind === 'cv' && !isEmptyCV(d.data))
+    return cvs.find((d) => d.id === s.activeId) ?? cvs.sort((a, b) => b.updatedAt - a.updatedAt)[0]
+  })
+  const sh = shell[uiLang]
 
   const start = (templateId: string) => {
     updateDesign({ ...templates.find((m) => m.id === templateId)?.preset, templateId })
@@ -40,7 +48,7 @@ export function Home() {
       <header className="sticky top-0 z-20 border-b border-line bg-desk">
         <nav className={`${wrap} flex h-16 items-center gap-3 sm:gap-6`}>
           <Logo />
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-1 lg:flex">
             <a href="#modeles" className="btn btn-ghost border-0">{t.navModels}</a>
             <a href="#comment" className="btn btn-ghost border-0">{t.navHow}</a>
           </div>
@@ -56,6 +64,20 @@ export function Home() {
       <main id="main" tabIndex={-1} className="outline-none">
         {/* Trame de fond : des feuilles A4 (1:1,414) en filet, qui s'effacent vers les bords. */}
         <div className="trame">
+        {mine && mine.kind === 'cv' && (
+          <section aria-labelledby="resume-title" className={`${wrap} pt-8`}>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-card border border-edge bg-panel p-4 sm:p-5">
+              <div className="min-w-0 flex-1 basis-64">
+                <h2 id="resume-title" className="m-0 text-base font-semibold">{sh.resume}</h2>
+                <p className="mt-1 text-pretty text-sm text-muted">
+                  {sh.resumeLine.replace('{name}', fullName(mine.data) || mine.name).replace('{date}', formatDate(mine.updatedAt, uiLang))}
+                  <span className="block">{sh.resumeLocal}</span>
+                </p>
+              </div>
+              <a href={EDITOR} className="btn btn-primary" onClick={() => useStore.getState().openDoc(mine.id)}>{sh.resumeBtn}</a>
+            </div>
+          </section>
+        )}
         <section className={`${wrap} grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:gap-16`}>
           <div>
             <h1 className="text-balance text-[2rem] font-semibold leading-[1.05] tracking-[-0.05em] sm:text-5xl">

@@ -1,5 +1,5 @@
 import { fullName, visibleFields, visibleSections } from '../model/cv'
-import { sampleCV } from '../model/sample'
+import { SAMPLE_PROFILES, sampleCV } from '../model/sample'
 import { LANGS, type CV, type Lang } from '../model/types'
 import type { TemplateDef } from '../templates/types'
 
@@ -25,8 +25,8 @@ export const externalCount = (names: string[], origin: string) =>
 /** Premier mot d'un nom d'étape (« Compétences et langues » devient « Compétences »). */
 export const shortStep = (name: string) => name.split(/\s+/)[0]
 
-const SAMPLE_NAMES = new Set(LANGS.map((l) => fullName(sampleCV(l))))
-/** Le CV porte encore le nom de l'exemple (Camille, Laila…) : il vient des données d'exemple, pas de la personne. */
+const SAMPLE_NAMES = new Set(LANGS.flatMap((l) => SAMPLE_PROFILES.map((p) => fullName(sampleCV(l, p)))))
+/** Le CV porte encore le nom de l'exemple (Camille, Nadia, Lucas…) : il vient des données d'exemple, pas de la personne. */
 export const isExampleCV = (cv: CV) => SAMPLE_NAMES.has(fullName(cv))
 /** Rien à imprimer : ni nom, ni coordonnées, ni section remplie. */
 export const isEmptyCV = (cv: CV) => !fullName(cv) && !cv.personal.title.trim() && !visibleFields(cv).length && !visibleSections(cv).length

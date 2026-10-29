@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { monthNames } from '../model/dates'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { extra } from '../i18n/extra'
 import { ui, type UI } from '../i18n/ui'
@@ -10,7 +11,7 @@ import {
 } from '../model/cv'
 import { MAX_IMPORT_BYTES, MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
 import { sampleCV } from '../model/sample'
-import { LANGS, SECTION_KINDS, type CVDoc, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
+import { LANGS, SECTION_KINDS, type CVDoc, type Lang, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
 import { useCvDoc, useStore } from '../store'
 import { placeholders } from '../i18n/placeholders'
 import { Field, Icon, LangSelect, useWide } from './bits'
@@ -97,7 +98,8 @@ export function PersonalCard() {
   }
   const setPersonal = (patch: Partial<typeof cv.personal>) => update((c) => ({ ...c, personal: { ...c.personal, ...patch } }))
   const missingKinds = FIELD_ORDER.filter((k) => !cv.personal.fields.some((f) => f.kind === k))
-  const fieldLabel = (k: FieldKind) => (k === 'custom' ? t.customLabel : t[k])
+  const fieldName = (f: (typeof cv.personal.fields)[number]) => (f.kind === 'custom' ? f.label || t.customLabel : t[f.kind])
+  const fieldLabel = (k: FieldKind) => (k === 'custom' ? t.customValue : t[k])
   return (
       <Card title={t.personal}>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -118,16 +120,16 @@ export function PersonalCard() {
           {cv.personal.fields.map((f) => (
             <li key={f.id} className={`flex items-end gap-1 ${f.visible ? '' : 'opacity-60'}`}>
               {f.kind === 'custom' && (
-                <div className="w-1/3"><Field label={t.customLabel}><input className="inp" value={f.label ?? ''} onChange={(e) => update((c) => patchField(c, f.id, { label: e.target.value }))} /></Field></div>
+                <div className="w-2/5 max-w-48 shrink-0"><Field label={t.customLabel}><input className="inp" value={f.label ?? ''} onChange={(e) => update((c) => patchField(c, f.id, { label: e.target.value }))} /></Field></div>
               )}
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <Field label={fieldLabel(f.kind)}>
                   <input className="inp" placeholder={ph.personal.fields.find((x) => x.kind === f.kind)?.value} type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
                     value={f.value} onChange={(e) => update((c) => patchField(c, f.id, { value: e.target.value }))} />
                 </Field>
               </div>
-              <button type="button" className="btn btn-ghost" onClick={() => update((c) => patchField(c, f.id, { visible: !f.visible }))}>{f.visible ? t.hide : t.show}</button>
-              <Icon label={t.remove} onClick={() => update((c) => removeField(c, f.id))}>×</Icon>
+              <button type="button" className="btn btn-ghost" aria-label={`${f.visible ? t.hide : t.show}${t.onItem.replace('{x}', fieldName(f))}`} onClick={() => update((c) => patchField(c, f.id, { visible: !f.visible }))}>{f.visible ? t.hide : t.show}</button>
+              <Icon label={`${t.remove}${t.onItem.replace('{x}', fieldName(f))}`} onClick={() => update((c) => removeField(c, f.id))}>×</Icon>
             </li>
           ))}
         </ul>
@@ -224,11 +226,13 @@ export const Card = ({ title, children }: { title?: string; children: React.Reac
 export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; t: UI; std: string }) {
   const update = useStore((st) => st.update)
   const labels = cvLabels[useCvDoc().data.lang]
-  const tv = v2[useStore((st) => st.uiLang)]
+  const uiLang = useStore((st) => st.uiLang)
+  const tv = v2[uiLang]
   const ph = usePlaceholders()
   const [ti, su, tx] = t.kindFields[s.kind]
   const dated = s.kind === 'experience' || s.kind === 'education' || s.kind === 'projects' || s.kind === 'custom'
   const multi = s.kind !== 'profile'
+  const onSec = (verb: string) => verb + t.onSection.replace('{x}', sectionTitle(s, labels))
   return (
     <li className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'}`}>
       <div className="flex items-center gap-1">
@@ -236,13 +240,13 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
           {sectionTitle(s, labels)}
           {!s.visible && <span className="ms-2 text-sm font-normal text-muted">({t.hidden})</span>}
         </h3>
-        <Icon label={t.up} onClick={() => update((c) => moveSection(c, s.id, -1))} disabled={i === 0}>↑</Icon>
-        <Icon label={t.down} onClick={() => update((c) => moveSection(c, s.id, 1))} disabled={i === n - 1}>↓</Icon>
-        <button type="button" className="btn btn-ghost" onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
-        <Icon label={t.remove} onClick={() => update((c) => removeSection(c, s.id))}>×</Icon>
+        <Icon label={onSec(t.up)} onClick={() => update((c) => moveSection(c, s.id, -1))} disabled={i === 0}>↑</Icon>
+        <Icon label={onSec(t.down)} onClick={() => update((c) => moveSection(c, s.id, 1))} disabled={i === n - 1}>↓</Icon>
+        <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
+        <Icon label={onSec(t.remove)} onClick={() => update((c) => removeSection(c, s.id))}>×</Icon>
       </div>
       <div className="mt-2">
-        <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} « ${std} »`}>
+        <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
           <input className="inp" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
         </Field>
       </div>
@@ -250,12 +254,13 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
         {s.items.map((it, k) => {
           const set = (p: Partial<typeof it>) => update((c) => patchItem(c, s.id, it.id, p))
           const eg = phItem(ph, s.kind, k)
+          const onItem = (verb: string) => verb + t.onItem.replace('{x}', [it.title, it.subtitle].filter(Boolean).join(', ') || String(k + 1))
           return (
             <li key={it.id} className="border-s-2 border-line ps-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 {ti && <Field label={ti}><input className="inp" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
                 {(s.kind === 'skills' || s.kind === 'languages') && (
-                  <Field label={tv.level}>
+                  <Field label={s.kind === 'languages' ? t.levelOf5 : tv.level}>
                     <select className="inp" value={it.level ?? 0} onChange={(e) => set({ level: +e.target.value })}>
                       <option value={0}>{tv.noLevel}</option>
                       {labels.levels.map((l, n) => <option key={n} value={n + 1}>{n + 1} · {l}</option>)}
@@ -265,10 +270,10 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
                 {su && <Field label={su}><input className="inp" placeholder={eg.subtitle} value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
                 {dated && <Field label={t.place}><input className="inp" placeholder={eg.place} value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
                 {dated && (
-                  <div className="grid grid-cols-2 gap-2 sm:col-span-2">
-                    <Field label={t.start}><input className="inp" type="month" placeholder="AAAA-MM" value={it.start} onChange={(e) => set({ start: e.target.value })} /></Field>
-                    <Field label={t.end}><input className="inp" type="month" placeholder="AAAA-MM" value={it.end} disabled={it.current} onChange={(e) => set({ end: e.target.value })} /></Field>
-                    <label className="col-span-2 flex min-h-11 items-center gap-2 text-sm">
+                  <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+                    <DatePick legend={t.start} lang={uiLang} value={it.start} onChange={(start) => set({ start })} />
+                    <DatePick legend={t.end} lang={uiLang} value={it.end} disabled={it.current} onChange={(end) => set({ end })} />
+                    <label className="sm:col-span-2 flex min-h-11 items-center gap-2 text-sm">
                       <input type="checkbox" className="size-5 accent-ink" checked={it.current} onChange={(e) => set({ current: e.target.checked })} />
                       {t.current}
                     </label>
@@ -284,9 +289,9 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
               )}
               {multi && (
                 <div className="mt-2 flex justify-end gap-1">
-                  <Icon label={t.up} onClick={() => update((c) => moveItem(c, s.id, it.id, -1))} disabled={k === 0}>↑</Icon>
-                  <Icon label={t.down} onClick={() => update((c) => moveItem(c, s.id, it.id, 1))} disabled={k === s.items.length - 1}>↓</Icon>
-                  <Icon label={t.remove} onClick={() => update((c) => removeItem(c, s.id, it.id))}>×</Icon>
+                  <Icon label={onItem(t.up)} onClick={() => update((c) => moveItem(c, s.id, it.id, -1))} disabled={k === 0}>↑</Icon>
+                  <Icon label={onItem(t.down)} onClick={() => update((c) => moveItem(c, s.id, it.id, 1))} disabled={k === s.items.length - 1}>↓</Icon>
+                  <Icon label={onItem(t.remove)} onClick={() => update((c) => removeItem(c, s.id, it.id))}>×</Icon>
                 </div>
               )}
             </li>
@@ -295,6 +300,42 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
       </ul>
       {multi && <button type="button" className="btn mt-3" onClick={() => update((c) => addItem(c, s.id))}>+ {t.addItem}</button>}
     </li>
+  )
+}
+
+const QUOTES: Partial<Record<Lang, [string, string]>> = { fr: ['« ', ' »'], en: ['“', '”'], de: ['„', '“'] }
+/** Cite un texte avec les guillemets de la langue de l'interface. */
+const quote = (lang: Lang, x: string) => { const [a, b] = QUOTES[lang] ?? ['«', '»']; return a + x + b }
+
+/**
+ * Date AAAA-MM en deux listes natives, Mois et Année. Année seule -> « AAAA » (le PDF n'affiche alors que l'année) ;
+ * un mois choisi avant l'année attend l'année (état local) plutôt que d'inventer une année.
+ */
+function DatePick({ legend, lang, value, onChange, disabled }: { legend: string; lang: Lang; value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const t = ui[lang]
+  const [y, m = ''] = value.split('-')
+  const [pending, setPending] = useState('')
+  const month = m || pending
+  const top = new Date().getFullYear() + 1
+  const years = Array.from({ length: top - 1959 }, (_, i) => String(top - i))
+  if (y && !years.includes(y)) years.push(y)
+  const names = useMemo(() => monthNames(lang, 'short'), [lang]) // court : « sept. » tient dans la colonne
+  const setMonth = (v: string) => { setPending(v); if (y) onChange(v ? `${y}-${v}` : y) }
+  const setYear = (v: string) => { setPending(month); onChange(v ? (month ? `${v}-${month}` : v) : '') }
+  return (
+    <fieldset disabled={disabled} className="m-0 min-w-0 border-0 p-0">
+      <legend className="mb-1 p-0 text-sm font-medium">{legend}</legend>
+      <div className="grid grid-cols-2 gap-2">
+        <select className="inp" aria-label={`${legend} : ${t.month}`} value={month} onChange={(e) => setMonth(e.target.value)}>
+          <option value="">{t.month}</option>
+          {names.map((n, i) => <option key={i} value={String(i + 1).padStart(2, '0')}>{n}</option>)}
+        </select>
+        <select className="inp" aria-label={`${legend} : ${t.year}`} value={y} onChange={(e) => setYear(e.target.value)}>
+          <option value="">{t.year}</option>
+          {years.map((v) => <option key={v} value={v}>{v}</option>)}
+        </select>
+      </div>
+    </fieldset>
   )
 }
 

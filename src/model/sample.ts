@@ -1,13 +1,14 @@
 import { emptyCV, newField, uid } from './cv'
 import { letterFromCV } from './letter'
+import { firstContent, retailContent } from './sampleProfiles'
 import type { CV, Item, Lang, Letter, SectionKind } from './types'
 
 /** Données d'exemple, fictives. Le contenu est celui de la langue (fr, en, ar) ; les autres langues reprennent l'anglais. */
 type Row = Partial<Omit<Item, 'id'>>
-interface Content {
+export interface Content {
   firstName: string; lastName: string; title: string
   fields: [string, string, string, string] // lieu, e-mail, téléphone, site (pas de date de naissance : déconseillée en France)
-  sections: [SectionKind, Row[]][]
+  sections: [SectionKind, Row[], string?][] // 3e valeur : titre d'une section libre
 }
 
 const it = (r: Row): Item => ({ id: uid(), title: '', subtitle: '', place: '', start: '', end: '', current: false, text: '', ...r })
@@ -79,14 +80,18 @@ const ar: Content = {
 
 const contents: Partial<Record<Lang, Content>> = { fr, en, ar }
 
-export function sampleCV(lang: Lang): CV {
-  const c = contents[lang] ?? en
+export type SampleProfile = 'retail' | 'first' | 'dev'
+export const SAMPLE_PROFILES: readonly SampleProfile[] = ['retail', 'first', 'dev']
+
+/** Exemple d'un profil : vente et accueil (par défaut), premier emploi, informatique (Camille). */
+export function sampleCV(lang: Lang, profile: SampleProfile = 'retail'): CV {
+  const c = profile === 'retail' ? retailContent(lang) : profile === 'first' ? firstContent(lang) : contents[lang] ?? en
   const cv = emptyCV(lang)
   cv.personal = {
     ...cv.personal, firstName: c.firstName, lastName: c.lastName, title: c.title,
-    fields: (['location', 'email', 'phone', 'website'] as const).map((k, i) => newField(k, c.fields[i])),
+    fields: (['location', 'email', 'phone', 'website'] as const).flatMap((k, i) => (c.fields[i] ? [newField(k, c.fields[i])] : [])),
   }
-  cv.sections = c.sections.map(([kind, rows]) => ({ id: uid(), kind, title: '', visible: true, items: rows.map(it) }))
+  cv.sections = c.sections.map(([kind, rows, title]) => ({ id: uid(), kind, title: title ?? '', visible: true, items: rows.map(it) }))
   return cv
 }
 
@@ -133,5 +138,5 @@ const letters: Record<Lang, LetterContent> = {
 /** Lettre d'exemple, cohérente avec `sampleCV(lang)` : expéditeur repris du CV d'exemple, destinataire fictif. */
 export function sampleLetter(lang: Lang): Letter {
   const c = letters[lang]
-  return { ...letterFromCV(sampleCV(lang)), recipient: { name: c.recipient[0], company: c.recipient[1], address: c.recipient[2] }, subject: c.subject, body: c.body }
+  return { ...letterFromCV(sampleCV(lang, 'dev')), recipient: { name: c.recipient[0], company: c.recipient[1], address: c.recipient[2] }, subject: c.subject, body: c.body }
 }

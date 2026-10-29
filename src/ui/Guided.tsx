@@ -151,7 +151,11 @@ function ModelStep() {
   const uiLang = useStore((s) => s.uiLang)
   const id = useCvDoc().design.templateId
   const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => { ref.current?.querySelector('ul [aria-pressed="true"]')?.scrollIntoView({ block: 'nearest' }) }, [])
+  // Seulement si la vignette est hors de l'écran : sinon on garderait le haut du panneau (exemples, étapes) caché.
+  useEffect(() => {
+    const el = ref.current?.querySelector('ul [aria-pressed="true"]')
+    if (el && el.getBoundingClientRect().top > innerHeight) el.scrollIntoView({ block: 'center' })
+  }, [])
   return (
     <div ref={ref} className="flex flex-col gap-4">
       <p className="m-0 text-base font-medium">{tips[uiLang].chosen.replace('{name}', modelName(getTemplate(id), uiLang))}</p>
@@ -195,6 +199,9 @@ function Finish({ onDownload, downloading, saved }: { onDownload: () => void; do
           <button type="button" className="btn" onClick={() => exportJson(doc)}>{t.exportJson}</button>
           <LetterLink />
           <a href="#/documents" className="btn btn-ghost">{g.docsLink}</a>
+        </div>
+        {/* Action destructive à part, sous un filet : loin du bouton Télécharger. */}
+        <div className="mt-8 border-t border-line pt-4">
           <button type="button" className="btn btn-ghost text-danger" onClick={clear}>{t.clearAll}</button>
         </div>
         {saved && <p aria-hidden="true" className="mt-3 text-sm font-medium text-ink">{saved}</p>}

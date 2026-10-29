@@ -9,7 +9,7 @@ import { LANGS } from './types'
 
 describe('lettre : création depuis un CV', () => {
   it('reprend nom, titre, e-mail, téléphone et lieu du CV ; formules de la langue', () => {
-    const cv = sampleCV('fr')
+    const cv = sampleCV('fr', 'dev')
     const l = letterFromCV(cv)
     expect(l.lang).toBe('fr')
     expect(l.sender).toMatchObject({ name: 'Camille Marchand', title: 'Développeuse web full-stack', email: 'camille.marchand@exemple.fr', address: 'Lyon, France' })
@@ -20,20 +20,20 @@ describe('lettre : création depuis un CV', () => {
   })
 
   it('reprend la ville du CV comme lieu de la lettre', () => {
-    expect(letterFromCV(sampleCV('fr')).place).toBe('Lyon')
+    expect(letterFromCV(sampleCV('fr', 'dev')).place).toBe('Lyon')
     expect(cityOf('12 rue des Fleurs, 69001 Lyon, France')).toBe('Lyon')
     expect(cityOf('Casablanca')).toBe('Casablanca')
     expect(cityOf('')).toBe('')
   })
 
   it('ignore les champs masqués ou vides', () => {
-    const cv = sampleCV('en')
+    const cv = sampleCV('en', 'dev')
     const email = cv.personal.fields.find((f) => f.kind === 'email')!
     expect(letterFromCV(patchField(cv, email.id, { visible: false })).sender.email).toBe('')
   })
 
   it('est indépendante du CV après création (dans les deux sens)', () => {
-    const cv = sampleCV('fr')
+    const cv = sampleCV('fr', 'dev')
     const l = letterFromCV(cv)
     const before = structuredClone(cv)
     const l2 = patchSender(l, { name: 'Autre', email: 'x@y.z' })
@@ -44,7 +44,7 @@ describe('lettre : création depuis un CV', () => {
   })
 
   it('la signature suit le nom tant qu’on ne l’a pas modifiée', () => {
-    const l = letterFromCV(sampleCV('fr'))
+    const l = letterFromCV(sampleCV('fr', 'dev'))
     expect(patchSender(l, { name: 'Zoé Durand' }).signature).toBe('Zoé Durand')
     expect(patchSender({ ...l, signature: 'Zoé' }, { name: 'Zoé Durand' }).signature).toBe('Zoé')
   })
@@ -77,7 +77,7 @@ describe('lettre : langue, texte, fichier', () => {
   })
 
   it('nom de fichier Lettre-Prenom-Nom.pdf', () => {
-    expect(letterFileName(letterFromCV(sampleCV('fr')))).toBe('Lettre-Camille-Marchand.pdf')
+    expect(letterFileName(letterFromCV(sampleCV('fr', 'dev')))).toBe('Lettre-Camille-Marchand.pdf')
     expect(letterFileName(blankLetter('fr'))).toBe('Lettre-CVLove.pdf')
   })
 
@@ -89,7 +89,7 @@ describe('lettre : langue, texte, fichier', () => {
 
 describe('lettre : export / import et migration', () => {
   it('aller-retour JSON sans perte', () => {
-    const doc = newLetterDoc('Lettre 2', { ...letterFromCV(sampleCV('fr')), body: 'Bonjour\n\nMerci' })
+    const doc = newLetterDoc('Lettre 2', { ...letterFromCV(sampleCV('fr', 'dev')), body: 'Bonjour\n\nMerci' })
     const [back] = parseImport(exportDocs([doc]))
     expect(back.kind).toBe('letter')
     expect(back.data).toEqual(doc.data)

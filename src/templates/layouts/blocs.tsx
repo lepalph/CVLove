@@ -3,7 +3,7 @@ import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { ContactRow, Entry, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
+import { colon, ContactRow, Entry, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -56,7 +56,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
       return s.items.map((it) => (
         <View key={it.id} wrap={false} style={{ flexDirection: t.row, justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: t.m(3) }}>
           <Text style={{ flex: 1 }}>
-            {it.title && <Text style={{ fontWeight: 700 }}>{it.title}{it.text ? ' : ' : ''}</Text>}
+            {it.title && <Text style={{ fontWeight: 700 }}>{it.title}{it.text ? colon(cv.lang) : ''}</Text>}
             {fixBidi(it.text, t.rtl)}
           </Text>
           <SkillLevel it={it} t={t} color={accInk} track={tint(accInk, 0.7)} />
@@ -68,7 +68,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   return (
     <Document title={fullName(cv)} author={fullName(cv)} language={cv.lang}>
       <Page {...t.pageProps} style={{ ...t.pageStyle(36, 40), paddingBottom: t.m(24) }}>
-        <View style={{ alignItems: 'center', ...(headBg ? { backgroundColor: headBg, borderRadius: 6, paddingVertical: t.m(16), paddingHorizontal: t.m(16) } : {}) }}>
+        <View style={{ alignItems: 'center', ...(headBg ? { backgroundColor: headBg, borderRadius: 6, paddingVertical: t.m(11), paddingHorizontal: t.m(16) } : {}) }}>
           {!!personal.photo && <View style={{ marginBottom: 8 }}><Image src={personal.photo} style={t.photo(band ? 84 : 92)} /></View>}
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(band ? 25 : 27), lineHeight: 1.2, textAlign: 'center', color: headFg }}>{fullName(cv)}</Text>
           {!!personal.title.trim() && <Text style={{ fontSize: t.s(12), marginTop: 3, textAlign: 'center', color: headBg ? headFg : accInk }}>{personal.title}</Text>}

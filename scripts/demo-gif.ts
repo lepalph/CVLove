@@ -1,5 +1,5 @@
 // Parcours de démonstration enregistré en vidéo puis converti en docs/images/demo.gif (ffmpeg requis).
-// Un `vite preview` doit tourner ; port via SCREENS_URL (défaut :4173). Lancer : pnpm demo:gif
+// Un `vite preview` doit tourner ; port via SCREENS_URL (défaut :4173). Thème sombre par défaut (DEMO_SCHEME=light pour le clair). Lancer : pnpm demo:gif
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs'
 import { chromium } from 'playwright'
@@ -12,7 +12,7 @@ mkdirSync(dir, { recursive: true })
 mkdirSync('docs/images', { recursive: true })
 
 const browser = await chromium.launch()
-const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'fr-FR', colorScheme: 'light', recordVideo: { dir, size: { width: 1280, height: 800 } } })
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'fr-FR', colorScheme: process.env.DEMO_SCHEME === 'light' ? 'light' : 'dark', recordVideo: { dir, size: { width: 1280, height: 800 } } })
 const page = await ctx.newPage()
 const pause = (ms: number) => page.waitForTimeout(ms)
 
@@ -24,7 +24,7 @@ await page.waitForSelector('canvas', { state: 'attached', timeout: 20000 })
 await pause(1500)
 await page.getByRole('button', { name: 'Moderne · Bandeau' }).click()
 await pause(1500)
-await page.getByRole('button', { name: 'Remplir avec l’exemple' }).first().click()
+await page.getByRole('button', { name: 'Vente et accueil' }).click()
 await pause(2500)
 await page.getByRole('button', { name: 'Minimal · Gouttière' }).click()
 await pause(1500)

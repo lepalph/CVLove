@@ -63,11 +63,11 @@ const fr: V2 = {
 }
 
 const en: V2 = {
-  docs: 'My documents', docsSub: 'Your résumés, saved in this browser. Export them to keep a copy elsewhere.',
-  newCV: 'New résumé', open: 'Open', duplicate: 'Duplicate', rename: 'Rename', renameLabel: 'Document name',
+  docs: 'My documents', docsSub: 'Your CVs, saved in this browser. Export them to keep a copy elsewhere.',
+  newCV: 'New CV', open: 'Open', duplicate: 'Duplicate', rename: 'Rename', renameLabel: 'Document name',
   del: 'Delete', deleteConfirm: 'Delete “{name}”? This cannot be undone.',
   exportDoc: 'Export', exportAll: 'Export all (JSON)', importFile: 'Import (JSON)', importError: 'Unreadable file: this is not a CVLove export.',
-  kindCV: 'Résumé', kindLetter: 'Letter', updated: 'Edited', active: 'Currently editing',
+  kindCV: 'CV', kindLetter: 'Letter', updated: 'Edited', active: 'Currently editing',
   design: 'Design', models: 'Templates', category: 'Category', all: 'All',
   cats: { classique: 'Classic', moderne: 'Modern', creatif: 'Creative', simple: 'Simple' },
   columns: 'Columns', oneCol: '1 column', twoCols: '2 columns', photoFilter: 'Photo', withPhoto: 'With photo', withoutPhoto: 'No photo',

@@ -1,15 +1,16 @@
+import type { ReactNode } from 'react'
 import { View } from '@react-pdf/renderer'
 import type { LetterLabels } from '../i18n/letter'
 import { formatDay } from '../model/dates'
 import { paragraphs } from '../model/letter'
 import type { Letter } from '../model/types'
-import { Text, fixBidi } from './shared'
+import { Text, colon, fixBidi, linked } from './shared'
 import type { Theme } from './theme'
 
 export const MUTED = '#5c564d'
 
 /** Coordonnées de l'expéditeur, une par ligne (vides écartées). */
-export const senderLines = (l: Letter) => [l.sender.address, l.sender.email, l.sender.phone].map((x) => x.trim()).filter(Boolean)
+export const senderLines = (l: Letter): ReactNode[] => [l.sender.address, l.sender.email, l.sender.phone].map((x) => x.trim()).filter(Boolean).map((x) => linked(x))
 
 /** « Lyon, 12 mars 2026 » (lieu et date facultatifs). */
 export const placeDate = (l: Letter) => [l.place.trim(), formatDay(l.date, l.lang)].filter(Boolean).join(l.lang === 'ar' ? '، ' : ', ')
@@ -31,7 +32,7 @@ export const recipientLines = (l: Letter) => [l.recipient.name, l.recipient.comp
 
 /** Objet, formule d'appel, paragraphes, politesse et signature. La politesse et la signature ne se séparent pas. */
 export function Main({ t, letter, labels, accent }: { t: Theme; letter: Letter; labels: LetterLabels; accent: string }) {
-  const sep = letter.lang === 'fr' ? ' : ' : ': '
+  const sep = colon(letter.lang)
   const gap = { marginTop: t.m(9), textAlign: t.start }
   return (
     <View style={{ fontSize: t.s(10.5) }}>

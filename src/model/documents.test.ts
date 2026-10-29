@@ -46,7 +46,7 @@ describe('migration v1 -> v2', () => {
   })
 
   it('mode d’édition : guidé pour un nouveau document, complet pour un document migré', () => {
-    expect(newCVDoc('CV', sampleCV('fr')).editorMode).toBe('guided')
+    expect(newCVDoc('CV', sampleCV('fr', 'dev')).editorMode).toBe('guided')
     expect(migrateV1(v1.state as never).documents[0].editorMode).toBe('full')
   })
 
@@ -57,7 +57,7 @@ describe('migration v1 -> v2', () => {
 
 describe('documents', () => {
   it('duplique en copie indépendante', () => {
-    const a = newCVDoc('CV', sampleCV('fr'))
+    const a = newCVDoc('CV', sampleCV('fr', 'dev'))
     const b = duplicateDoc(a, 'CV 2')
     expect(b.id).not.toBe(a.id)
     expect(b.data).toEqual(a.data)
@@ -66,7 +66,7 @@ describe('documents', () => {
   })
 
   it('exporte puis réimporte (nouveaux ids, contenu et design identiques)', () => {
-    const a = newCVDoc('Mon CV', sampleCV('fr'))
+    const a = newCVDoc('Mon CV', sampleCV('fr', 'dev'))
     const [b] = parseImport(exportDocs([a]))
     expect(b.id).not.toBe(a.id)
     expect({ ...b, id: '', updatedAt: 0 }).toEqual({ ...a, id: '', updatedAt: 0 })
@@ -85,7 +85,7 @@ describe('documents', () => {
   })
 
   it('choisit un nom libre', () => {
-    const docs = [newCVDoc('CV', sampleCV('fr')), newCVDoc('CV 2', sampleCV('fr'))]
+    const docs = [newCVDoc('CV', sampleCV('fr', 'dev')), newCVDoc('CV 2', sampleCV('fr', 'dev'))]
     expect(freeName(docs, 'CV')).toBe('CV 3')
     expect(freeName(docs, 'Lettre')).toBe('Lettre')
   })
@@ -110,6 +110,6 @@ describe('nom automatique d’un CV', () => {
     expect(followName(d, next, 'fr')).toBe('Zoé')
     expect(followName({ ...d, name: 'Candidature' }, next, 'fr')).toBe('Candidature')
     expect(followName({ ...d, name: 'CV sans titre 2' }, next, 'fr')).toBe('Zoé')
-    expect(followName({ ...d, name: 'Zoé', data: next }, d.data, 'en')).toBe('Untitled résumé')
+    expect(followName({ ...d, name: 'Zoé', data: next }, d.data, 'en')).toBe('Untitled CV')
   })
 })

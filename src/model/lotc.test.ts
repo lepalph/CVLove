@@ -29,7 +29,7 @@ describe('sanitizeCV : toujours un CV rendable', () => {
     expect(cv.sections[0].items).toEqual([expect.objectContaining({ title: '', level: 5, current: false })])
   })
   it('un CV valide ressort identique', () => {
-    const cv = sampleCV('fr')
+    const cv = sampleCV('fr', 'dev')
     expect(sanitizeCV(cv)).toEqual(cv)
   })
 })
@@ -110,7 +110,7 @@ describe('sanitizeState (hydratation)', () => {
     }
   })
   it('conserve les documents valides, l’actif et la langue d’interface ; ids dupliqués rendus uniques', () => {
-    const a = { kind: 'cv', id: 'x', name: 'A', data: sampleCV('fr') }
+    const a = { kind: 'cv', id: 'x', name: 'A', data: sampleCV('fr', 'dev') }
     const s = sanitizeState({ documents: [a, { ...a, name: 'B' }], activeId: 'x', uiLang: 'de' }, blank)
     expect(s.documents).toHaveLength(2)
     expect(new Set(s.documents.map((d) => d.id)).size).toBe(2)

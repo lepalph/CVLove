@@ -3,6 +3,7 @@ import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { tips } from '../i18n/tips'
 import { ui } from '../i18n/ui'
+import { shell } from '../i18n/shell'
 import { v2 } from '../i18n/v2'
 import { LANGS, type EditorMode } from '../model/types'
 import { PdfCanvas } from '../pdf/PdfCanvas'
@@ -28,6 +29,7 @@ export function EdHeader({ mode, onMode, tab, onTab, onDownload, accent, note }:
   const wide = useWide()
   return (
     <header className="edbar border-b border-line bg-desk px-[var(--m)] py-2">
+      <h1 className="sr-only">{location.hash.startsWith('#/lettre') ? shell[uiLang].titleLetter : shell[uiLang].titleEditor}</h1>
       <div className="a-logo flex items-center gap-1">
         <Logo accent={accent} />
         <a href="#/documents" className="btn btn-ghost whitespace-nowrap border-0 px-2" aria-label={v2[uiLang].docs} title={v2[uiLang].docs}>
@@ -36,10 +38,10 @@ export function EdHeader({ mode, onMode, tab, onTab, onDownload, accent, note }:
         </a>
       </div>
       {wide && <div className="a-mode"><ModeSeg mode={mode} onMode={onMode} /></div>}
-      <div role="tablist" className="a-tabs flex rounded-ctl border border-edge p-0.5 lg:hidden">
+      <div role="group" aria-label={shell[uiLang].view} className="a-tabs flex rounded-ctl border border-edge p-0.5 lg:hidden">
         {(['edit', 'preview'] as const).map((k) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => onTab(k)}
-            className="min-h-10 flex-1 rounded-[4px] px-2 text-sm font-medium text-muted transition-colors duration-150 aria-selected:bg-ink aria-selected:text-desk sm:px-3">
+          <button key={k} type="button" aria-pressed={tab === k} onClick={() => onTab(k)}
+            className="min-h-11 flex-1 rounded-[4px] px-2 text-sm font-medium text-muted transition-colors duration-150 aria-pressed:bg-ink aria-pressed:text-desk sm:px-3">
             {k === 'edit' ? t.tabEdit : t.tabPreview}
           </button>
         ))}

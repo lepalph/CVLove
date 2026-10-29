@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { extra } from '../i18n/extra'
+import { formatDate, importedText, shell } from '../i18n/shell'
 import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
@@ -8,6 +9,7 @@ import { MAX_IMPORT_BYTES } from '../model/sanitize'
 import { exportDocs } from '../model/documents'
 import { LANGS, type Doc } from '../model/types'
 import { useStore } from '../store'
+import { isEmptyCV } from './lib'
 import { LANG_NAMES, LangSelect, Logo, SaveBanner, SkipLink } from './bits'
 
 /** Nom affiché : un nom automatique (« CV », « CV 2 », « Lettre ») est complété par la personne, pour distinguer plusieurs documents. */
@@ -31,7 +33,9 @@ export function Documents() {
   const [asking, setAsking] = useState(false)
   const [source, setSource] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string }>()
+  const [err, setErr] = useState('')
+  const [said, setSaid] = useState('') // annonce (zone role=status toujours présente)
+  const done = useRef(false) // le champ de renommage a déjà été validé ou annulé
   const fileRef = useRef<HTMLInputElement>(null)
 
   const open = (id: string) => {
@@ -40,18 +44,40 @@ export function Documents() {
   }
   const onImport = async (f?: File) => {
     if (!f) return
-    if (f.size > MAX_IMPORT_BYTES) return setMsg({ ok: false, text: extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)) })
+    setSaid('')
+    if (f.size > MAX_IMPORT_BYTES) return setErr(extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)))
     try {
+      const before = useStore.getState()
       const n = importDocs(await f.text())
-      setMsg({ ok: true, text: extra[uiLang].imported.replace('{n}', String(n)) })
+      setErr('')
+      setSaid(importedText(uiLang, n))
+      // Un CV vide jamais rempli ne sert plus à rien : il laisse la place au premier document importé.
+      const now = useStore.getState().documents
+      const first = now[before.documents.length]
+      const active = before.documents.find((d) => d.id === before.activeId)
+      if (active?.kind === 'cv' && isEmptyCV(active.data) && first) {
+        if (now.slice(before.documents.length).some((d) => d.kind === 'cv')) remove(active.id)
+        openDoc(first.id)
+      }
     } catch {
-      setMsg({ ok: false, text: t.importError })
+      setErr(t.importError)
     }
+  }
+  const focusRename = (id: string) => requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-rename="${id}"]`)?.focus())
+  const finishRename = (id: string, value: string | null) => {
+    if (done.current) return
+    done.current = true
+    if (value !== null) rename(id, value)
+    setEditing(null)
+  }
+  const dup = (id: string) => {
+    duplicate(id)
+    const s = useStore.getState()
+    setSaid(shell[uiLang].duplicated.replace('{name}', s.documents.find((d) => d.id === s.activeId)?.name ?? ''))
   }
   const del = (d: Doc) => {
     if (confirm(t.deleteConfirm.replace('{name}', d.name))) remove(d.id)
   }
-  const date = new Intl.DateTimeFormat(uiLang === 'ar' ? 'ar-u-nu-latn' : uiLang, { dateStyle: 'medium', timeStyle: 'short' })
 
   return (
     <>
@@ -90,7 +116,8 @@ export function Documents() {
             <button type="button" className="btn btn-ghost" onClick={() => setAsking(false)}>{L.cancel}</button>
           </form>
         )}
-        {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-3 text-sm ${msg.ok ? 'text-muted' : 'text-danger'}`}>{msg.text}</p>}
+        <p role="status" className="mt-3 text-sm text-muted empty:hidden">{said}</p>
+        {err && <p role="alert" className="mt-3 text-sm text-danger">{err}</p>}
 
         <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs}>
           {documents.map((d) => (
@@ -98,20 +125,23 @@ export function Documents() {
               <div className="min-w-[12rem] flex-1">
                 {editing === d.id ? (
                   <input autoFocus aria-label={t.renameLabel} className="inp" defaultValue={d.name}
-                    onBlur={(e) => { rename(d.id, e.target.value); setEditing(null) }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditing(null) }} />
+                    onBlur={(e) => finishRename(d.id, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { finishRename(d.id, e.currentTarget.value); focusRename(d.id) }
+                      if (e.key === 'Escape') { finishRename(d.id, null); focusRename(d.id) }
+                    }} />
                 ) : (
                   <p className="text-lg font-semibold tracking-tight">{shownName(d)}</p>
                 )}
                 <p className="mt-0.5 font-mono text-xs text-muted">
-                  {d.kind === 'cv' ? t.kindCV : t.kindLetter} · {LANG_NAMES[d.data.lang]} · {t.updated} {date.format(d.updatedAt)}
+                  {d.kind === 'cv' ? t.kindCV : t.kindLetter} · {LANG_NAMES[d.data.lang]} · {t.updated} {formatDate(d.updatedAt, uiLang)}
                   {d.id === activeId && <> · <span className="text-ink">{t.active}</span></>}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">
                 <button type="button" className="btn" aria-label={`${t.open} : ${d.name}`} onClick={() => open(d.id)}>{t.open}</button>
-                <button type="button" className="btn btn-ghost" aria-label={`${t.duplicate} : ${d.name}`} onClick={() => duplicate(d.id)}>{t.duplicate}</button>
-                <button type="button" className="btn btn-ghost" aria-label={`${t.rename} : ${d.name}`} onClick={() => setEditing(d.id)}>{t.rename}</button>
+                <button type="button" className="btn btn-ghost" aria-label={`${t.duplicate} : ${d.name}`} onClick={() => dup(d.id)}>{t.duplicate}</button>
+                <button type="button" className="btn btn-ghost" aria-label={`${t.rename} : ${d.name}`} data-rename={d.id} onClick={() => { done.current = false; setEditing(d.id) }}>{t.rename}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.exportDoc} : ${d.name}`} onClick={() => download(`${d.name.replace(/[^\p{L}\p{N}]+/gu, '-')}.json`, exportDocs([d]))}>{t.exportDoc}</button>
                 <button type="button" className="btn btn-ghost text-danger" aria-label={`${t.del} : ${d.name}`} onClick={() => del(d)}>{t.del}</button>
               </div>

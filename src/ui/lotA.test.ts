@@ -24,7 +24,7 @@ describe('cœur du logo', () => {
 describe('barre d’étapes et état du document', () => {
   it('abrège au premier mot', () => expect(shortStep('Compétences et langues')).toBe('Compétences'))
   it('reconnaît l’exemple, le vide, et un CV rempli par la personne', () => {
-    const ex = sampleCV('fr')
+    const ex = sampleCV('fr', 'dev')
     expect(isExampleCV(ex)).toBe(true)
     expect(isEmptyCV(ex)).toBe(false)
     expect(isEmptyCV(emptyCV('fr'))).toBe(true)

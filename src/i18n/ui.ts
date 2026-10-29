@@ -14,6 +14,8 @@ export interface UI {
   clearAll: string
   clearConfirm: string
   loadSample: string
+  sampleIntro: string
+  samples: Record<'retail' | 'first' | 'dev', string>
   exportJson: string
   importJson: string
   importError: string
@@ -35,6 +37,12 @@ export interface UI {
   phone: string
   website: string
   customLabel: string
+  month: string
+  year: string
+  levelOf5: string
+  /** Fin du nom accessible d'un bouton de section / d'élément : verbe + ceci, {x} = nom. */
+  onSection: string
+  onItem: string
   customValue: string
   addField: string
   addCustomField: string
@@ -75,6 +83,8 @@ const fr: UI = {
   clearAll: 'Tout effacer',
   clearConfirm: 'Effacer tout le contenu du CV ? Cette action est définitive.',
   loadSample: 'Remplir avec l’exemple',
+  sampleIntro: 'Remplir avec un exemple :',
+  samples: { retail: 'Vente et accueil', first: 'Premier emploi', dev: 'Informatique' },
   exportJson: 'Exporter (JSON)',
   importJson: 'Importer (JSON)',
   importError: 'Fichier illisible : ce n’est pas un CV CVLove.',
@@ -95,7 +105,12 @@ const fr: UI = {
   email: 'E-mail',
   phone: 'Téléphone',
   website: 'Site web',
-  customLabel: 'Libellé',
+  customLabel: 'Nom du champ',
+  month: 'Mois',
+  year: 'Année',
+  levelOf5: 'Niveau sur 5',
+  onSection: ' la section {x}',
+  onItem: ' : {x}',
   customValue: 'Valeur',
   addField: 'Ajouter un champ',
   addCustomField: 'Champ libre',
@@ -121,13 +136,13 @@ const fr: UI = {
   kinds: { profile: 'Profil', experience: 'Expérience', education: 'Formation', skills: 'Compétences', languages: 'Langues', projects: 'Projets', interests: 'Centres d’intérêt', custom: 'Section libre' },
   kindFields: {
     profile: ['', '', 'Texte'], experience: ['Poste', 'Entreprise', 'Description'], education: ['Diplôme', 'École', 'Description'],
-    skills: ['Catégorie', '', 'Compétences'], languages: ['Langue', '', 'Niveau'], projects: ['Projet', 'Lien ou rôle', 'Description'],
+    skills: ['Catégorie', '', 'Compétences'], languages: ['Langue', '', 'Niveau en toutes lettres'], projects: ['Projet', 'Lien ou rôle', 'Description'],
     interests: ['Centre d’intérêt', '', ''], custom: ['Titre', 'Sous-titre', 'Description'],
   },
 }
 
 const en: UI = {
-  tagline: 'A résumé in a few minutes',
+  tagline: 'A CV in a few minutes',
   privacy: 'Everything stays on your device: nothing is sent over the Internet.',
   galleryTitle: 'Pick a template',
   gallerySub: 'You can switch at any time without losing your information.',
@@ -137,16 +152,18 @@ const en: UI = {
   tabPreview: 'Preview',
   download: 'Download PDF',
   clearAll: 'Clear everything',
-  clearConfirm: 'Erase all the content of the résumé? This cannot be undone.',
+  clearConfirm: 'Erase all the content of the CV? This cannot be undone.',
   loadSample: 'Fill with the sample',
+  sampleIntro: 'Fill with an example:',
+  samples: { retail: 'Retail and customer service', first: 'First job', dev: 'IT' },
   exportJson: 'Export (JSON)',
   importJson: 'Import (JSON)',
-  importError: 'Unreadable file: this is not a CVLove résumé.',
+  importError: 'Unreadable file: this is not a CVLove CV.',
   uiLang: 'Interface language',
-  cvLang: 'Résumé language',
+  cvLang: 'CV language',
   cvLangHint: 'Changes section titles and dates, never your text.',
   template: 'Template',
-  accent: 'Accent color',
+  accent: 'Accent colour',
   personal: 'Personal details',
   firstName: 'First name',
   lastName: 'Last name',
@@ -159,7 +176,12 @@ const en: UI = {
   email: 'Email',
   phone: 'Phone',
   website: 'Website',
-  customLabel: 'Label',
+  customLabel: 'Field name',
+  month: 'Month',
+  year: 'Year',
+  levelOf5: 'Level out of 5',
+  onSection: ' the {x} section',
+  onItem: ': {x}',
   customValue: 'Value',
   addField: 'Add a field',
   addCustomField: 'Custom field',
@@ -185,7 +207,7 @@ const en: UI = {
   kinds: { profile: 'Profile', experience: 'Experience', education: 'Education', skills: 'Skills', languages: 'Languages', projects: 'Projects', interests: 'Interests', custom: 'Custom section' },
   kindFields: {
     profile: ['', '', 'Text'], experience: ['Job title', 'Company', 'Description'], education: ['Degree', 'School', 'Description'],
-    skills: ['Category', '', 'Skills'], languages: ['Language', '', 'Level'], projects: ['Project', 'Link or role', 'Description'],
+    skills: ['Category', '', 'Skills'], languages: ['Language', '', 'Level in words'], projects: ['Project', 'Link or role', 'Description'],
     interests: ['Interest', '', ''], custom: ['Title', 'Subtitle', 'Description'],
   },
 }
@@ -203,6 +225,8 @@ const es: UI = {
   clearAll: 'Borrar todo',
   clearConfirm: '¿Borrar todo el contenido del currículum? No se puede deshacer.',
   loadSample: 'Rellenar con el ejemplo',
+  sampleIntro: 'Rellenar con un ejemplo:',
+  samples: { retail: 'Ventas y atención al cliente', first: 'Primer empleo', dev: 'Informática' },
   exportJson: 'Exportar (JSON)',
   importJson: 'Importar (JSON)',
   importError: 'Archivo ilegible: no es un currículum de CVLove.',
@@ -223,7 +247,12 @@ const es: UI = {
   email: 'Correo electrónico',
   phone: 'Teléfono',
   website: 'Sitio web',
-  customLabel: 'Etiqueta',
+  customLabel: 'Nombre del campo',
+  month: 'Mes',
+  year: 'Año',
+  levelOf5: 'Nivel sobre 5',
+  onSection: ' la sección {x}',
+  onItem: ': {x}',
   customValue: 'Valor',
   addField: 'Añadir un campo',
   addCustomField: 'Campo libre',
@@ -249,7 +278,7 @@ const es: UI = {
   kinds: { profile: 'Perfil', experience: 'Experiencia', education: 'Formación', skills: 'Competencias', languages: 'Idiomas', projects: 'Proyectos', interests: 'Intereses', custom: 'Sección libre' },
   kindFields: {
     profile: ['', '', 'Texto'], experience: ['Puesto', 'Empresa', 'Descripción'], education: ['Titulación', 'Centro', 'Descripción'],
-    skills: ['Categoría', '', 'Competencias'], languages: ['Idioma', '', 'Nivel'], projects: ['Proyecto', 'Enlace o función', 'Descripción'],
+    skills: ['Categoría', '', 'Competencias'], languages: ['Idioma', '', 'Nivel en palabras'], projects: ['Proyecto', 'Enlace o función', 'Descripción'],
     interests: ['Interés', '', ''], custom: ['Título', 'Subtítulo', 'Descripción'],
   },
 }
@@ -267,6 +296,8 @@ const de: UI = {
   clearAll: 'Alles löschen',
   clearConfirm: 'Den gesamten Inhalt des Lebenslaufs löschen? Das lässt sich nicht rückgängig machen.',
   loadSample: 'Mit Beispiel füllen',
+  sampleIntro: 'Mit einem Beispiel füllen:',
+  samples: { retail: 'Verkauf und Empfang', first: 'Erster Job', dev: 'IT' },
   exportJson: 'Exportieren (JSON)',
   importJson: 'Importieren (JSON)',
   importError: 'Datei nicht lesbar: Das ist kein CVLove-Lebenslauf.',
@@ -287,7 +318,12 @@ const de: UI = {
   email: 'E-Mail',
   phone: 'Telefon',
   website: 'Website',
-  customLabel: 'Bezeichnung',
+  customLabel: 'Feldname',
+  month: 'Monat',
+  year: 'Jahr',
+  levelOf5: 'Niveau von 5',
+  onSection: ': Abschnitt {x}',
+  onItem: ': {x}',
   customValue: 'Wert',
   addField: 'Feld hinzufügen',
   addCustomField: 'Freies Feld',
@@ -313,7 +349,7 @@ const de: UI = {
   kinds: { profile: 'Profil', experience: 'Berufserfahrung', education: 'Ausbildung', skills: 'Kenntnisse', languages: 'Sprachen', projects: 'Projekte', interests: 'Interessen', custom: 'Freier Abschnitt' },
   kindFields: {
     profile: ['', '', 'Text'], experience: ['Position', 'Unternehmen', 'Beschreibung'], education: ['Abschluss', 'Einrichtung', 'Beschreibung'],
-    skills: ['Kategorie', '', 'Kenntnisse'], languages: ['Sprache', '', 'Niveau'], projects: ['Projekt', 'Link oder Rolle', 'Beschreibung'],
+    skills: ['Kategorie', '', 'Kenntnisse'], languages: ['Sprache', '', 'Niveau in Worten'], projects: ['Projekt', 'Link oder Rolle', 'Beschreibung'],
     interests: ['Interesse', '', ''], custom: ['Titel', 'Untertitel', 'Beschreibung'],
   },
 }
@@ -331,6 +367,8 @@ const it: UI = {
   clearAll: 'Cancella tutto',
   clearConfirm: 'Cancellare tutto il contenuto del CV? L’azione è definitiva.',
   loadSample: 'Riempi con l’esempio',
+  sampleIntro: 'Riempi con un esempio:',
+  samples: { retail: 'Vendita e accoglienza', first: 'Primo impiego', dev: 'Informatica' },
   exportJson: 'Esporta (JSON)',
   importJson: 'Importa (JSON)',
   importError: 'File illeggibile: non è un CV di CVLove.',
@@ -351,7 +389,12 @@ const it: UI = {
   email: 'E-mail',
   phone: 'Telefono',
   website: 'Sito web',
-  customLabel: 'Etichetta',
+  customLabel: 'Nome del campo',
+  month: 'Mese',
+  year: 'Anno',
+  levelOf5: 'Livello su 5',
+  onSection: ': sezione {x}',
+  onItem: ': {x}',
   customValue: 'Valore',
   addField: 'Aggiungi un campo',
   addCustomField: 'Campo libero',
@@ -377,7 +420,7 @@ const it: UI = {
   kinds: { profile: 'Profilo', experience: 'Esperienza', education: 'Formazione', skills: 'Competenze', languages: 'Lingue', projects: 'Progetti', interests: 'Interessi', custom: 'Sezione libera' },
   kindFields: {
     profile: ['', '', 'Testo'], experience: ['Ruolo', 'Azienda', 'Descrizione'], education: ['Titolo di studio', 'Istituto', 'Descrizione'],
-    skills: ['Categoria', '', 'Competenze'], languages: ['Lingua', '', 'Livello'], projects: ['Progetto', 'Link o ruolo', 'Descrizione'],
+    skills: ['Categoria', '', 'Competenze'], languages: ['Lingua', '', 'Livello in parole'], projects: ['Progetto', 'Link o ruolo', 'Descrizione'],
     interests: ['Interesse', '', ''], custom: ['Titolo', 'Sottotitolo', 'Descrizione'],
   },
 }
@@ -395,6 +438,8 @@ const pt: UI = {
   clearAll: 'Apagar tudo',
   clearConfirm: 'Apagar todo o conteúdo do currículo? Esta ação é definitiva.',
   loadSample: 'Preencher com o exemplo',
+  sampleIntro: 'Preencher com um exemplo:',
+  samples: { retail: 'Vendas e atendimento', first: 'Primeiro emprego', dev: 'Informática' },
   exportJson: 'Exportar (JSON)',
   importJson: 'Importar (JSON)',
   importError: 'Ficheiro ilegível: não é um currículo CVLove.',
@@ -415,7 +460,12 @@ const pt: UI = {
   email: 'E-mail',
   phone: 'Telefone',
   website: 'Site',
-  customLabel: 'Rótulo',
+  customLabel: 'Nome do campo',
+  month: 'Mês',
+  year: 'Ano',
+  levelOf5: 'Nível em 5',
+  onSection: ' a secção {x}',
+  onItem: ': {x}',
   customValue: 'Valor',
   addField: 'Adicionar um campo',
   addCustomField: 'Campo livre',
@@ -441,7 +491,7 @@ const pt: UI = {
   kinds: { profile: 'Perfil', experience: 'Experiência', education: 'Formação', skills: 'Competências', languages: 'Idiomas', projects: 'Projetos', interests: 'Interesses', custom: 'Secção livre' },
   kindFields: {
     profile: ['', '', 'Texto'], experience: ['Cargo', 'Empresa', 'Descrição'], education: ['Curso', 'Instituição', 'Descrição'],
-    skills: ['Categoria', '', 'Competências'], languages: ['Idioma', '', 'Nível'], projects: ['Projeto', 'Ligação ou função', 'Descrição'],
+    skills: ['Categoria', '', 'Competências'], languages: ['Idioma', '', 'Nível por extenso'], projects: ['Projeto', 'Ligação ou função', 'Descrição'],
     interests: ['Interesse', '', ''], custom: ['Título', 'Subtítulo', 'Descrição'],
   },
 }
@@ -459,6 +509,8 @@ const ar: UI = {
   clearAll: 'مسح كل شيء',
   clearConfirm: 'هل تريد مسح كل محتوى السيرة الذاتية؟ لا يمكن التراجع عن هذا الإجراء.',
   loadSample: 'املأ بالمثال',
+  sampleIntro: 'املأ بمثال:',
+  samples: { retail: 'مبيعات واستقبال', first: 'أول وظيفة', dev: 'المعلوميات' },
   exportJson: 'تصدير (JSON)',
   importJson: 'استيراد (JSON)',
   importError: 'ملف غير مقروء: ليس سيرة ذاتية من CVLove.',
@@ -479,7 +531,12 @@ const ar: UI = {
   email: 'البريد الإلكتروني',
   phone: 'الهاتف',
   website: 'الموقع الإلكتروني',
-  customLabel: 'العنوان',
+  customLabel: 'اسم الحقل',
+  month: 'الشهر',
+  year: 'السنة',
+  levelOf5: 'المستوى من 5',
+  onSection: ': قسم {x}',
+  onItem: ': {x}',
   customValue: 'القيمة',
   addField: 'إضافة حقل',
   addCustomField: 'حقل حر',
@@ -505,7 +562,7 @@ const ar: UI = {
   kinds: { profile: 'نبذة شخصية', experience: 'الخبرة', education: 'التعليم', skills: 'المهارات', languages: 'اللغات', projects: 'المشاريع', interests: 'الاهتمامات', custom: 'قسم حر' },
   kindFields: {
     profile: ['', '', 'النص'], experience: ['المسمى الوظيفي', 'الشركة', 'الوصف'], education: ['الشهادة', 'المؤسسة', 'الوصف'],
-    skills: ['الفئة', '', 'المهارات'], languages: ['اللغة', '', 'المستوى'], projects: ['المشروع', 'رابط أو دور', 'الوصف'],
+    skills: ['الفئة', '', 'المهارات'], languages: ['اللغة', '', 'المستوى بالكلمات'], projects: ['المشروع', 'رابط أو دور', 'الوصف'],
     interests: ['الاهتمام', '', ''], custom: ['العنوان', 'عنوان فرعي', 'الوصف'],
   },
 }

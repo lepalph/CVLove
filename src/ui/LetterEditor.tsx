@@ -79,8 +79,8 @@ const useLetter = () => {
 const Text = ({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) => (
   <Field label={label}><input className="inp" type={type} value={value} onChange={(e) => onChange(e.target.value)} /></Field>
 )
-const Area = ({ label, value, onChange, rows, hint }: { label: string; value: string; onChange: (v: string) => void; rows: number; hint?: string }) => (
-  <Field label={label} hint={hint}><textarea className="inp" rows={rows} value={value} onChange={(e) => onChange(e.target.value)} /></Field>
+const Area = ({ label, value, onChange, rows, hint, placeholder }: { label: string; value: string; onChange: (v: string) => void; rows: number; hint?: string; placeholder?: string }) => (
+  <Field label={label} hint={hint}><textarea className="inp" rows={rows} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} /></Field>
 )
 
 function LangCard() {
@@ -147,7 +147,7 @@ function BodyCard({ title }: { title?: string }) {
   return (
     <Card title={title}>
       <div className="grid gap-3">
-        <Area label={L.body} hint={L.bodyHint} rows={14} value={letter.body} onChange={(v) => set({ body: v })} />
+        <Area label={L.body} hint={L.bodyHint} placeholder={L.bodyPlaceholder} rows={14} value={letter.body} onChange={(v) => set({ body: v })} />
         <Area label={L.closing} rows={2} value={letter.closing} onChange={(v) => set({ closing: v })} />
         <Text label={L.signature} value={letter.signature} onChange={(v) => set({ signature: v })} />
       </div>

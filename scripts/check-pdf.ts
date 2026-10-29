@@ -80,7 +80,7 @@ const photo = () => {
 
 /** CV d'exemple + 12 expériences (une par mois : toutes les abréviations de mois passent par la police). */
 function longCV(lang: Lang): CV {
-  const cv = sampleCV(lang)
+  const cv = sampleCV(lang, 'dev')
   const exp = cv.sections.find((s) => s.kind === 'experience')!
   exp.items = Array.from({ length: 12 }, (_, i) => ({ ...exp.items[i % 2], id: `x${i}`, text: exp.items[i % 2].text.repeat(3), start: `20${10 + i}-${String(i + 1).padStart(2, '0')}`, end: i ? `20${11 + i}-${String(12 - i).padStart(2, '0')}` : '', current: i === 0 }))
   cv.personal.photo = photo()
@@ -136,7 +136,7 @@ const EN_BODY = ['I am writing to apply for the web developer position. For six 
 
 /** Lettre d'exemple : expéditeur repris du CV d'exemple, corps de la langue (anglais pour les langues sans texte propre), `times` x le corps. */
 function sampleLetter(lang: Lang, times = 1): Letter {
-  const l = letterFromCV(sampleCV(lang))
+  const l = letterFromCV(sampleCV(lang, 'dev'))
   const body = BODIES[lang] ?? EN_BODY
   return {
     ...l, place: lang === 'ar' ? 'ليون' : 'Lyon', date: '2026-03-12',
@@ -174,13 +174,13 @@ jobs.push({
 })
 for (const t of templates) {
   for (const lang of LANGS)
-    jobs.push({ name: `${t.id}/${lang}`, run: () => check(sampleCV(lang), designOf(t), { png: lang === 'fr' || lang === 'ar' ? `${t.id}-${lang}` : undefined }) })
+    jobs.push({ name: `${t.id}/${lang}`, run: () => check(sampleCV(lang, 'dev'), designOf(t), { png: lang === 'fr' || lang === 'ar' ? `${t.id}-${lang}` : undefined }) })
   for (const lang of ['en', 'ar'] as const)
     jobs.push({ name: `${t.id}/${lang} long + photo`, run: () => check(longCV(lang), designOf(t), { minPages: 2, png: `long-${t.id}-${lang}`, pngPages: 2 }) })
   // Letter + niveaux en barres ; points + réglages extrêmes (grande police, grandes marges, interligne serré / aéré)
-  jobs.push({ name: `${t.id}/fr Letter + barres`, run: () => check(sampleCV('fr'), designOf(t, { pageSize: 'LETTER', skillDisplay: 'bars' }), { size: [612, 792], png: `letter-${t.id}-fr` }) })
+  jobs.push({ name: `${t.id}/fr Letter + barres`, run: () => check(sampleCV('fr', 'dev'), designOf(t, { pageSize: 'LETTER', skillDisplay: 'bars' }), { size: [612, 792], png: `letter-${t.id}-fr` }) })
   jobs.push({ name: `${t.id}/en points, 115 %, marges larges`, run: () => check(longCV('en'), designOf(t, { skillDisplay: 'dots', fontScale: 1.15, margins: 'large', lineHeight: 1.6, photoShape: 'square' }), { minPages: 2, png: `max-${t.id}-en` }) })
-  jobs.push({ name: `${t.id}/de 90 %, marges serrées, niveaux en texte`, run: () => check(sampleCV('de'), designOf(t, { skillDisplay: 'text', fontScale: 0.9, margins: 'compact', lineHeight: 1.2, accent: '#facc15' })) })
+  jobs.push({ name: `${t.id}/de 90 %, marges serrées, niveaux en texte`, run: () => check(sampleCV('de', 'dev'), designOf(t, { skillDisplay: 'text', fontScale: 0.9, margins: 'compact', lineHeight: 1.2, accent: '#facc15' })) })
 }
 // Lettres de motivation : 3 mises en page x 7 langues, Letter, texte long sur 2 pages (accent clair, grande police, marges larges)
 for (const l of letterLayouts) {

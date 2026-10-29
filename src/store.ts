@@ -4,7 +4,7 @@ import { detectLang } from './i18n/ui'
 import { DEFAULT_DESIGN, applyDesignPatch, emptyCV } from './model/cv'
 import { blankCV, duplicateDoc, followName, freeName, migrateV1, newCVDoc, parseImport, patchDoc, untitledName } from './model/documents'
 import { blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
-import { sampleCV } from './model/sample'
+import { sampleCV, type SampleProfile } from './model/sample'
 import { sanitizeState } from './model/sanitize'
 import type { CV, CVDoc, Design, Doc, EditorMode, Lang, Letter, LetterDoc } from './model/types'
 import { getTemplate } from './templates'
@@ -21,7 +21,7 @@ interface State {
   /** Mode guidé / complet du document actif (mémorisé avec lui, sans toucher à sa date de modification). */
   setEditorMode: (m: EditorMode) => void
   clearAll: () => void
-  loadSample: () => void
+  loadSample: (profile?: SampleProfile) => void
   /** Remplace le contenu et le design du document actif par le premier CV du fichier. */
   importJson: (json: string) => void
   /** Lettre du document actif (voir `selectLetterDoc`). */
@@ -110,7 +110,7 @@ export const useStore = create<State>()(
         setUiLang: (uiLang) => set({ uiLang }),
         setEditorMode: (editorMode) => set((s) => ({ documents: patchDoc(s.documents, selectCvDoc(s).id, { editorMode }) })),
         clearAll: () => patchActive((d) => ({ data: emptyCV(d.data.lang) })),
-        loadSample: () => patchActive((d) => ({ data: sampleCV(d.data.lang) })),
+        loadSample: (profile) => patchActive((d) => ({ data: sampleCV(d.data.lang, profile) })),
         importJson: (json) => {
           const imported = parseImport(json).find((d) => d.kind === 'cv') as CVDoc | undefined
           if (!imported) throw new Error('invalid')
