@@ -4,7 +4,7 @@
 
 CVLove est un générateur de CV gratuit et open source. Vous choisissez un modèle, vous remplissez vos informations et vous téléchargez un PDF. Il n'y a ni compte, ni publicité, ni serveur applicatif.
 
-![Parcours CVLove : choisir un modèle, remplir avec l'exemple, changer de couleur, télécharger](docs/images/demo.gif)
+![Parcours CVLove : choisir un modèle, remplir avec un exemple, changer de couleur, télécharger (mode sombre)](docs/images/demo.gif)
 
 ## Captures
 
@@ -33,7 +33,9 @@ Pour le vérifier, ouvrez les outils du navigateur (F12, ou Cmd+Option+I sur Mac
 ## Fonctionnalités
 
 - Accueil sur `#/`, éditeur sur `#/editeur`, liste des documents sur `#/documents`, lettre de motivation sur `#/lettre`.
-- Éditeur à deux modes : Guidé (9 étapes) ou Complet (un seul formulaire).
+- Éditeur à deux modes : Guidé (9 étapes, avec de courts conseils pour un premier CV) ou Complet (un seul formulaire).
+- Tant que le CV est vide, l’aperçu montre un exemple dans le modèle choisi. Trois exemples peuvent être chargés : vente et accueil, premier emploi, informatique.
+- L’accueil propose de reprendre le CV en cours.
 - 36 modèles, soit 12 mises en page avec 3 styles chacune. Changer de modèle conserve vos données.
 - 7 couleurs d'accent et un sélecteur de couleur libre, 6 paires de polices, taille du texte, interligne, marges, A4 ou Letter, forme de la photo, affichage des niveaux de compétence.
 - Sections : profil, expérience, formation, compétences, langues, projets, centres d'intérêt, section libre. Vous pouvez les ajouter, les masquer, les renommer et les réordonner.

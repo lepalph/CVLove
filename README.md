@@ -4,7 +4,7 @@
 
 CVLove is a free, open source résumé builder. You pick a template, fill in your details and download a PDF. There is no account, no ads and no backend.
 
-![CVLove walkthrough: pick a template, fill with the sample, change color, download](docs/images/demo.gif)
+![CVLove walkthrough: pick a template, fill with a sample, change color, download (dark mode)](docs/images/demo.gif)
 
 ## Screenshots
 
@@ -33,7 +33,9 @@ To check it yourself, open the browser developer tools (F12, or Cmd+Option+I on 
 ## Features
 
 - Home at `#/`, editor at `#/editeur`, document list at `#/documents`, cover letter at `#/lettre`.
-- Editor with two modes: Guided (9 steps) or Full (one form).
+- Editor with two modes: Guided (9 steps, with short tips for a first CV) or Full (one form).
+- While your CV is empty, the preview shows a sample in the template you picked. Three samples can be loaded: retail and front desk, first job, software.
+- The home page offers to pick up the CV you were working on.
 - 36 templates, made of 12 layouts with 3 styles each. Switching template keeps your data.
 - 7 accent colors plus a free color picker, 6 font pairs, text size, line height, margins, A4 or Letter, photo shape, skill level display.
 - Sections: profile, experience, education, skills, languages, projects, interests, free section. You can add, hide, rename and reorder them.
