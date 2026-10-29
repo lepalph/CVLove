@@ -10,7 +10,7 @@ CVLove est un générateur de CV gratuit et open source. Vous choisissez un mod�
 
 | Accueil | Catalogue des modèles |
 | --- | --- |
-| ![Page d'accueil](docs/images/home.png) | ![Catalogue de 36 modèles](docs/images/templates.png) |
+| ![Page d'accueil](docs/images/home.png) | ![Catalogue des modèles](docs/images/templates.png) |
 
 | Éditeur guidé | Mode sombre |
 | --- | --- |
@@ -36,7 +36,7 @@ Pour le vérifier, ouvrez les outils du navigateur (F12, ou Cmd+Option+I sur Mac
 - Éditeur à deux modes : Guidé (9 étapes, avec de courts conseils pour un premier CV) ou Complet (un seul formulaire).
 - Tant que le CV est vide, l’aperçu montre un exemple dans le modèle choisi. Trois exemples peuvent être chargés : vente et accueil, premier emploi, informatique.
 - L’accueil propose de reprendre le CV en cours.
-- 36 modèles, soit 12 mises en page avec 3 styles chacune. Changer de modèle conserve vos données.
+- Un catalogue de mises en page, avec 3 styles chacune. Changer de modèle conserve vos données.
 - 7 couleurs d'accent et un sélecteur de couleur libre, 6 paires de polices, taille du texte, interligne, marges, A4 ou Letter, forme de la photo, affichage des niveaux de compétence.
 - Sections : profil, expérience, formation, compétences, langues, projets, centres d'intérêt, section libre. Vous pouvez les ajouter, les masquer, les renommer et les réordonner.
 - Photo facultative, champs personnels masquables ou personnalisés.
@@ -59,7 +59,7 @@ pnpm dev            # serveur de développement, http://localhost:5173
 pnpm build          # vérification des types, puis build de production dans dist/
 pnpm preview        # sert dist/ sur http://localhost:4173
 pnpm test           # tests unitaires (Vitest)
-pnpm check:pdf      # rend chaque modèle dans chaque langue, vérifie le texte extrait, écrit des PNG dans out/
+pnpm check:pdf      # rend chaque modèle dans chaque langue, vérifie le texte extrait, écrit des PNG dans out/ (ONLY=<regex> pour filtrer)
 pnpm test:e2e       # build, puis tests Playwright (Chromium)
 pnpm demo:gif       # enregistre le GIF du parcours (preview lancé et ffmpeg requis)
 ```
@@ -68,14 +68,7 @@ Au premier lancement des tests de bout en bout, installez le navigateur avec `pn
 
 ## Ajouter un modèle
 
-Les contributions sont bienvenues : nouveaux modèles, nouvelles fonctionnalités, corrections et traductions. Une nouvelle mise en page tient dans un seul fichier.
-
-1. Copiez le fichier le plus proche dans `src/templates/layouts/` (`classique.tsx` pour une colonne, `moderne.tsx` pour deux).
-2. Modifiez son `meta` (id égal au nom du fichier, noms par langue, catégorie, colonnes, 3 styles) et la mise en page elle-même. Utilisez `makeTheme` pour que votre mise en page suive les réglages de design de l'utilisateur.
-3. Le registre prend le fichier en compte automatiquement via `import.meta.glob`. Vous ne le modifiez pas.
-4. Lancez `pnpm check:pdf` et regardez les PNG dans `out/`.
-
-Les règles complètes et les critères d'acceptation sont dans [CONTRIBUTING.md](CONTRIBUTING.md). Le contrat des modèles est documenté dans `src/templates/types.ts`.
+Les contributions sont bienvenues : nouveaux modèles, nouvelles fonctionnalités, corrections et traductions. Une nouvelle mise en page tient dans un seul fichier de `src/templates/layouts/`, et le registre le prend en compte tout seul. Les étapes, la liste des mises en page existantes, les helpers, le filtre `ONLY=<regex>` de `pnpm check:pdf` et les critères d'acceptation sont dans [CONTRIBUTING.md](CONTRIBUTING.md) (en anglais). Le contrat des modèles est documenté dans `src/templates/types.ts`.
 
 ## Limites connues
 

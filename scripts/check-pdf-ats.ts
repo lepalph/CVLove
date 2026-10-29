@@ -2,7 +2,8 @@
 //  - ATS : un mot connu du contenu ressort éclaté (« S O P H I E »), une ligature (« ﬁ ») disparaît, ou un mot est coupé par « ’ » ;
 //  - pagination : un titre de section reste seul en bas de page, ou le nombre de pages explose (Letter, 115 %, marges larges, accent clair) ;
 //  - arabe : le texte arabe d'un CV passé en français n'a pas de police (glyphes absents) ;
-//  - contraste : texte d'accent < 4,5:1 sur blanc (voir aussi src/templates/contrast.test.ts).
+//  - deux-points et liens : pas d’espace avant « : » hors français, e-mail, téléphone et site cliquables.
+// Le contraste de l’accent n’est pas vérifié ici : ink() et onAccent() sont testés dans src/templates/lotb.test.ts.
 import { fileURLToPath } from 'node:url'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { cvLabels } from '../src/i18n/labels'

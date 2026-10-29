@@ -10,7 +10,7 @@ CVLove is a free, open source résumé builder. You pick a template, fill in you
 
 | Home | Template catalog |
 | --- | --- |
-| ![Home page](docs/images/home.png) | ![Catalog of 36 templates](docs/images/templates.png) |
+| ![Home page](docs/images/home.png) | ![Template catalog](docs/images/templates.png) |
 
 | Guided editor | Dark mode |
 | --- | --- |
@@ -36,7 +36,7 @@ To check it yourself, open the browser developer tools (F12, or Cmd+Option+I on 
 - Editor with two modes: Guided (9 steps, with short tips for a first CV) or Full (one form).
 - While your CV is empty, the preview shows a sample in the template you picked. Three samples can be loaded: retail and front desk, first job, software.
 - The home page offers to pick up the CV you were working on.
-- 36 templates, made of 12 layouts with 3 styles each. Switching template keeps your data.
+- A catalog of layouts, each with 3 styles. Switching template keeps your data.
 - 7 accent colors plus a free color picker, 6 font pairs, text size, line height, margins, A4 or Letter, photo shape, skill level display.
 - Sections: profile, experience, education, skills, languages, projects, interests, free section. You can add, hide, rename and reorder them.
 - Optional photo, hideable or custom personal fields.
@@ -59,7 +59,7 @@ pnpm dev            # development server, http://localhost:5173
 pnpm build          # type check, then production build in dist/
 pnpm preview        # serve dist/ on http://localhost:4173
 pnpm test           # unit tests (Vitest)
-pnpm check:pdf      # renders every template in every language, checks the extracted text, writes PNGs to out/
+pnpm check:pdf      # renders every template in every language, checks the extracted text, writes PNGs to out/ (ONLY=<regex> to filter)
 pnpm test:e2e       # builds, then runs the Playwright tests (Chromium)
 pnpm demo:gif       # records the walkthrough GIF (needs preview running and ffmpeg)
 ```
@@ -68,14 +68,7 @@ On the first end-to-end run, install the browser with `pnpm exec playwright inst
 
 ## Add a template
 
-Contributions are welcome: new templates, new features, fixes and translations. A new layout is one file.
-
-1. Copy the closest file in `src/templates/layouts/` (`classique.tsx` for one column, `moderne.tsx` for two).
-2. Edit its `meta` (id equal to the file name, names per language, category, columns, 3 styles) and the layout itself. Use `makeTheme` so that your layout follows the user's design options.
-3. The registry picks the file up automatically through `import.meta.glob`. You do not edit it.
-4. Run `pnpm check:pdf` and look at the PNGs in `out/`.
-
-The full rules and the acceptance criteria are in [CONTRIBUTING.md](CONTRIBUTING.md). The template contract is documented in `src/templates/types.ts`.
+Contributions are welcome: new templates, new features, fixes and translations. A new layout is one file in `src/templates/layouts/`, and the registry picks it up by itself. The steps, the list of existing layouts, the helpers, the `ONLY=<regex>` filter of `pnpm check:pdf` and the acceptance criteria are in [CONTRIBUTING.md](CONTRIBUTING.md). The template contract is documented in `src/templates/types.ts`.
 
 ## Known limits
 
