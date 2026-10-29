@@ -10,7 +10,7 @@ import { getTemplate } from '../templates'
 import { LANG_NAMES } from './bits'
 import { DesignSettings, ModelGallery } from './DesignPanel'
 import { LetterLink } from './LetterLink'
-import { shortStep, modelName } from './lib'
+import { shortStep, modelName, isEmptyCV } from './lib'
 import { useClearAll } from './ExampleTools'
 import { exportJson, LanguageCard, PersonalCard, SectionsCard } from './Form'
 
@@ -31,7 +31,8 @@ export const guidedStart = { afterModel: false }
 export function useGuidedProgress(id?: string) {
   const cvId = useCvDoc().id
   const docId = id ?? cvId
-  const [p, setP] = useState(() => (guidedStart.afterModel && !id ? { docId, i: 1, done: new Set([0]) } : { docId, i: 0, done: new Set<number>() }))
+  const filledCv = !isEmptyCV(useCvDoc().data)
+  const [p, setP] = useState(() => ((guidedStart.afterModel || filledCv) && !id ? { docId, i: 1, done: new Set([0]) } : { docId, i: 0, done: new Set<number>() }))
   useEffect(() => { guidedStart.afterModel = false }, [])
   return p.docId === docId ? { p, setP } : { p: { docId, i: 0, done: new Set<number>() }, setP }
 }
@@ -98,7 +99,7 @@ export function Steps({ progress, names, hints, tips: tipList, filled, children 
           {names.map((name, k) => (
             <li key={name} className="flex-auto">
               <button type="button" aria-current={k === i ? 'step' : undefined} aria-label={isDone(k) ? `${name} (${g.stepDone})` : name} title={name} onClick={() => setI(k)}
-                className={`flex min-h-11 w-full items-center gap-1.5 rounded-ctl border px-2.5 text-start font-mono text-xs transition-colors duration-150 ${
+                className={`flex min-h-11 w-full items-center gap-1.5 rounded-ctl border px-2.5 text-start font-mono text-[13px] transition-colors duration-150 ${
                   k === i ? 'border-ink bg-ink text-desk' : isDone(k) ? 'border-ink text-ink hover:bg-sunk' : 'border-edge text-muted hover:border-faint hover:text-ink'}`}>
                 <span dir="ltr" className="tabular-nums">{num(k)}</span>
                 <span className="truncate">{k === i ? name : shortStep(name)}</span>

@@ -3,9 +3,9 @@ import { ui } from '../i18n/ui'
 import { fullName } from '../model/cv'
 import { blankCV } from '../model/documents'
 import type { Letter } from '../model/types'
-import { SAMPLE_PROFILES, sampleLetter } from '../model/sample'
+import { SAMPLE_PROFILES, sampleLetter, type SampleProfile } from '../model/sample'
 import { useCvDoc, useLetterDoc, useStore } from '../store'
-import { isEmptyCV, isExampleCV, sampleProfileOf } from './lib'
+import { isEmptyCV, isExampleCV } from './lib'
 
 /** « Tout effacer » (avec confirmation) : repart de sections vides prêtes à remplir, champs d'exemple en placeholder. Même geste dans les deux modes. */
 export function useClearAll() {
@@ -48,8 +48,8 @@ export function ExampleTools() {
   return null
 }
 
-const fillLetter = (l: Letter): Letter => {
-  const s = sampleLetter(l.lang, sampleProfileOf(l.sender.name))
+const fillLetter = (l: Letter, profile: SampleProfile): Letter => {
+  const s = sampleLetter(l.lang, profile)
   const keep = !!l.sender.name.trim()
   return { ...s, sender: keep ? l.sender : s.sender, signature: keep ? l.signature : s.signature, place: l.place || s.place, date: l.date, salutation: l.salutation, closing: l.closing }
 }
@@ -59,12 +59,14 @@ export function LetterExampleTools() {
   const letter = useLetterDoc()!.data
   const update = useStore((s) => s.updateLetter)
   const uiLang = useStore((s) => s.uiLang)
+  const t = ui[uiLang]
   if ([letter.recipient.name, letter.recipient.company, letter.subject, letter.body].some((v) => v.trim())) return null
   return (
-    <div className="mb-5">
-      <button type="button" className="btn" onClick={() => update(fillLetter)}>
-        {ui[uiLang].loadSample}
-      </button>
+    <div role="group" aria-label={t.sampleIntro} className="mb-5">
+      <p className="m-0 mb-2 text-sm font-medium">{t.sampleIntro}</p>
+      <div className="flex flex-wrap gap-2">
+        {SAMPLE_PROFILES.map((p) => <button key={p} type="button" className="btn" onClick={() => update((l) => fillLetter(l, p))}>{t.samples[p]}</button>)}
+      </div>
     </div>
   )
 }

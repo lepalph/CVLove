@@ -142,7 +142,7 @@ export function Documents() {
                 <button type="button" className="btn" aria-label={`${t.open} : ${d.name}`} onClick={() => open(d.id)}>{t.open}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.duplicate} : ${d.name}`} onClick={() => dup(d.id)}>{t.duplicate}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.rename} : ${d.name}`} data-rename={d.id} onClick={() => { done.current = false; setEditing(d.id) }}>{t.rename}</button>
-                <button type="button" className="btn btn-ghost" aria-label={`${t.exportDoc} : ${d.name}`} onClick={() => download(`${d.name.replace(/[^\p{L}\p{N}]+/gu, '-')}.json`, exportDocs([d]))}>{t.exportDoc}</button>
+                <button type="button" className="btn btn-ghost" aria-label={`${ui[uiLang].exportJson} : ${d.name}`} onClick={() => download(`${d.name.replace(/[^\p{L}\p{N}]+/gu, '-')}.json`, exportDocs([d]))}>{ui[uiLang].exportJson}</button>
                 <button type="button" className="btn btn-ghost text-danger" aria-label={`${t.del} : ${d.name}`} onClick={() => del(d)}>{t.del}</button>
               </div>
             </li>

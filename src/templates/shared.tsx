@@ -149,15 +149,17 @@ export const lineNodes = (text: string, rtl: boolean) =>
 export const Lines = ({ text, rtl }: { text: string; rtl: boolean }) => <>{lineNodes(text, rtl)}</>
 
 /**
- * Description d'un poste : `head` (titre, période...) et la 1re ligne restent ensemble, le reste peut passer à la page suivante.
+ * Description d'un poste : `head` (titre, période...) et les 2 premières lignes restent ensemble, le reste peut passer à la page suivante.
  * Un poste long ne repousse plus la page entière (blancs, 8 pages) et un titre ne reste jamais seul sous un en-tête de section.
  */
 export function Entry({ head, text, rtl, style }: { head: ReactNode; text: string; rtl: boolean; style?: ViewProps['style'] }) {
-  const [first, ...rest] = lineNodes(text, rtl)
+  const nodes = lineNodes(text, rtl)
+  // Entrée courte (~1/3 de page max) : jamais coupée ; sinon l'en-tête part avec ses 2 premières lignes.
+  const short = text.length < 600 && nodes.length <= 4
   return (
-    <View style={style}>
-      <View wrap={false}>{head}{first}</View>
-      {rest}
+    <View style={style} wrap={!short}>
+      <View wrap={false}>{head}{nodes.slice(0, 2)}</View>
+      {nodes.slice(2)}
     </View>
   )
 }
@@ -168,7 +170,7 @@ export function Entry({ head, text, rtl, style }: { head: ReactNode; text: strin
  */
 export const SectionFlow = ({ gap, title, children }: { gap: number; title: ReactNode; children: ReactNode }) => (
   <Fragment>
-    <View minPresenceAhead={70} style={{ marginTop: gap }}>{title}</View>
+    <View minPresenceAhead={120} style={{ marginTop: gap }}>{title}</View>
     {children}
   </Fragment>
 )

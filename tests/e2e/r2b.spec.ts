@@ -57,7 +57,7 @@ test('lettre assortie : trame dans le corps et exemple encore proposé', async (
   await page.getByRole('button', { name: 'Vente et accueil' }).click()
   await page.getByRole('button', { name: 'Créer la lettre assortie' }).click()
   await expect(page).toHaveURL(/#\/lettre/)
-  await expect(page.getByRole('button', { name: 'Remplir avec l’exemple' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Remplir avec un exemple :' })).toBeVisible()
   await page.getByRole('button', { name: 'Complet' }).click()
   await expect(page.getByLabel('Corps de la lettre')).toHaveAttribute('placeholder', /Pourquoi cette entreprise/)
 })

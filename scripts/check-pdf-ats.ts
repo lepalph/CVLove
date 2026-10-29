@@ -98,6 +98,9 @@ for (const t of templates.filter((x: { id: string }) => x.id.endsWith('-1'))) {
     // titre orphelin : plus aucun texte sous lui ni à sa hauteur (un contenu sur la même ligne, en colonne de libellés, compte comme dessous)
     for (const title of page.filter((l) => titles.includes(l.text.trim().toLowerCase())))
       if (!page.some((l) => l !== title && l.y < title.y + 3)) fail(`${t.id}/pagination`, `titre « ${title.text.trim()} » en dernière ligne de la page ${p}`)
+    // intitulé d'expérience (« Poste N Responsable… ») avec moins de 2 lignes de contenu sous lui sur la page
+    for (const job of page.filter((l) => /^Poste \d Responsable/.test(l.text.trim())))
+      if (page.filter((l) => l !== job && l.y < job.y - 3).length < 2) fail(`${t.id}/pagination`, `intitulé « ${job.text.trim()} » en bas de la page ${p}, sans son contenu`)
   }
 }
 

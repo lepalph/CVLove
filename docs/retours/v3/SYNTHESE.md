@@ -56,3 +56,17 @@ Le lot 1 a porté : Léa voit 6 de ses frictions corrigées. Ce qui reste : l'ex
 ### Écarté
 - Aperçu toujours visible sur mobile (Léa) : l'écran est trop étroit, l'onglet Aperçu reste le bon compromis.
 - Format Letter basculé automatiquement selon la langue (Tom) : choix de l'utilisateur, on ne le change pas dans son dos.
+
+## Ronde 3 : Marc 8 (7 en r1) · Amina 8 (6,5 en r1) · Gérard 8 (7 en r2) · Sami (contributeur) 8
+
+Les reprises montrent que les lots 1 et 2 ont porté : défilement, dates, exemple, couleur gardée, arabe, reprise du CV. Sami a ajouté un 13e modèle en suivant CONTRIBUTING sans toucher au registre ; la doc a été complétée d'après son retour.
+
+### Lot 3 (dernier)
+- Vignettes de la galerie dans la couleur et la police de l'utilisateur (Amina).
+- Un CV déjà rempli rouvre le guidé à Identité, pas à Modèle (Gérard).
+- Lettre : trois exemples au choix, comme pour le CV (Marc).
+- Un poste ne se coupe plus entre deux pages (Marc).
+- « Exporter (JSON) » explicite dans Mes documents, nom accessible du choix de police, étapes en 13 px (Gérard, Amina).
+
+### Arrêt des itérations
+Les notes plafonnent à 8 et les frictions restantes touchent au positionnement (aperçu riche façon Canva, réglages fins dans l'aperçu, bouton « Permis » dédié). Continuer reviendrait à changer de produit.

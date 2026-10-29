@@ -70,7 +70,7 @@ export function ModelGallery({ tall }: { tall?: boolean }) {
             <li key={m.id}>
               <button type="button" aria-pressed={on} aria-label={name} tabIndex={m.id === stop ? 0 : -1} onClick={() => updateDesign({ ...m.preset, templateId: m.id })}
                 className="group flex w-full flex-col gap-1.5 rounded-[4px] bg-transparent p-0 text-start">
-                <SamplePage lang={cv.lang} templateId={m.id}
+                <SamplePage lang={cv.lang} templateId={m.id} custom={design.custom}
                   className="!shadow-none outline outline-1 -outline-offset-1 outline-edge transition-shadow duration-150 group-hover:outline-faint group-aria-pressed:!outline-2 group-aria-pressed:outline-ink" />
                 <span className={`text-xs leading-tight ${on ? 'font-semibold text-ink' : 'text-muted'}`}>{name}</span>
               </button>
@@ -126,7 +126,7 @@ export function DesignSettings({ letter }: { letter?: boolean }) {
       </fieldset>
 
       <Field label={t.font}>
-        <select className="inp" value={design.fontPair} onChange={(e) => set('fontPair', e.target.value as Design['fontPair'])}>
+        <select className="inp" aria-label={t.font} value={design.fontPair} onChange={(e) => set('fontPair', e.target.value as Design['fontPair'])}>
           {FONT_PAIRS.map((p) => <option key={p} value={p}>{FONT_PAIR_DEFS[p].label}</option>)}
         </select>
       </Field>
