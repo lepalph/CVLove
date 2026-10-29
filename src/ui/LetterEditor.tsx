@@ -13,6 +13,7 @@ import { Field, LangSelect, SkipLink } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
 import { DesignSettings } from './DesignPanel'
 import { LetterExampleTools } from './ExampleTools'
+import { sampleProfileOf } from './lib'
 import { Card } from './Form'
 import { Steps, useGuidedProgress } from './Guided'
 
@@ -61,7 +62,7 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
           <LetterExampleTools />
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang) : letter, design)} deps={[letter, design]} empty={empty} sample said={said}
+        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design)} deps={[letter, design]} empty={empty} sample said={said}
           label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
       </main>
       <EdFooter />

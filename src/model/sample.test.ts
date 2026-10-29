@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { fullName } from './cv'
 import { formatMonth, formatPeriod, monthNames } from './dates'
-import { SAMPLE_PROFILES, sampleCV } from './sample'
+import { SAMPLE_PROFILES, sampleCV, sampleLetter } from './sample'
 import { sanitizeCV } from './sanitize'
 import { LANGS } from './types'
 
@@ -23,6 +23,20 @@ describe('profils d’exemple', () => {
   })
   it('le premier emploi a une section Bénévolat', () => {
     expect(sampleCV('fr', 'first').sections.find((s) => s.kind === 'custom')?.title).toBe('Bénévolat')
+  })
+})
+
+describe('lettres d’exemple', () => {
+  it('3 profils x 7 langues : corps, objet, destinataire, sans tiret cadratin', () => {
+    for (const p of SAMPLE_PROFILES) for (const l of LANGS) {
+      const x = sampleLetter(l, p)
+      expect(x.body.trim(), `${p}/${l}`).not.toBe('')
+      expect(x.subject && x.recipient.name && x.recipient.company && x.recipient.address).toBeTruthy()
+      expect(x.body + x.subject).not.toContain('—')
+    }
+  })
+  it('le défaut est retail', () => {
+    expect(sampleLetter('fr').sender.name).toBe('Nadia Perrin')
   })
 })
 

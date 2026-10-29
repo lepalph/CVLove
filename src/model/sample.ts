@@ -97,7 +97,7 @@ export function sampleCV(lang: Lang, profile: SampleProfile = 'retail'): CV {
 
 interface LetterContent { recipient: [string, string, string]; subject: string; body: string }
 
-const letters: Record<Lang, LetterContent> = {
+const devLetters: Record<Lang, LetterContent> = {
   fr: {
     recipient: ['Madame Durand', 'Studio Horizon', '14 rue des Tisserands\n69002 Lyon'],
     subject: 'Candidature au poste de développeuse full-stack',
@@ -135,8 +135,86 @@ const letters: Record<Lang, LetterContent> = {
   },
 }
 
-/** Lettre d'exemple, cohérente avec `sampleCV(lang)` : expéditeur repris du CV d'exemple, destinataire fictif. */
-export function sampleLetter(lang: Lang): Letter {
-  const c = letters[lang]
-  return { ...letterFromCV(sampleCV(lang, 'dev')), recipient: { name: c.recipient[0], company: c.recipient[1], address: c.recipient[2] }, subject: c.subject, body: c.body }
+const retailLetters: Record<Lang, LetterContent> = {
+  fr: {
+    recipient: ['Madame Lambert', 'Boutique Aurore', '8 rue de la République\n69001 Lyon'],
+    subject: 'Candidature au poste de conseillère de vente',
+    body: "Votre annonce pour un poste de conseillère de vente m'a tout de suite intéressée. Depuis huit ans, je travaille en boulangerie, en supermarché et en boutique de prêt-à-porter, et j'aime le contact avec les clients.\n\nChez Maison Duval, j'accueille et je conseille une quarantaine de clients par jour, je tiens la caisse et je la clôture chaque soir sans écart. Je prends aussi plaisir à garder un magasin rangé et bien approvisionné.\n\nJe serais heureuse de vous rencontrer pour vous parler de mon parcours. Je reste disponible à votre convenance.",
+  },
+  en: {
+    recipient: ['Ms Lambert', 'Aurora Boutique', '8 Park Street\nBristol BS1 5JG'],
+    subject: 'Application for the sales assistant position',
+    body: "Your advert for a sales assistant immediately caught my interest. For eight years I have worked in a bakery, a supermarket and a fashion store, and I enjoy dealing with customers.\n\nAt Duval & Co I welcome and advise about forty customers a day, run the till and balance it every evening. I also take pride in keeping a store tidy and well stocked.\n\nI would be pleased to meet you and tell you more about my background. I am available whenever suits you.",
+  },
+  es: {
+    recipient: ['Sra. Lambert', 'Boutique Aurora', 'Calle de la Paz 8\n46003 Valencia'],
+    subject: 'Candidatura al puesto de dependienta',
+    body: "Su oferta de dependienta me ha interesado enseguida. Desde hace ocho años trabajo en panadería, supermercado y tiendas de moda, y disfruto del trato con los clientes.\n\nEn Moda Duval atiendo y aconsejo a unos cuarenta clientes al día, llevo la caja y la cierro cada tarde sin descuadres. También me gusta mantener la tienda ordenada y bien surtida.\n\nMe alegraría poder reunirme con usted para hablarle de mi trayectoria. Quedo a su disposición.",
+  },
+  de: {
+    recipient: ['Frau Lambert', 'Boutique Aurora', 'Gartenstraße 8\n80331 München'],
+    subject: 'Bewerbung als Verkäuferin',
+    body: "Ihre Anzeige für eine Verkäuferin hat sofort mein Interesse geweckt. Seit acht Jahren arbeite ich in einer Bäckerei, einem Supermarkt und einem Modegeschäft und schätze den Kontakt zu Kunden.\n\nBei Duval Mode berate ich täglich etwa vierzig Kunden, führe die Kasse und schließe sie jeden Abend ohne Differenz ab. Außerdem halte ich gern das Geschäft ordentlich und gut aufgefüllt.\n\nÜber ein Treffen, bei dem ich Ihnen meinen Werdegang schildern kann, freue ich mich sehr. Ich stehe Ihnen jederzeit zur Verfügung.",
+  },
+  it: {
+    recipient: ['Gentile Signora Lambert', 'Boutique Aurora', 'Via della Pace 8\n10121 Torino'],
+    subject: 'Candidatura per la posizione di commessa',
+    body: "Il vostro annuncio per una commessa ha subito suscitato il mio interesse. Da otto anni lavoro in panetteria, al supermercato e in negozi di abbigliamento, e mi piace il contatto con i clienti.\n\nDa Moda Duval accolgo e consiglio circa quaranta clienti al giorno, gestisco la cassa e la chiudo ogni sera senza differenze. Mi piace anche tenere il negozio in ordine e ben rifornito.\n\nSarei lieta di incontrarvi per parlarvi del mio percorso. Resto a vostra disposizione.",
+  },
+  pt: {
+    recipient: ['Exma. Sra. Lambert', 'Boutique Aurora', 'Rua da Paz 8\n4000-001 Porto'],
+    subject: 'Candidatura ao lugar de vendedora',
+    body: "O vosso anúncio para vendedora despertou-me logo o interesse. Há oito anos que trabalho em padaria, supermercado e lojas de moda, e gosto do contacto com os clientes.\n\nNa Moda Duval atendo e aconselho cerca de quarenta clientes por dia, trabalho na caixa e fecho-a todas as noites sem diferenças. Também gosto de manter a loja arrumada e bem abastecida.\n\nFicaria satisfeita por me encontrar convosco para falar do meu percurso. Fico ao dispor.",
+  },
+  ar: {
+    recipient: ['السيدة لمبرت', 'بوتيك الفجر', 'شارع السلام 8\nالدار البيضاء'],
+    subject: 'طلب توظيف: بائعة ومستشارة مبيعات',
+    body: 'لفت إعلانكم عن وظيفة بائعة ومستشارة مبيعات انتباهي فورًا. أعمل منذ ثماني سنوات في مخبز وسوبرماركت ومتجر ملابس، وأحب التعامل مع الزبائن.\n\nفي متجر الأزياء الذي أعمل فيه أستقبل وأنصح نحو أربعين زبونًا يوميًا، وأتولى الصندوق وأغلقه كل مساء دون أي فارق. كما أحب أن يبقى المتجر مرتبًا وممتلئًا بالبضائع.\n\nيسعدني أن ألتقي بكم وأحدثكم عن مساري. وأنا رهن إشارتكم.',
+  },
+}
+
+const firstLetters: Record<Lang, LetterContent> = {
+  fr: {
+    recipient: ['Monsieur Lefèvre', 'Café des Halles', '5 place du Commerce\n44000 Nantes'],
+    subject: 'Candidature pour un emploi à temps partiel',
+    body: "Votre annonce pour un poste de serveur à temps partiel m'a intéressé. Je suis étudiant en première année de licence et je cherche un emploi que je peux concilier avec mes cours.\n\nJ'ai déjà gardé des enfants chaque semaine, travaillé l'été dans un camping et sur un marché, où j'accueillais les clients et tenais la caisse. Je suis ponctuel, sérieux et j'aime le travail en équipe.\n\nJe serais content de vous rencontrer pour vous en parler. Je reste disponible à votre convenance.",
+  },
+  en: {
+    recipient: ['Mr Lefevre', 'Market Café', '5 Commerce Square\nLeeds LS1 4AP'],
+    subject: 'Application for a part-time job',
+    body: "Your advert for a part-time waiter caught my interest. I am a first-year university student and I am looking for a job that fits around my classes.\n\nI have looked after children every week and worked summers at a campsite and on a market stall, where I welcomed customers and ran the till. I am punctual, reliable and enjoy working in a team.\n\nI would be glad to meet you to talk about it. I am available whenever suits you.",
+  },
+  es: {
+    recipient: ['Sr. Lefèvre', 'Café del Mercado', 'Plaza del Comercio 5\n46001 Valencia'],
+    subject: 'Candidatura a un empleo a tiempo parcial',
+    body: "Su oferta de camarero a tiempo parcial me ha interesado. Soy estudiante de primer curso de grado y busco un empleo que pueda compaginar con las clases.\n\nHe cuidado niños cada semana y he trabajado en verano en un camping y en un mercado, donde atendía a los clientes y llevaba la caja. Soy puntual, responsable y me gusta trabajar en equipo.\n\nMe encantaría reunirme con usted para hablarlo. Quedo a su disposición.",
+  },
+  de: {
+    recipient: ['Herr Lefèvre', 'Café am Markt', 'Marktplatz 5\n04109 Leipzig'],
+    subject: 'Bewerbung um eine Teilzeitstelle',
+    body: "Ihre Anzeige für eine Servicekraft in Teilzeit hat mich angesprochen. Ich bin Student im ersten Semester und suche eine Stelle, die sich mit meinem Studium vereinbaren lässt.\n\nIch habe regelmäßig Kinder betreut und in den Sommerferien auf einem Campingplatz und auf einem Markt gearbeitet, wo ich Kunden bedient und die Kasse geführt habe. Ich bin pünktlich, zuverlässig und arbeite gern im Team.\n\nÜber ein Gespräch freue ich mich. Ich stehe Ihnen jederzeit zur Verfügung.",
+  },
+  it: {
+    recipient: ['Gentile Signor Lefèvre', 'Caffè del Mercato', 'Piazza del Commercio 5\n40121 Bologna'],
+    subject: 'Candidatura per un lavoro part-time',
+    body: "Il vostro annuncio per un cameriere part-time mi ha interessato. Sono uno studente del primo anno di università e cerco un lavoro conciliabile con le lezioni.\n\nHo badato ai bambini ogni settimana e ho lavorato d'estate in un campeggio e in un mercato, dove accoglievo i clienti e tenevo la cassa. Sono puntuale, serio e mi piace lavorare in squadra.\n\nSarei contento di incontrarvi per parlarne. Resto a vostra disposizione.",
+  },
+  pt: {
+    recipient: ['Exmo. Sr. Lefèvre', 'Café do Mercado', 'Praça do Comércio 5\n4000-002 Porto'],
+    subject: 'Candidatura a um emprego a tempo parcial',
+    body: "O vosso anúncio para empregado de mesa a tempo parcial interessou-me. Sou estudante do 1.º ano de licenciatura e procuro um emprego compatível com as aulas.\n\nJá cuidei de crianças todas as semanas e trabalhei no verão num parque de campismo e num mercado, onde atendia os clientes e tratava da caixa. Sou pontual, responsável e gosto de trabalhar em equipa.\n\nFicaria contente por me encontrar convosco para falar sobre isto. Fico ao dispor.",
+  },
+  ar: {
+    recipient: ['السيد الفاسي', 'مقهى السوق', 'ساحة التجارة 5\nالدار البيضاء'],
+    subject: 'طلب توظيف بدوام جزئي',
+    body: 'لفت إعلانكم عن وظيفة نادل بدوام جزئي انتباهي. أنا طالب في السنة الأولى الجامعية وأبحث عن عمل يتناسب مع أوقات دراستي.\n\nاعتنيت بالأطفال كل أسبوع، وعملت في الصيف في مخيم وفي سوق، حيث كنت أستقبل الزبائن وأتولى الصندوق. أنا ملتزم بالمواعيد وجاد، وأحب العمل ضمن فريق.\n\nيسعدني أن ألتقي بكم للحديث عن ذلك. وأنا رهن إشارتكم.',
+  },
+}
+
+const letters = { retail: retailLetters, first: firstLetters, dev: devLetters }
+
+/** Lettre d'exemple, cohérente avec `sampleCV(lang, profile)` : expéditeur repris du CV d'exemple, destinataire fictif. */
+export function sampleLetter(lang: Lang, profile: SampleProfile = 'retail'): Letter {
+  const c = letters[profile][lang]
+  return { ...letterFromCV(sampleCV(lang, profile)), recipient: { name: c.recipient[0], company: c.recipient[1], address: c.recipient[2] }, subject: c.subject, body: c.body }
 }

@@ -5,7 +5,7 @@ import { blankCV } from '../model/documents'
 import type { Letter } from '../model/types'
 import { SAMPLE_PROFILES, sampleLetter } from '../model/sample'
 import { useCvDoc, useLetterDoc, useStore } from '../store'
-import { isEmptyCV, isExampleCV } from './lib'
+import { isEmptyCV, isExampleCV, sampleProfileOf } from './lib'
 
 /** « Tout effacer » (avec confirmation) : repart de sections vides prêtes à remplir, champs d'exemple en placeholder. Même geste dans les deux modes. */
 export function useClearAll() {
@@ -49,7 +49,7 @@ export function ExampleTools() {
 }
 
 const fillLetter = (l: Letter): Letter => {
-  const s = sampleLetter(l.lang)
+  const s = sampleLetter(l.lang, sampleProfileOf(l.sender.name))
   const keep = !!l.sender.name.trim()
   return { ...s, sender: keep ? l.sender : s.sender, signature: keep ? l.signature : s.signature, place: l.place || s.place, date: l.date, salutation: l.salutation, closing: l.closing }
 }
