@@ -153,7 +153,8 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
   const x = extra[uiLang]
   const labels = cvLabels[cv.lang]
   const shown = cv.sections.map((s, i) => ({ s, i })).filter(({ s }) => !only || only.includes(s.kind))
-  const addable = add.filter((k) => !only || k === 'custom' || !cv.sections.some((s) => s.kind === k))
+  const addable = add.filter((k) => k === 'custom' || !cv.sections.some((s) => s.kind === k)) // une section déjà présente ne se rajoute pas
+  const [picking, setPicking] = useState(!!only) // mode complet : un seul bouton « Ajouter une section », qui déplie les types
   return (
       <Card title={title === false ? undefined : (title ?? t.sections)}>
         {!only && cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
@@ -163,11 +164,12 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
             <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} />
           ))}
         </ul>
-        {addable.length > 0 && (
+        {addable.length > 0 && !picking && <button type="button" className="btn mt-5" onClick={() => setPicking(true)}>+ {t.addSection}</button>}
+        {addable.length > 0 && picking && (
           <>
             <p className="mb-2 mt-5 text-sm font-medium">{t.addSection}</p>
             <div className="flex flex-wrap gap-2">
-              {addable.map((k) => <button key={k} type="button" className="btn" onClick={() => update((c) => addSection(c, k))}>+ {t.kinds[k]}</button>)}
+              {addable.map((k, i) => <button key={k} type="button" className="btn" autoFocus={!only && i === 0} onClick={() => { update((c) => addSection(c, k)); if (!only) setPicking(false) }}>+ {t.kinds[k]}</button>)}
             </div>
           </>
         )}

@@ -109,7 +109,7 @@ export function entryMeta(it: Item, cv: CV, labels: CVLabels) {
 }
 
 /**
- * Niveau 1-5 d'une compétence ou d'une langue, selon design.skillDisplay : barres, points, ou mot (si l'item n'a pas de texte libre).
+ * Niveau 1-5 d’une compétence ou d’une langue, selon design.skillDisplay : barres, points ou mot.
  * `color` / `track` : trait plein / trait vide, à fournir sur un fond coloré. Rien si l'item n'a pas de niveau.
  */
 export function SkillLevel({ it, t, color = ink(t.accent), track, width = 54 }: { it: Item; t: Theme; color?: string; track?: string; width?: number }) {
@@ -117,8 +117,7 @@ export function SkillLevel({ it, t, color = ink(t.accent), track, width = 54 }: 
   if (!level) return null
   const empty = track ?? tint(color, 0.78)
   const mode = t.design.skillDisplay
-  if (mode === 'text')
-    return it.text.trim() ? null : <Text style={{ color, fontSize: t.s(8.5) }}>{t.labels.levels[level - 1]}</Text>
+  if (mode === 'text') return <Text style={{ color, fontSize: t.s(8.5) }}>{t.labels.levels[level - 1]}</Text>
   const dots = mode === 'dots'
   const gap = dots ? 3 : 2
   const w = dots ? 5 : (width - gap * 4) / 5

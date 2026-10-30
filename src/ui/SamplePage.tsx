@@ -5,6 +5,7 @@ import type { Design, Lang } from '../model/types'
 import { renderLazy } from '../pdf/lazy'
 import { PdfCanvas } from '../pdf/PdfCanvas'
 import { getTemplate } from '../templates'
+import { SAMPLE_PHOTO } from './samplePhoto'
 
 /** PDF d'exemple mis en cache : hero, grille et vignettes de l'éditeur ne fabriquent chacun qu'une fois. */
 const cache = new Map<string, Promise<Uint8Array>>()
@@ -12,7 +13,10 @@ const sampleBytes = (lang: Lang, templateId: string, custom?: Design['custom']) 
   const key = `${lang}|${templateId}|${custom?.accent ?? ''}|${custom?.fontPair ?? ''}`
   let p = cache.get(key)
   if (!p) {
-    p = renderLazy(sampleCV(lang), { ...DEFAULT_DESIGN, ...getTemplate(templateId).preset, templateId, ...custom })
+    const tpl = getTemplate(templateId)
+    const cv = sampleCV(lang)
+    if (tpl.photo) cv.personal.photo = SAMPLE_PHOTO
+    p = renderLazy(cv, { ...DEFAULT_DESIGN, ...tpl.preset, templateId, ...custom })
     p.catch(() => cache.delete(key)) // un échec (réseau coupé pendant le chargement d'un chunk) ne doit pas rester en cache : on réessaiera
     cache.set(key, p)
   }
