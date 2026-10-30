@@ -9,7 +9,7 @@ import {
   addCustomField, addItem, addSection, moveItem, moveSection, patchField, patchItem, patchSection,
   removeField, removeItem, removeSection, setLang, addField,
 } from '../model/cv'
-import { MAX_IMPORT_BYTES, MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
+import { MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
 import { sampleCV } from '../model/sample'
 import { LANGS, SECTION_KINDS, type CVDoc, type Lang, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
 import { useCvDoc, useStore } from '../store'
@@ -184,35 +184,19 @@ export function exportJson(doc: CVDoc) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
+/** Bas du formulaire : charger l'exemple, lettre assortie, tout effacer. Export et import JSON sont dans le menu Fichier de l'en-tête. */
 export function DataCard() {
   const doc = useCvDoc()
-  const { loadSample, importJson } = useStore()
-  const uiLang = useStore((s) => s.uiLang)
-  const t = ui[uiLang]
+  const loadSample = useStore((s) => s.loadSample)
+  const t = ui[useStore((s) => s.uiLang)]
   const clear = useClearAll()
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string }>()
-  const onImport = async (f?: File) => {
-    if (!f) return
-    if (f.size > MAX_IMPORT_BYTES) return setMsg({ ok: false, text: extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)) })
-    try {
-      importJson(await f.text())
-      setMsg({ ok: true, text: extra[uiLang].fileImported })
-    } catch {
-      setMsg({ ok: false, text: t.importError })
-    }
-  }
   return (
       <Card>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn" onClick={() => { if (isEmptyCV(doc.data) || isExampleCV(doc.data) || confirm(t.clearConfirm)) loadSample() }}>{t.loadSample}</button>
-          <button type="button" className="btn" onClick={() => exportJson(doc)}>{t.exportJson}</button>
           <LetterLink />
-          <input id="imp" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
-          <button type="button" className="btn" onClick={() => fileRef.current?.click()}>{t.importJson}</button>
           <button type="button" className="btn text-danger" onClick={clear}>{t.clearAll}</button>
         </div>
-        {msg && <p role={msg.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${msg.ok ? 'text-muted' : 'text-danger'}`}>{msg.text}</p>}
         <p className="mt-3 text-sm text-muted">{t.privacy}</p>
       </Card>
   )

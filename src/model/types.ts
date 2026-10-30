@@ -112,6 +112,8 @@ interface DocBase {
   updatedAt: number // ms depuis epoch
   design: Design
   editorMode?: EditorMode
+  /** Brouillon créé d'office (premier lancement, dernier CV supprimé) : gardé en mémoire seulement, jamais écrit dans localStorage, tant qu'on ne l'enregistre pas. */
+  draft?: true
 }
 export type CVDoc = DocBase & { kind: 'cv'; data: CV }
 export type LetterDoc = DocBase & { kind: 'letter'; data: Letter }

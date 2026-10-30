@@ -24,9 +24,27 @@ const download = (name: string, json: string) => {
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
+/**
+ * Ajoute les documents d'un fichier JSON et renvoie leur nombre (lève `Error('invalid')` si illisible).
+ * Un CV vide jamais rempli ne sert plus à rien : il laisse la place au premier document importé, qui devient actif.
+ */
+export function importAndOpen(json: string): number {
+  const { importDocs, remove, openDoc } = useStore.getState()
+  const before = useStore.getState()
+  const n = importDocs(json)
+  const now = useStore.getState().documents
+  const first = now[before.documents.length]
+  const active = before.documents.find((d) => d.id === before.activeId)
+  if (active?.kind === 'cv' && isEmptyCV(active.data) && first) {
+    if (now.slice(before.documents.length).some((d) => d.kind === 'cv')) remove(active.id)
+    openDoc(first.id)
+  }
+  return n
+}
+
 /** #/documents : liste des CV (et lettres) ; créer, ouvrir, dupliquer, renommer, supprimer, exporter / importer en JSON. */
 export function Documents() {
-  const { documents, activeId, uiLang, setUiLang, openDoc, createCV, createLetter, duplicate, rename, remove, importDocs } = useStore()
+  const { documents, activeId, uiLang, setUiLang, openDoc, createCV, createLetter, duplicate, rename, remove, save } = useStore()
   const t = v2[uiLang]
   const L = letterUi[uiLang]
   const cvs = documents.filter((d) => d.kind === 'cv')
@@ -47,18 +65,9 @@ export function Documents() {
     setSaid('')
     if (f.size > MAX_IMPORT_BYTES) return setErr(extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)))
     try {
-      const before = useStore.getState()
-      const n = importDocs(await f.text())
+      const n = importAndOpen(await f.text())
       setErr('')
       setSaid(importedText(uiLang, n))
-      // Un CV vide jamais rempli ne sert plus à rien : il laisse la place au premier document importé.
-      const now = useStore.getState().documents
-      const first = now[before.documents.length]
-      const active = before.documents.find((d) => d.id === before.activeId)
-      if (active?.kind === 'cv' && isEmptyCV(active.data) && first) {
-        if (now.slice(before.documents.length).some((d) => d.kind === 'cv')) remove(active.id)
-        openDoc(first.id)
-      }
     } catch {
       setErr(t.importError)
     }
@@ -120,7 +129,7 @@ export function Documents() {
         {err && <p role="alert" className="mt-3 text-sm text-danger">{err}</p>}
 
         <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs}>
-          {documents.map((d) => (
+          {documents.filter((d) => !(d.draft && d.kind === 'cv' && isEmptyCV(d.data))).map((d) => ( // brouillon vierge : rien à lister
             <li key={d.id} data-doc={d.name} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
               <div className="min-w-[12rem] flex-1">
                 {editing === d.id ? (
@@ -136,9 +145,11 @@ export function Documents() {
                 <p className="mt-0.5 font-mono text-xs text-muted">
                   {d.kind === 'cv' ? t.kindCV : t.kindLetter} · {LANG_NAMES[d.data.lang]} · {t.updated} {formatDate(d.updatedAt, uiLang)}
                   {d.id === activeId && <> · <span className="text-ink">{t.active}</span></>}
+                  {d.draft && <> · <span className="font-semibold text-ink">{t.draft}</span></>}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">
+                {d.draft && <button type="button" className="btn btn-primary" aria-label={`${t.save} : ${d.name}`} onClick={() => save(d.id)}>{t.save}</button>}
                 <button type="button" className="btn" aria-label={`${t.open} : ${d.name}`} onClick={() => open(d.id)}>{t.open}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.duplicate} : ${d.name}`} onClick={() => dup(d.id)}>{t.duplicate}</button>
                 <button type="button" className="btn btn-ghost" aria-label={`${t.rename} : ${d.name}`} data-rename={d.id} onClick={() => { done.current = false; setEditing(d.id) }}>{t.rename}</button>

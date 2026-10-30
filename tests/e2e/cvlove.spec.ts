@@ -134,6 +134,7 @@ test('langue du CV : EN change les titres pas le contenu, AR passe en RTL', asyn
 test('export JSON puis import après « Tout effacer »', async ({ page }) => {
   await openEditor(page)
   await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByText('Fichier', { exact: true }).click()
   const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Exporter (JSON)' }).click()])
   const json = readFileSync((await d.path())!)
   page.once('dialog', (x) => x.accept())
@@ -143,9 +144,19 @@ test('export JSON puis import après « Tout effacer »', async ({ page }) => {
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
 })
 
-test('rechargement : données conservées', async ({ page }) => {
+test('rechargement : un brouillon est perdu (après confirmation), un CV enregistré est conservé', async ({ page }) => {
   await openEditor(page)
   await page.getByLabel('Prénom').fill('Zoé')
+  let asked = false
+  page.once('dialog', (x) => { asked = x.type() === 'beforeunload'; void x.accept() })
+  await page.reload()
+  expect(asked).toBe(true)
+  await page.getByRole('button', { name: 'Complet' }).click()
+  await expect(page.getByLabel('Prénom')).toHaveValue('')
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByRole('button', { name: 'Enregistrer dans mon navigateur' }).click()
+  await expect(page.getByRole('button', { name: 'Enregistrer dans mon navigateur' })).toHaveCount(0)
+  await page.waitForTimeout(600)
   await page.reload()
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
 })
@@ -352,11 +363,14 @@ test('nouveau CV vide, nommé d’après la personne, exemple à la demande', as
   await openEditor(page)
   await expect(page.getByLabel('Prénom')).toHaveValue('')
   await page.getByRole('link', { name: 'Mes documents' }).click()
-  await expect(page.locator('li[data-doc="CV sans titre"]')).toBeVisible()
-  await page.getByRole('button', { name: 'Ouvrir : CV sans titre' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(0) // brouillon vierge : pas listé
+  await page.getByRole('link', { name: 'Modifier' }).click()
   await page.getByLabel('Prénom').fill('Zoé')
   await page.getByRole('link', { name: 'Mes documents' }).click()
-  await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
+  await expect(page.locator('li[data-doc="Zoé"]')).toContainText('Brouillon, pas encore enregistré')
+  page.once('dialog', (x) => x.accept())
+  await page.getByRole('button', { name: 'Supprimer : Zoé' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(0) // supprimable, remplacé par un brouillon vierge invisible
 })
 
 test('fichier trop gros : message clair, rien n’est importé', async ({ page }) => {

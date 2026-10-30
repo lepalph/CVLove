@@ -24,8 +24,11 @@ export const newCVDoc = (name: string, data: CV, design: Design = DEFAULT_DESIGN
   id: uid(), kind: 'cv', name, updatedAt: Date.now(), design, data, editorMode: 'guided',
 })
 
+/** CV vierge créé d'office : un brouillon, que l'on peut enregistrer ou supprimer. */
+export const draftCVDoc = (lang: Lang): CVDoc => ({ ...newCVDoc(untitledName(lang), blankCV(lang)), draft: true })
+
 /** Copie profonde avec de nouveaux identifiants de document (les ids internes peuvent rester : ils ne sont uniques que dans un document). */
-export const duplicateDoc = (d: Doc, name: string): Doc => ({ ...structuredClone(d), id: uid(), name, updatedAt: Date.now() })
+export const duplicateDoc = (d: Doc, name: string): Doc => ({ ...structuredClone(d), id: uid(), name, updatedAt: Date.now(), draft: undefined })
 
 export const patchDoc = (docs: Doc[], id: string, patch: Partial<Doc>): Doc[] =>
   docs.map((d) => (d.id === id ? ({ ...d, ...patch } as Doc) : d))

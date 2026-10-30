@@ -15,7 +15,8 @@ import { isEmptyCV, modelName } from './lib'
 import { sampleCV } from '../model/sample'
 
 export function Editor() {
-  const { data: cv, design, editorMode } = useCvDoc()
+  const doc = useCvDoc()
+  const { data: cv, design, editorMode } = doc
   const setEditorMode = useStore((s) => s.setEditorMode)
   const mode = editorMode ?? 'full' // documents migrés : complet
   const progress = useGuidedProgress()
@@ -64,11 +65,11 @@ export function Editor() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SkipLink />
-      <EdHeader mode={mode} onMode={setEditorMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} note={saved} />
+      <EdHeader doc={doc} mode={mode} onMode={setEditorMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} note={saved} />
       <SaveBanner />
       <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>
-          <MobileTools mode={mode} onMode={setEditorMode} />
+          <MobileTools doc={doc} mode={mode} onMode={setEditorMode} />
           <ExampleTools />
           {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
         </div>

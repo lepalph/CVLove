@@ -55,10 +55,10 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SkipLink />
-      <EdHeader mode={mode} onMode={setLetterMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} />
+      <EdHeader doc={doc!} mode={mode} onMode={setLetterMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} />
       <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>
-          <MobileTools mode={mode} onMode={setLetterMode} />
+          <MobileTools doc={doc!} mode={mode} onMode={setLetterMode} />
           <LetterExampleTools />
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>

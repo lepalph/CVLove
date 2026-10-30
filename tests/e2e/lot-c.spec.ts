@@ -49,6 +49,7 @@ test('stockage plein : la saisie reste, aucune erreur, tout est écrit dès que 
   page.on('pageerror', (e) => errors.push(String(e)))
   await page.goto('/#/editeur')
   await page.getByRole('button', { name: 'Complet' }).click()
+  await page.getByRole('button', { name: 'Enregistrer dans mon navigateur' }).click()
   await page.evaluate(() => {
     const orig = Storage.prototype.setItem
     ;(window as any).__orig = orig

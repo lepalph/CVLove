@@ -45,6 +45,10 @@ export interface V2 {
   displays: { text: string; bars: string; dots: string }
   level: string
   noLevel: string
+  /** Brouillon créé d'office, pas encore écrit dans le navigateur. */
+  draft: string
+  save: string
+  file: string
 }
 
 const fr: V2 = {
@@ -60,6 +64,7 @@ const fr: V2 = {
   margins: 'Marges', marginOpts: { compact: 'Serrées', normal: 'Normales', large: 'Larges' }, pageSize: 'Format de page',
   photoShape: 'Forme de la photo', shapes: { circle: 'Rond', rounded: 'Arrondi', square: 'Carré' },
   skillDisplay: 'Affichage des niveaux', displays: { text: 'Texte', bars: 'Barres', dots: 'Points' }, level: 'Niveau', noLevel: 'Aucun',
+  draft: 'Brouillon, pas encore enregistré', save: 'Enregistrer dans mon navigateur', file: 'Fichier',
 }
 
 const en: V2 = {
@@ -75,6 +80,7 @@ const en: V2 = {
   margins: 'Margins', marginOpts: { compact: 'Tight', normal: 'Normal', large: 'Wide' }, pageSize: 'Page size',
   photoShape: 'Photo shape', shapes: { circle: 'Round', rounded: 'Rounded', square: 'Square' },
   skillDisplay: 'Level display', displays: { text: 'Text', bars: 'Bars', dots: 'Dots' }, level: 'Level', noLevel: 'None',
+  draft: 'Draft, not saved yet', save: 'Save in my browser', file: 'File',
 }
 
 const es: V2 = {
@@ -90,6 +96,7 @@ const es: V2 = {
   margins: 'Márgenes', marginOpts: { compact: 'Estrechos', normal: 'Normales', large: 'Amplios' }, pageSize: 'Formato de página',
   photoShape: 'Forma de la foto', shapes: { circle: 'Redonda', rounded: 'Redondeada', square: 'Cuadrada' },
   skillDisplay: 'Visualización de niveles', displays: { text: 'Texto', bars: 'Barras', dots: 'Puntos' }, level: 'Nivel', noLevel: 'Ninguno',
+  draft: 'Borrador, aún sin guardar', save: 'Guardar en mi navegador', file: 'Archivo',
 }
 
 const de: V2 = {
@@ -105,6 +112,7 @@ const de: V2 = {
   margins: 'Ränder', marginOpts: { compact: 'Schmal', normal: 'Normal', large: 'Breit' }, pageSize: 'Seitenformat',
   photoShape: 'Fotoform', shapes: { circle: 'Rund', rounded: 'Abgerundet', square: 'Eckig' },
   skillDisplay: 'Darstellung der Stufen', displays: { text: 'Text', bars: 'Balken', dots: 'Punkte' }, level: 'Stufe', noLevel: 'Keine',
+  draft: 'Entwurf, noch nicht gespeichert', save: 'In meinem Browser speichern', file: 'Datei',
 }
 
 const it: V2 = {
@@ -120,6 +128,7 @@ const it: V2 = {
   margins: 'Margini', marginOpts: { compact: 'Stretti', normal: 'Normali', large: 'Ampi' }, pageSize: 'Formato pagina',
   photoShape: 'Forma della foto', shapes: { circle: 'Tonda', rounded: 'Arrotondata', square: 'Quadrata' },
   skillDisplay: 'Visualizzazione dei livelli', displays: { text: 'Testo', bars: 'Barre', dots: 'Punti' }, level: 'Livello', noLevel: 'Nessuno',
+  draft: 'Bozza, non ancora salvata', save: 'Salva nel mio browser', file: 'File',
 }
 
 const pt: V2 = {
@@ -135,6 +144,7 @@ const pt: V2 = {
   margins: 'Margens', marginOpts: { compact: 'Estreitas', normal: 'Normais', large: 'Largas' }, pageSize: 'Formato da página',
   photoShape: 'Forma da foto', shapes: { circle: 'Redonda', rounded: 'Arredondada', square: 'Quadrada' },
   skillDisplay: 'Apresentação dos níveis', displays: { text: 'Texto', bars: 'Barras', dots: 'Pontos' }, level: 'Nível', noLevel: 'Nenhum',
+  draft: 'Rascunho, ainda não guardado', save: 'Guardar no meu navegador', file: 'Ficheiro',
 }
 
 const ar: V2 = {
@@ -150,6 +160,7 @@ const ar: V2 = {
   margins: 'الهوامش', marginOpts: { compact: 'ضيقة', normal: 'عادية', large: 'واسعة' }, pageSize: 'حجم الصفحة',
   photoShape: 'شكل الصورة', shapes: { circle: 'دائري', rounded: 'مستدير الزوايا', square: 'مربع' },
   skillDisplay: 'عرض المستويات', displays: { text: 'نص', bars: 'أشرطة', dots: 'نقاط' }, level: 'المستوى', noLevel: 'بدون',
+  draft: 'مسودة، لم تُحفظ بعد', save: 'احفظ في متصفحي', file: 'ملف',
 }
 
 export const v2: Record<Lang, V2> = { fr, en, es, de, it, pt, ar }

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { detectLang } from './i18n/ui'
 import { DEFAULT_DESIGN, applyDesignPatch, emptyCV } from './model/cv'
-import { blankCV, duplicateDoc, followName, freeName, migrateV1, newCVDoc, parseImport, patchDoc, untitledName } from './model/documents'
+import { blankCV, draftCVDoc, duplicateDoc, followName, freeName, migrateV1, newCVDoc, parseImport, patchDoc, untitledName } from './model/documents'
 import { blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
 import { sampleCV, type SampleProfile } from './model/sample'
 import { sanitizeState } from './model/sanitize'
@@ -22,8 +22,6 @@ interface State {
   setEditorMode: (m: EditorMode) => void
   clearAll: () => void
   loadSample: (profile?: SampleProfile) => void
-  /** Remplace le contenu et le design du document actif par le premier CV du fichier. */
-  importJson: (json: string) => void
   /** Lettre du document actif (voir `selectLetterDoc`). */
   updateLetter: (fn: (l: Letter) => Letter) => void
   updateLetterDesign: (patch: Partial<Design>) => void
@@ -36,12 +34,14 @@ interface State {
   duplicate: (id: string) => void
   rename: (id: string, name: string) => void
   remove: (id: string) => void
+  /** Enregistre un brouillon dans ce navigateur. */
+  save: (id: string) => void
   /** Ajoute les documents d'un fichier JSON ; renvoie leur nombre. */
   importDocs: (json: string) => number
 }
 
 const initialLang = detectLang()
-const first = newCVDoc(untitledName(initialLang), blankCV(initialLang)) // page vide ; l'exemple se charge à la demande (loadSample)
+const first = draftCVDoc(initialLang) // page vide, brouillon ; l'exemple se charge à la demande (loadSample)
 
 /** CV du document actif ; si c'est une lettre, le premier CV (l'éditeur de CV ne gère que les CV). */
 export const selectCvDoc = (s: Pick<State, 'documents' | 'activeId'>): CVDoc =>
@@ -111,11 +111,6 @@ export const useStore = create<State>()(
         setEditorMode: (editorMode) => set((s) => ({ documents: patchDoc(s.documents, selectCvDoc(s).id, { editorMode }) })),
         clearAll: () => patchActive((d) => ({ data: emptyCV(d.data.lang) })),
         loadSample: (profile) => patchActive((d) => ({ data: sampleCV(d.data.lang, profile) })),
-        importJson: (json) => {
-          const imported = parseImport(json).find((d) => d.kind === 'cv') as CVDoc | undefined
-          if (!imported) throw new Error('invalid')
-          patchActive(() => ({ data: imported.data, design: imported.design }))
-        },
         updateLetter: (fn) => patchLetterDoc((d) => ({ data: fn(d.data) })),
         updateLetterDesign: (patch) => patchLetterDoc((d) => ({ design: { ...d.design, ...patch } })),
         setLetterMode: (editorMode) => patchLetterDoc(() => ({ editorMode }), false),
@@ -146,10 +141,11 @@ export const useStore = create<State>()(
         remove: (id) =>
           set((s) => {
             let documents = s.documents.filter((d) => d.id !== id)
-            if (!documents.some((d) => d.kind === 'cv')) documents = [...documents, newCVDoc(untitledName(s.uiLang), blankCV(s.uiLang))] // jamais sans CV
+            if (!documents.some((d) => d.kind === 'cv')) documents = [...documents, draftCVDoc(s.uiLang)] // jamais sans CV : un brouillon vierge
             const activeId = documents.some((d) => d.id === s.activeId) ? s.activeId : documents[0].id
             return { documents, activeId }
           }),
+        save: (id) => set((s) => ({ documents: patchDoc(s.documents, id, { draft: undefined }) })),
         importDocs: (json) => {
           const docs = parseImport(json)
           set((s) => ({ documents: [...s.documents, ...docs] }))
@@ -160,7 +156,7 @@ export const useStore = create<State>()(
     {
       name: 'cvlove:v2',
       version: 2,
-      partialize: (s) => ({ documents: s.documents, activeId: s.activeId, uiLang: s.uiLang }),
+      partialize: (s) => ({ documents: s.documents.filter((d) => !d.draft), activeId: s.activeId, uiLang: s.uiLang }), // brouillons : en mémoire seulement
       storage: {
         // Lecture : toujours un état valide (voir model/sanitize.ts). JSON illisible : copie brute dans `cvlove:corrupt`, on repart d'un CV vierge.
         getItem: (name) => {
@@ -170,7 +166,7 @@ export const useStore = create<State>()(
             const v1 = raw ? null : safe(() => localStorage.getItem('cvlove:v1'))
             if (!raw && !v1) return null
             const state = raw ? JSON.parse(raw).state : migrateV1(JSON.parse(v1!).state)
-            return { state: sanitizeState(state, () => newCVDoc(untitledName(detectLang()), blankCV(detectLang()))), version: 2 }
+            return { state: sanitizeState(state, () => draftCVDoc(detectLang())), version: 2 }
           } catch {
             if (raw) safe(() => localStorage.setItem('cvlove:corrupt', raw))
             return null
