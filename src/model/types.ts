@@ -45,6 +45,8 @@ export interface Section {
   /** Titre personnalisé ; vide = libellé de la langue du CV. */
   title: string
   visible: boolean
+  /** Replié dans l'éditeur seulement (le PDF l'ignore). Absent = déplié. */
+  collapsed?: boolean
   items: Item[]
 }
 

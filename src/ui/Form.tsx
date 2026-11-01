@@ -1,12 +1,14 @@
-import { useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
 import { monthNames } from '../model/dates'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { extra } from '../i18n/extra'
+import { sectionsText, sectionSummary } from '../i18n/sections'
+import { useSectionDrag } from './sectionDrag'
 import { ui, type UI } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { exportDocs } from '../model/documents'
 import {
-  addCustomField, addItem, addSection, moveItem, moveSection, patchField, patchItem, patchSection,
+  addCustomField, addItem, addSection, moveItem, moveSection, moveSectionTo, setCollapsed, patchField, patchItem, patchSection,
   removeField, removeItem, removeSection, setLang, addField,
 } from '../model/cv'
 import { MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
@@ -178,15 +180,33 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
   const addable = add.filter((k) => k === 'custom' || !cv.sections.some((s) => s.kind === k)) // une section déjà présente ne se rajoute pas
   const [picking, setPicking] = useState(!!only) // mode complet : un seul bouton « Ajouter une section », qui déplie les types
   const addRef = useRef<HTMLButtonElement>(null)
+  const sx = sectionsText[uiLang]
+  const [said, setSaid] = useState('') // annonce du dernier déplacement (zone role=status toujours présente)
+  const { list, drag, start } = useSectionDrag(shown.map(({ s }) => s.id), (id, pos) => {
+    const to = shown[pos].i
+    update((c) => moveSectionTo(c, id, to))
+    setSaid(sx.moved.replace('{x}', sectionTitle(cv.sections.find((s) => s.id === id)!, labels)).replace('{n}', String(to + 1)).replace('{total}', String(cv.sections.length)))
+  })
+  const ids = shown.map(({ s }) => s.id)
   return (
       <Card title={title === false ? undefined : (title ?? t.sections)}>
+        <p role="status" className="sr-only">{said}</p>
         {!only && cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
         {shown.length > 0 && <p className="mb-4 text-sm text-muted">{x.visibilityHint}</p>}
-        <ul className="flex flex-col gap-6">
-          {shown.map(({ s, i }) => (
-            <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} />
-          ))}
-        </ul>
+        {shown.length > 1 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button type="button" className="btn" onClick={() => update((c) => setCollapsed(c, true, ids))}>{sx.collapseAll}</button>
+            <button type="button" className="btn" onClick={() => update((c) => setCollapsed(c, false, ids))}>{sx.expandAll}</button>
+          </div>
+        )}
+        <div className="relative">
+          <ul ref={list} className="flex flex-col gap-6">
+            {shown.map(({ s, i }) => (
+              <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} grab={(e) => start(e, s.id)} dy={drag?.id === s.id ? drag.dy : undefined} />
+            ))}
+          </ul>
+          {drag && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-20 h-0.5 -translate-y-px bg-ink" style={{ top: drag.bar }} />}
+        </div>
         {addable.length > 0 && !picking && <button ref={addRef} type="button" data-add="section" className="btn mt-5" onClick={() => setPicking(true)}>+ {t.addSection}</button>}
         {addable.length > 0 && picking && (
           <>
@@ -232,7 +252,7 @@ export const Card = ({ title, children }: { title?: string; children: React.Reac
   </section>
 )
 
-export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: number; t: UI; std: string }) {
+export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: number; n: number; t: UI; std: string; grab?: (e: PointerEvent<HTMLElement>) => void; dy?: number }) {
   const update = useStore((st) => st.update)
   const labels = cvLabels[useCvDoc().data.lang]
   const uiLang = useStore((st) => st.uiLang)
@@ -242,10 +262,16 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
   const dated = s.kind === 'experience' || s.kind === 'education' || s.kind === 'projects' || s.kind === 'custom'
   const multi = s.kind !== 'profile'
   const onSec = (verb: string) => verb + t.onSection.replace('{x}', sectionTitle(s, labels))
+  const sx = sectionsText[uiLang]
+  const folded = !!s.collapsed
   return (
-    <li className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'}`}>
-      <div className="flex items-center gap-1">
-        <h3 tabIndex={-1} className="flex-1 text-base font-semibold">
+    <li className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-10 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
+      <div className="flex flex-wrap items-center gap-1">
+        {grab && <button type="button" className="btn btn-ghost cursor-grab touch-none px-0 active:cursor-grabbing" aria-label={onSec(sx.drag)} title={onSec(sx.drag)} onPointerDown={grab}><svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className="fill-current text-muted">{[4, 8, 12].flatMap((y) => [6, 10].map((x) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.4" />))}</svg></button>}
+        <button type="button" className="btn btn-ghost px-0" aria-expanded={!folded} aria-controls={`sec-${s.id}`} aria-label={onSec(folded ? sx.expand : sx.collapse)} title={onSec(folded ? sx.expand : sx.collapse)} onClick={() => update((c) => patchSection(c, s.id, { collapsed: folded ? undefined : true }))}>
+          <svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className={`fill-none stroke-current stroke-2 transition-transform duration-150 motion-reduce:transition-none ${folded ? '-rotate-90 rtl:rotate-90' : ''}`}><path d="m4 6 4 4 4-4" /></svg>
+        </button>
+        <h3 tabIndex={-1} className="min-w-24 flex-1 text-base font-semibold">
           {sectionTitle(s, labels)}
           {!s.visible && <span className="ms-2 text-sm font-normal text-muted">({t.hidden})</span>}
         </h3>
@@ -254,6 +280,8 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
         <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
         <Icon label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => update((c) => removeSection(c, s.id)))}>×</Icon>
       </div>
+      {folded && <p className="mt-1 truncate text-sm text-muted">{sectionSummary(s, uiLang)}</p>}
+      <div id={`sec-${s.id}`} hidden={folded}>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
           <input className="inp" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
@@ -308,6 +336,7 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
         })}
       </ul>
       {multi && <button type="button" data-add="item" className="btn mt-3" onClick={() => update((c) => addItem(c, s.id))}>+ {t.addItem}</button>}
+      </div>
     </li>
   )
 }

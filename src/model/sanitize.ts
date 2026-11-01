@@ -106,6 +106,7 @@ const cleanItem = (i: unknown): Item => {
 
 const cleanSection = (s: Obj): Section => ({
   id: str(s.id) || uid(), kind: s.kind as Section['kind'], title: str(s.title), visible: bool(s.visible, true),
+  ...(s.collapsed === true ? { collapsed: true } : {}),
   items: arr(s.items, MAX.items).filter(isObj).map(cleanItem),
 })
 
