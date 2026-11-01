@@ -24,3 +24,6 @@
 - Sur 390 px, la ligne de boutons passe sur deux lignes (poignée, chevron et titre, puis Masquer et ×).
 - La poignée ne se commande pas au clavier : ↑↓ jouent ce rôle.
 - Tests : `tests/e2e/sections.spec.ts` (souris, toucher via CDP, Échap, clavier, repli, rechargement, arabe, autodéfilement, 390 px).
+
+## Revue du chief of staff (2026-11-02, `lepalph/CVLove@936ba5b`)
+- `collapsed` vit dans les données du CV : replier une section relance le rendu PDF (identique) et met à jour la date du document. Acceptable pour l'instant ; à sortir dans un état d'interface par document si la [performance](../REPRISE.md) de l'aperçu devient le sujet.

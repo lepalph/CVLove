@@ -11,7 +11,7 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Audit des boutons](audit-boutons.md) — chaque bouton, attendu contre constaté (à venir).
 
 ## Fonctions
-- [Glisser-déposer et repli des sections](sections-glisser-replier.md) — (à venir).
+- [Glisser-déposer et repli des sections](sections-glisser-replier.md) — 2026-11-02 : poignée pointer events, moveSectionTo, repli gardé par document, limites.
 - [Aperçu multipage](apercu-multipage.md) — 2026-11-02 : plafond 30 pages annoncé, page courante, précédente/suivante, défilement gardé.
 
 ## Panel d'inventeurs
