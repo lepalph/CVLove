@@ -7,7 +7,6 @@ test('CV rempli : le guidé s’ouvre à Identité (y compris via Reprendre)', a
   await page.getByRole('link', { name: 'Créer mon CV' }).first().click()
   await page.getByRole('button', { name: 'Complet' }).click()
   await page.getByRole('button', { name: 'Vente et accueil' }).click()
-  await page.getByRole('button', { name: 'Enregistrer dans mon navigateur' }).click()
   await page.waitForTimeout(600)
   await page.goto('/')
   await page.getByRole('link', { name: /Reprendre|Continuer/ }).first().click()
@@ -31,6 +30,8 @@ test('lettre : trois exemples au choix', async ({ page }) => {
 test('Mes documents : Exporter (JSON) avec le nom du document', async ({ page }) => {
   await page.goto('/#/documents')
   await page.getByRole('button', { name: 'Nouveau CV' }).click()
+  await page.getByRole('button', { name: 'Complet' }).click()
+  await page.getByLabel('Prénom').fill('Zoé')
   await page.goto('/#/documents')
   await expect(page.getByRole('button', { name: /^Exporter \(JSON\) : / }).first()).toBeVisible()
 })

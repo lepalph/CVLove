@@ -1,3 +1,5 @@
 # pnpm 12 bloque les scripts post-installation non approuvés ; esbuild (via tsx et vite) en a besoin.
 allowBuilds:
   esbuild: true
+# Une version publiée depuis moins de 3 jours n'est pas installée (un paquet compromis est en général retiré entre-temps).
+minimumReleaseAge: 4320

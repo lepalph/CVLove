@@ -7,7 +7,6 @@ const fillCV = async (page: Page, first = 'Zoé') => {
   await page.goto('/#/editeur')
   await page.getByRole('button', { name: 'Complet' }).click()
   await page.getByLabel('Prénom').fill(first)
-  await page.getByRole('button', { name: 'Enregistrer dans mon navigateur' }).click()
   await page.waitForTimeout(600)
 }
 
@@ -113,6 +112,8 @@ test.describe('en-GB', () => {
     await page.goto('/#/documents')
     await page.getByLabel('Interface language').selectOption('en')
     await page.getByRole('button', { name: 'New CV' }).click()
+    await page.getByRole('button', { name: 'Full', exact: true }).click()
+    await page.getByLabel('First name').fill('Zoé')
     await page.goto('/#/documents')
     await expect(page.locator('li[data-doc]').first()).toContainText(/Edited \d{2}\/\d{2}\/\d{4}/)
   })

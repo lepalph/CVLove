@@ -9,6 +9,8 @@ export interface Extra {
   colorApplied: string
   /** `{file}` = nom du fichier. */
   downloaded: string
+  /** Refus du téléchargement d'un document vide (role=alert). */
+  emptyDownload: string
   /** `{model}` et `{who}`. */
   previewAlt: string
   emptyPreview: string
@@ -53,6 +55,7 @@ const fr: Extra = {
   imported: '{n} document(s) importé(s).', fileImported: 'Fichier importé.',
   saveQuota: 'Stockage du navigateur plein : vos dernières modifications ne sont pas enregistrées. Exportez vos documents avant de fermer la page.', saveUnavailable: 'Enregistrement impossible sur cet appareil (navigation privée ou stockage bloqué). Exportez vos documents avant de fermer la page.', exportMine: 'Exporter mes documents',
   tooBig: 'Fichier trop volumineux (maximum {mb} Mo).', photoError: 'Image illisible : essayez un fichier JPEG ou PNG.', untitled: 'CV sans titre',
+  emptyDownload: 'Votre document est vide : ajoutez au moins votre nom pour le télécharger.',
 }
 const en: Extra = {
   skip: 'Skip to content',
@@ -68,6 +71,7 @@ const en: Extra = {
   imported: '{n} document(s) imported.', fileImported: 'File imported.',
   saveQuota: 'Browser storage is full: your latest changes are not saved. Export your documents before closing the page.', saveUnavailable: 'Saving is not possible on this device (private browsing or blocked storage). Export your documents before closing the page.', exportMine: 'Export my documents',
   tooBig: 'File too large (maximum {mb} MB).', photoError: 'Unreadable image: try a JPEG or PNG file.', untitled: 'Untitled CV',
+  emptyDownload: 'Your document is empty: add at least your name to download it.',
 }
 const es: Extra = {
   skip: 'Ir al contenido',
@@ -83,6 +87,7 @@ const es: Extra = {
   imported: '{n} documento(s) importado(s).', fileImported: 'Archivo importado.',
   saveQuota: 'Almacenamiento del navegador lleno: tus últimos cambios no se guardan. Exporta tus documentos antes de cerrar la página.', saveUnavailable: 'No se puede guardar en este dispositivo (navegación privada o almacenamiento bloqueado). Exporta tus documentos antes de cerrar la página.', exportMine: 'Exportar mis documentos',
   tooBig: 'Archivo demasiado grande (máximo {mb} MB).', photoError: 'Imagen ilegible: prueba con un archivo JPEG o PNG.', untitled: 'CV sin título',
+  emptyDownload: 'Tu documento está vacío: añade al menos tu nombre para descargarlo.',
 }
 const de: Extra = {
   skip: 'Zum Inhalt springen',
@@ -98,6 +103,7 @@ const de: Extra = {
   imported: '{n} Dokument(e) importiert.', fileImported: 'Datei importiert.',
   saveQuota: 'Browser-Speicher voll: Ihre letzten Änderungen sind nicht gespeichert. Exportieren Sie Ihre Dokumente, bevor Sie die Seite schließen.', saveUnavailable: 'Speichern auf diesem Gerät nicht möglich (privater Modus oder gesperrter Speicher). Exportieren Sie Ihre Dokumente, bevor Sie die Seite schließen.', exportMine: 'Meine Dokumente exportieren',
   tooBig: 'Datei zu groß (maximal {mb} MB).', photoError: 'Bild nicht lesbar: Versuchen Sie eine JPEG- oder PNG-Datei.', untitled: 'Lebenslauf ohne Titel',
+  emptyDownload: 'Ihr Dokument ist leer: Fügen Sie mindestens Ihren Namen hinzu, um es herunterzuladen.',
 }
 const it: Extra = {
   skip: 'Vai al contenuto',
@@ -113,6 +119,7 @@ const it: Extra = {
   imported: '{n} documento/i importato/i.', fileImported: 'File importato.',
   saveQuota: 'Memoria del browser piena: le ultime modifiche non sono salvate. Esporta i documenti prima di chiudere la pagina.', saveUnavailable: 'Salvataggio impossibile su questo dispositivo (navigazione privata o archiviazione bloccata). Esporta i documenti prima di chiudere la pagina.', exportMine: 'Esporta i miei documenti',
   tooBig: 'File troppo grande (massimo {mb} MB).', photoError: 'Immagine illeggibile: prova con un file JPEG o PNG.', untitled: 'CV senza titolo',
+  emptyDownload: 'Il documento è vuoto: aggiungi almeno il tuo nome per scaricarlo.',
 }
 const pt: Extra = {
   skip: 'Ir para o conteúdo',
@@ -128,6 +135,7 @@ const pt: Extra = {
   imported: '{n} documento(s) importado(s).', fileImported: 'Ficheiro importado.',
   saveQuota: 'Armazenamento do navegador cheio: as suas últimas alterações não estão guardadas. Exporte os documentos antes de fechar a página.', saveUnavailable: 'Não é possível guardar neste dispositivo (navegação privada ou armazenamento bloqueado). Exporte os documentos antes de fechar a página.', exportMine: 'Exportar os meus documentos',
   tooBig: 'Ficheiro demasiado grande (máximo {mb} MB).', photoError: 'Imagem ilegível: tente um ficheiro JPEG ou PNG.', untitled: 'CV sem título',
+  emptyDownload: 'O documento está vazio: adicione pelo menos o seu nome para o descarregar.',
 }
 const ar: Extra = {
   skip: 'انتقل إلى المحتوى',
@@ -143,6 +151,7 @@ const ar: Extra = {
   imported: 'تم استيراد {n} مستند.', fileImported: 'تم استيراد الملف.',
   saveQuota: 'مساحة تخزين المتصفح ممتلئة: آخر تعديلاتك غير محفوظة. صدّر مستنداتك قبل إغلاق الصفحة.', saveUnavailable: 'تعذّر الحفظ على هذا الجهاز (تصفح خاص أو تخزين محظور). صدّر مستنداتك قبل إغلاق الصفحة.', exportMine: 'تصدير مستنداتي',
   tooBig: 'الملف كبير جدًا (الحد الأقصى {mb} ميغابايت).', photoError: 'صورة غير قابلة للقراءة: جرّب ملف JPEG أو PNG.', untitled: 'سيرة ذاتية بلا عنوان',
+  emptyDownload: 'مستندك فارغ: أضف اسمك على الأقل لتنزيله.',
 }
 
 export const extra: Record<Lang, Extra> = { fr, en, es, de, it, pt, ar }

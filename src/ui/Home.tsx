@@ -7,7 +7,7 @@ import { formatDate, shell } from '../i18n/shell'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { LANGS, type Lang } from '../model/types'
-import { useStore } from '../store'
+import { selectCvDoc, useStore } from '../store'
 import { layouts, templates } from '../templates'
 import { GithubIcon, LangSelect, Logo, SkipLink } from './bits'
 import { useModelFilter } from './DesignPanel'
@@ -35,7 +35,13 @@ export function Home() {
   })
   const sh = shell[uiLang]
 
+  // « Créer mon CV » et « Commencer avec ce modèle » partent d'un CV neuf ; le CV vide en cours sert tel quel.
+  const fresh = () => {
+    const s = useStore.getState()
+    if (!isEmptyCV(selectCvDoc(s).data)) s.createCV()
+  }
   const start = (templateId: string) => {
+    fresh()
     updateDesign({ ...templates.find((m) => m.id === templateId)?.preset, templateId })
     guidedStart.afterModel = true
     location.hash = EDITOR
@@ -53,10 +59,13 @@ export function Home() {
             <a href="#comment" className="btn btn-ghost border-0">{t.navHow}</a>
           </div>
           <div className="ms-auto flex items-center gap-2 sm:gap-3">
-            <a href="#/documents" className="btn btn-ghost whitespace-nowrap border-0 px-2 sm:px-4">{v2[uiLang].docs}</a>
+            <a href="#/documents" className="btn btn-ghost whitespace-nowrap border-0 px-2 sm:px-4" aria-label={v2[uiLang].docs} title={v2[uiLang].docs}>
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="fill-none stroke-current stroke-2 sm:hidden"><path d="M8 3h8l4 4v14H8z M4 7v14h4" strokeLinejoin="round" /></svg>
+              <span className="max-sm:hidden">{v2[uiLang].docs}</span>
+            </a>
             <a href={GITHUB_URL} className="btn btn-ghost hidden border-0 sm:inline-flex" aria-label={t.navCode} title={t.navCode}><GithubIcon /></a>
             <LangSelect label={ui[uiLang].uiLang} value={uiLang} onChange={(l: Lang) => setUiLang(l)} langs={LANGS} />
-            <a href={EDITOR} className="btn btn-primary btn-pill hidden whitespace-nowrap sm:inline-flex">{t.create}</a>
+            <a href={EDITOR} onClick={fresh} className="btn btn-primary btn-pill hidden whitespace-nowrap sm:inline-flex">{t.create}</a>
           </div>
         </nav>
       </header>
@@ -88,7 +97,7 @@ export function Home() {
             </h1>
             <p className="mt-5 max-w-[34rem] text-pretty text-lg leading-relaxed text-muted">{t.heroSub}</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href={EDITOR} className="btn btn-primary btn-pill">{t.create}</a>
+              <a href={EDITOR} onClick={fresh} className="btn btn-primary btn-pill">{t.create}</a>
               <a href={GITHUB_URL} className="btn btn-pill">{t.seeCode}</a>
             </div>
             <p className="mt-8 font-mono text-[0.8125rem] text-muted">
@@ -158,7 +167,7 @@ export function Home() {
             {LANGS.map((l) => (
               <li key={l} className="flex flex-col gap-2 border-t border-line py-5">
                 <span className="font-mono text-xs uppercase text-muted" dir="ltr">{l}</span>
-                <span lang={l} dir={l === 'ar' ? 'rtl' : 'ltr'} className="self-start text-[1.75rem] font-medium leading-tight tracking-[-0.03em] sm:text-3xl">{cvLabels[l].sections.education}</span>
+                <span lang={l} dir={l === 'ar' ? 'rtl' : 'ltr'} className="self-start text-2xl font-medium leading-tight tracking-[-0.03em] [overflow-wrap:anywhere] sm:text-3xl">{cvLabels[l].sections.education}</span>
               </li>
             ))}
           </ul>
@@ -175,7 +184,7 @@ export function Home() {
         <section className={`${wrap} pb-14 sm:pb-20`}>
           <div className="flex flex-col items-start gap-6 rounded-card bg-ink p-8 text-desk sm:flex-row sm:items-center sm:justify-between sm:p-12">
             <h2 className="max-w-[24ch] text-balance text-[2rem] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-4xl">{t.finalTitle}</h2>
-            <a href={EDITOR} className="btn btn-pill whitespace-nowrap border-desk bg-desk text-ink hover:!bg-sunk">{t.create}</a>
+            <a href={EDITOR} onClick={fresh} className="btn btn-pill whitespace-nowrap border-desk bg-desk text-ink hover:!bg-sunk">{t.create}</a>
           </div>
         </section>
       </main>

@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { extra } from '../i18n/extra'
 import { tips } from '../i18n/tips'
+import { ui } from '../i18n/ui'
 import { fullName, pdfFileName } from '../model/cv'
 import { renderLazy } from '../pdf/lazy'
 import { useCvDoc, useStore } from '../store'
 import { getTemplate } from '../templates'
 import { ACCENTS } from '../templates/types'
-import { SaveBanner, SkipLink } from './bits'
+import { SaveBanner, SkipLink, useDownloadAlert } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
 import { ExampleTools } from './ExampleTools'
 import { Form } from './Form'
@@ -26,6 +27,7 @@ export function Editor() {
   const [downloading, setDownloading] = useState(false)
   const [said, setSaid] = useState('')
   const [saved, setSaved] = useState('') // confirmation visible du téléchargement, quelques secondes
+  const dl = useDownloadAlert(cv)
   const m = getTemplate(design.templateId)
   const mName = modelName(m, uiLang)
 
@@ -46,6 +48,10 @@ export function Editor() {
 
   const download = async () => {
     if (downloading) return
+    if (isEmptyCV(cv)) return dl.fail(x.emptyDownload) // l'aperçu montre l'exemple : sans ce refus, le PDF sortirait blanc
+    dl.clear()
+    setSaid('') // vidées avant d'être remplies : un 2e téléchargement du même fichier est annoncé de nouveau
+    setSaved('')
     setDownloading(true)
     try {
       const bytes = await renderLazy(cv, design)
@@ -56,6 +62,9 @@ export function Editor() {
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
       setSaid(x.downloaded.replace('{file}', file))
       setSaved(tips[uiLang].saved.replace('{file}', file))
+    } catch (e) {
+      console.error(e)
+      dl.fail(ui[uiLang].previewError)
     } finally {
       setDownloading(false)
     }
@@ -67,6 +76,7 @@ export function Editor() {
       <SkipLink />
       <EdHeader doc={doc} mode={mode} onMode={setEditorMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} note={saved} />
       <SaveBanner />
+      {dl.node}
       <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>
           <MobileTools doc={doc} mode={mode} onMode={setEditorMode} />

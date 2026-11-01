@@ -45,10 +45,13 @@ export interface V2 {
   displays: { text: string; bars: string; dots: string }
   level: string
   noLevel: string
-  /** Brouillon créé d'office, pas encore écrit dans le navigateur. */
-  draft: string
-  save: string
   file: string
+  importTitle: string
+  /** `{name}` : nom du document en cours. */
+  importReplace: string
+  importAdd: string
+  wipeAll: string
+  wipeConfirm: string
 }
 
 const fr: V2 = {
@@ -64,7 +67,9 @@ const fr: V2 = {
   margins: 'Marges', marginOpts: { compact: 'Serrées', normal: 'Normales', large: 'Larges' }, pageSize: 'Format de page',
   photoShape: 'Forme de la photo', shapes: { circle: 'Rond', rounded: 'Arrondi', square: 'Carré' },
   skillDisplay: 'Affichage des niveaux', displays: { text: 'Texte', bars: 'Barres', dots: 'Points' }, level: 'Niveau', noLevel: 'Aucun',
-  draft: 'Brouillon, pas encore enregistré', save: 'Enregistrer dans mon navigateur', file: 'Fichier',
+  file: 'Fichier',
+  importTitle: 'Importer ce fichier', importReplace: 'Remplacer « {name} »', importAdd: 'Ajouter comme nouveau document',
+  wipeAll: 'Effacer toutes mes données', wipeConfirm: 'Effacer tous vos CV et lettres de ce navigateur ? Exportez-les d’abord si vous voulez les garder. Cette action est définitive.',
 }
 
 const en: V2 = {
@@ -80,7 +85,9 @@ const en: V2 = {
   margins: 'Margins', marginOpts: { compact: 'Tight', normal: 'Normal', large: 'Wide' }, pageSize: 'Page size',
   photoShape: 'Photo shape', shapes: { circle: 'Round', rounded: 'Rounded', square: 'Square' },
   skillDisplay: 'Level display', displays: { text: 'Text', bars: 'Bars', dots: 'Dots' }, level: 'Level', noLevel: 'None',
-  draft: 'Draft, not saved yet', save: 'Save in my browser', file: 'File',
+  file: 'File',
+  importTitle: 'Import this file', importReplace: 'Replace “{name}”', importAdd: 'Add as a new document',
+  wipeAll: 'Erase all my data', wipeConfirm: 'Erase all your CVs and letters from this browser? Export them first if you want to keep them. This cannot be undone.',
 }
 
 const es: V2 = {
@@ -96,7 +103,9 @@ const es: V2 = {
   margins: 'Márgenes', marginOpts: { compact: 'Estrechos', normal: 'Normales', large: 'Amplios' }, pageSize: 'Formato de página',
   photoShape: 'Forma de la foto', shapes: { circle: 'Redonda', rounded: 'Redondeada', square: 'Cuadrada' },
   skillDisplay: 'Visualización de niveles', displays: { text: 'Texto', bars: 'Barras', dots: 'Puntos' }, level: 'Nivel', noLevel: 'Ninguno',
-  draft: 'Borrador, aún sin guardar', save: 'Guardar en mi navegador', file: 'Archivo',
+  file: 'Archivo',
+  importTitle: 'Importar este archivo', importReplace: 'Reemplazar «{name}»', importAdd: 'Añadir como documento nuevo',
+  wipeAll: 'Borrar todos mis datos', wipeConfirm: '¿Borrar todos sus CV y cartas de este navegador? Expórtelos antes si quiere conservarlos. Esta acción es definitiva.',
 }
 
 const de: V2 = {
@@ -112,7 +121,9 @@ const de: V2 = {
   margins: 'Ränder', marginOpts: { compact: 'Schmal', normal: 'Normal', large: 'Breit' }, pageSize: 'Seitenformat',
   photoShape: 'Fotoform', shapes: { circle: 'Rund', rounded: 'Abgerundet', square: 'Eckig' },
   skillDisplay: 'Darstellung der Stufen', displays: { text: 'Text', bars: 'Balken', dots: 'Punkte' }, level: 'Stufe', noLevel: 'Keine',
-  draft: 'Entwurf, noch nicht gespeichert', save: 'In meinem Browser speichern', file: 'Datei',
+  file: 'Datei',
+  importTitle: 'Diese Datei importieren', importReplace: '„{name}“ ersetzen', importAdd: 'Als neues Dokument hinzufügen',
+  wipeAll: 'Alle meine Daten löschen', wipeConfirm: 'Alle Lebensläufe und Anschreiben aus diesem Browser löschen? Exportieren Sie sie vorher, wenn Sie sie behalten möchten. Dies ist endgültig.',
 }
 
 const it: V2 = {
@@ -128,7 +139,9 @@ const it: V2 = {
   margins: 'Margini', marginOpts: { compact: 'Stretti', normal: 'Normali', large: 'Ampi' }, pageSize: 'Formato pagina',
   photoShape: 'Forma della foto', shapes: { circle: 'Tonda', rounded: 'Arrotondata', square: 'Quadrata' },
   skillDisplay: 'Visualizzazione dei livelli', displays: { text: 'Testo', bars: 'Barre', dots: 'Punti' }, level: 'Livello', noLevel: 'Nessuno',
-  draft: 'Bozza, non ancora salvata', save: 'Salva nel mio browser', file: 'File',
+  file: 'File',
+  importTitle: 'Importa questo file', importReplace: 'Sostituisci «{name}»', importAdd: 'Aggiungi come nuovo documento',
+  wipeAll: 'Cancella tutti i miei dati', wipeConfirm: 'Cancellare tutti i CV e le lettere da questo browser? Esportali prima se vuoi conservarli. L’azione è definitiva.',
 }
 
 const pt: V2 = {
@@ -144,7 +157,9 @@ const pt: V2 = {
   margins: 'Margens', marginOpts: { compact: 'Estreitas', normal: 'Normais', large: 'Largas' }, pageSize: 'Formato da página',
   photoShape: 'Forma da foto', shapes: { circle: 'Redonda', rounded: 'Arredondada', square: 'Quadrada' },
   skillDisplay: 'Apresentação dos níveis', displays: { text: 'Texto', bars: 'Barras', dots: 'Pontos' }, level: 'Nível', noLevel: 'Nenhum',
-  draft: 'Rascunho, ainda não guardado', save: 'Guardar no meu navegador', file: 'Ficheiro',
+  file: 'Ficheiro',
+  importTitle: 'Importar este ficheiro', importReplace: 'Substituir «{name}»', importAdd: 'Adicionar como novo documento',
+  wipeAll: 'Apagar todos os meus dados', wipeConfirm: 'Apagar todos os seus CV e cartas deste navegador? Exporte-os antes se os quiser guardar. Esta ação é definitiva.',
 }
 
 const ar: V2 = {
@@ -160,7 +175,9 @@ const ar: V2 = {
   margins: 'الهوامش', marginOpts: { compact: 'ضيقة', normal: 'عادية', large: 'واسعة' }, pageSize: 'حجم الصفحة',
   photoShape: 'شكل الصورة', shapes: { circle: 'دائري', rounded: 'مستدير الزوايا', square: 'مربع' },
   skillDisplay: 'عرض المستويات', displays: { text: 'نص', bars: 'أشرطة', dots: 'نقاط' }, level: 'المستوى', noLevel: 'بدون',
-  draft: 'مسودة، لم تُحفظ بعد', save: 'احفظ في متصفحي', file: 'ملف',
+  file: 'ملف',
+  importTitle: 'استيراد هذا الملف', importReplace: 'استبدال «{name}»', importAdd: 'إضافة كمستند جديد',
+  wipeAll: 'مسح كل بياناتي', wipeConfirm: 'مسح كل سيرك الذاتية ورسائلك من هذا المتصفح؟ صدّرها أولًا إن أردت الاحتفاظ بها. لا يمكن التراجع عن هذا الإجراء.',
 }
 
 export const v2: Record<Lang, V2> = { fr, en, es, de, it, pt, ar }

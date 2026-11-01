@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type MouseEvent } from 'react'
 import { monthNames } from '../model/dates'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { extra } from '../i18n/extra'
@@ -33,6 +33,27 @@ const phItem = (ph: ReturnType<typeof usePlaceholders>, kind: SectionKind, k: nu
 }
 
 const FIELD_ORDER: Exclude<FieldKind, 'custom'>[] = ['birthDate', 'location', 'email', 'phone', 'website']
+/** Valeur d'`autocomplete` de chaque champ (1.3.5). Le lieu est une ville : le navigateur propose la sienne. Les champs libres n'en ont pas. */
+const AUTOCOMPLETE: Partial<Record<FieldKind, string>> = { birthDate: 'bday', location: 'address-level2', email: 'email', phone: 'tel', website: 'url' }
+
+/**
+ * Supprime une ligne de liste, puis rend le focus au voisin (suivant, sinon précédent : son titre ou son premier champ),
+ * à défaut au bouton d'ajout `[data-add=scope]` du conteneur. Sans cela le bouton disparaît et le focus tombe sur body (2.4.3).
+ */
+function removeThenFocus(e: MouseEvent<HTMLElement>, scope: string, remove: () => void) {
+  const row = e.currentTarget.closest('li')!
+  const near = (row.nextElementSibling ?? row.previousElementSibling)?.querySelector<HTMLElement>('h3, input, select, textarea')
+  const add = row.parentElement?.closest('li, section')?.querySelector<HTMLElement>(`[data-add=${scope}]`)
+  remove()
+  requestAnimationFrame(() => (near ?? add)?.focus())
+}
+
+/** Déplace (↑/↓) ; en bout de liste le bouton se désactive et perdrait le focus : il passe à la flèche opposée. */
+function moveThenFocus(e: MouseEvent<HTMLButtonElement>, move: () => void) {
+  const b = e.currentTarget
+  move()
+  requestAnimationFrame(() => b.disabled && ((b.textContent === '↑' ? b.nextElementSibling : b.previousElementSibling) as HTMLElement | null)?.focus())
+}
 
 /** Formulaire complet = ces cartes, dans l'ordre. Chacune est autonome : le mode guidé peut les monter une par une. */
 export function Form() {
@@ -83,6 +104,7 @@ export function PersonalCard() {
   const update = useStore((s) => s.update)
   const t = ui[useStore((s) => s.uiLang)]
   const fileRef = useRef<HTMLInputElement>(null)
+  const photoBtn = useRef<HTMLButtonElement>(null)
   const [photoMsg, setPhotoMsg] = useState('')
   const onPhoto = async (f?: File) => {
     if (!f) return
@@ -106,13 +128,13 @@ export function PersonalCard() {
           <Field label={t.firstName}><input className="inp" placeholder={ph.personal.firstName} value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
           <Field label={t.lastName}><input className="inp" placeholder={ph.personal.lastName} value={cv.personal.lastName} onChange={(e) => setPersonal({ lastName: e.target.value })} autoComplete="family-name" /></Field>
         </div>
-        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" placeholder={ph.personal.title} value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} /></Field></div>
+        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" placeholder={ph.personal.title} value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} autoComplete="organization-title" /></Field></div>
 
         <div className="mt-3 flex items-center gap-3">
           {cv.personal.photo && <img src={cv.personal.photo} alt="" className="size-14 rounded-full object-cover" />}
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { void onPhoto(e.target.files?.[0]); e.target.value = '' }} />
-          <button type="button" className="btn" onClick={() => fileRef.current?.click()}>{cv.personal.photo ? t.photo : t.addPhoto}</button>
-          {cv.personal.photo && <button type="button" className="btn btn-ghost" onClick={() => setPersonal({ photo: '' })}>{t.removePhoto}</button>}
+          <button ref={photoBtn} type="button" className="btn" onClick={() => fileRef.current?.click()}>{cv.personal.photo ? t.photo : t.addPhoto}</button>
+          {cv.personal.photo && <button type="button" className="btn btn-ghost" onClick={() => { setPersonal({ photo: '' }); requestAnimationFrame(() => photoBtn.current?.focus()) }}>{t.removePhoto}</button>}
         </div>
         {photoMsg && <p role="alert" className="mt-2 text-sm text-danger">{photoMsg}</p>}
 
@@ -125,17 +147,17 @@ export function PersonalCard() {
               <div className="min-w-0 flex-1">
                 <Field label={fieldLabel(f.kind)}>
                   <input className="inp" placeholder={ph.personal.fields.find((x) => x.kind === f.kind)?.value} type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
-                    value={f.value} onChange={(e) => update((c) => patchField(c, f.id, { value: e.target.value }))} />
+                    value={f.value} onChange={(e) => update((c) => patchField(c, f.id, { value: e.target.value }))} autoComplete={AUTOCOMPLETE[f.kind]} />
                 </Field>
               </div>
               <button type="button" className="btn btn-ghost" aria-label={`${f.visible ? t.hide : t.show}${t.onItem.replace('{x}', fieldName(f))}`} onClick={() => update((c) => patchField(c, f.id, { visible: !f.visible }))}>{f.visible ? t.hide : t.show}</button>
-              <Icon label={`${t.remove}${t.onItem.replace('{x}', fieldName(f))}`} onClick={() => update((c) => removeField(c, f.id))}>×</Icon>
+              <Icon label={`${t.remove}${t.onItem.replace('{x}', fieldName(f))}`} onClick={(e) => removeThenFocus(e, 'field', () => update((c) => removeField(c, f.id)))}>×</Icon>
             </li>
           ))}
         </ul>
         <div className="mt-3 flex flex-wrap gap-2">
-          {missingKinds.map((k) => <button key={k} type="button" className="btn" onClick={() => update((c) => addField(c, k))}>+ {t[k]}</button>)}
-          <button type="button" className="btn" onClick={() => update(addCustomField)}>+ {t.addCustomField}</button>
+          {missingKinds.map((k) => <button key={k} type="button" data-add="field" className="btn" onClick={() => update((c) => addField(c, k))}>+ {t[k]}</button>)}
+          <button type="button" data-add="field" className="btn" onClick={() => update(addCustomField)}>+ {t.addCustomField}</button>
         </div>
       </Card>
   )
@@ -155,6 +177,7 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
   const shown = cv.sections.map((s, i) => ({ s, i })).filter(({ s }) => !only || only.includes(s.kind))
   const addable = add.filter((k) => k === 'custom' || !cv.sections.some((s) => s.kind === k)) // une section déjà présente ne se rajoute pas
   const [picking, setPicking] = useState(!!only) // mode complet : un seul bouton « Ajouter une section », qui déplie les types
+  const addRef = useRef<HTMLButtonElement>(null)
   return (
       <Card title={title === false ? undefined : (title ?? t.sections)}>
         {!only && cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
@@ -164,12 +187,12 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
             <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} />
           ))}
         </ul>
-        {addable.length > 0 && !picking && <button type="button" className="btn mt-5" onClick={() => setPicking(true)}>+ {t.addSection}</button>}
+        {addable.length > 0 && !picking && <button ref={addRef} type="button" data-add="section" className="btn mt-5" onClick={() => setPicking(true)}>+ {t.addSection}</button>}
         {addable.length > 0 && picking && (
           <>
             <p className="mb-2 mt-5 text-sm font-medium">{t.addSection}</p>
             <div className="flex flex-wrap gap-2">
-              {addable.map((k, i) => <button key={k} type="button" className="btn" autoFocus={!only && i === 0} onClick={() => { update((c) => addSection(c, k)); if (!only) setPicking(false) }}>+ {t.kinds[k]}</button>)}
+              {addable.map((k, i) => <button key={k} type="button" data-add="section" className="btn" autoFocus={!only && i === 0} onClick={() => { update((c) => addSection(c, k)); if (!only) { setPicking(false); requestAnimationFrame(() => addRef.current?.focus()) } }}>+ {t.kinds[k]}</button>)}
             </div>
           </>
         )}
@@ -222,14 +245,14 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
   return (
     <li className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'}`}>
       <div className="flex items-center gap-1">
-        <h3 className="flex-1 text-base font-semibold">
+        <h3 tabIndex={-1} className="flex-1 text-base font-semibold">
           {sectionTitle(s, labels)}
           {!s.visible && <span className="ms-2 text-sm font-normal text-muted">({t.hidden})</span>}
         </h3>
-        <Icon label={onSec(t.up)} onClick={() => update((c) => moveSection(c, s.id, -1))} disabled={i === 0}>↑</Icon>
-        <Icon label={onSec(t.down)} onClick={() => update((c) => moveSection(c, s.id, 1))} disabled={i === n - 1}>↓</Icon>
+        <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, -1)))} disabled={i === 0}>↑</Icon>
+        <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, 1)))} disabled={i === n - 1}>↓</Icon>
         <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
-        <Icon label={onSec(t.remove)} onClick={() => update((c) => removeSection(c, s.id))}>×</Icon>
+        <Icon label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => update((c) => removeSection(c, s.id)))}>×</Icon>
       </div>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
@@ -275,16 +298,16 @@ export function SectionEditor({ s, i, n, t, std }: { s: Section; i: number; n: n
               )}
               {multi && (
                 <div className="mt-2 flex justify-end gap-1">
-                  <Icon label={onItem(t.up)} onClick={() => update((c) => moveItem(c, s.id, it.id, -1))} disabled={k === 0}>↑</Icon>
-                  <Icon label={onItem(t.down)} onClick={() => update((c) => moveItem(c, s.id, it.id, 1))} disabled={k === s.items.length - 1}>↓</Icon>
-                  <Icon label={onItem(t.remove)} onClick={() => update((c) => removeItem(c, s.id, it.id))}>×</Icon>
+                  <Icon label={onItem(t.up)} onClick={(e) => moveThenFocus(e, () => update((c) => moveItem(c, s.id, it.id, -1)))} disabled={k === 0}>↑</Icon>
+                  <Icon label={onItem(t.down)} onClick={(e) => moveThenFocus(e, () => update((c) => moveItem(c, s.id, it.id, 1)))} disabled={k === s.items.length - 1}>↓</Icon>
+                  <Icon label={onItem(t.remove)} onClick={(e) => removeThenFocus(e, 'item', () => update((c) => removeItem(c, s.id, it.id)))}>×</Icon>
                 </div>
               )}
             </li>
           )
         })}
       </ul>
-      {multi && <button type="button" className="btn mt-3" onClick={() => update((c) => addItem(c, s.id))}>+ {t.addItem}</button>}
+      {multi && <button type="button" data-add="item" className="btn mt-3" onClick={() => update((c) => addItem(c, s.id))}>+ {t.addItem}</button>}
     </li>
   )
 }

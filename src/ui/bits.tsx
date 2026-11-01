@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { extra } from '../i18n/extra'
 import { exportDocs } from '../model/documents'
 import { LANGS, type Lang } from '../model/types'
@@ -38,18 +38,20 @@ export function SkipLink() {
   )
 }
 
-/** Vrai quand la fenêtre a la largeur du mode bureau (lg, 64 rem). */
-export function useWide() {
-  const q = '(min-width: 64rem)'
-  const [wide, setWide] = useState(() => matchMedia(q).matches)
+/** Vrai quand la fenêtre correspond à la requête média. */
+function useMedia(q: string) {
+  const [on, setOn] = useState(() => matchMedia(q).matches)
   useEffect(() => {
     const m = matchMedia(q)
-    const on = () => setWide(m.matches)
-    m.addEventListener('change', on)
-    return () => m.removeEventListener('change', on)
-  }, [])
-  return wide
+    const f = () => setOn(m.matches)
+    m.addEventListener('change', f)
+    return () => m.removeEventListener('change', f)
+  }, [q])
+  return on
 }
+
+/** Vrai quand la fenêtre a la largeur du mode bureau (lg, 64 rem). */
+export const useWide = () => useMedia('(min-width: 64rem)')
 
 export const GithubIcon = () => (
   <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" className="fill-current">
@@ -58,10 +60,11 @@ export const GithubIcon = () => (
 )
 
 export function LangSelect({ label, value, onChange, langs = LANGS, wide }: { label: string; value: Lang; onChange: (l: Lang) => void; langs?: readonly Lang[]; wide?: boolean }) {
+  const narrow = useMedia('(max-width: 26rem)') && !wide // sous 416 px, le code seul : le nom entier faisait déborder les barres (1.4.10)
   return (
-    <select aria-label={label} title={label} className={`inp ${wide ? '' : 'w-auto'}`} value={value} onChange={(e) => onChange(e.target.value as Lang)}>
+    <select aria-label={label} title={label} className={`inp ${wide ? '' : narrow ? 'w-auto px-2' : 'w-auto'}`} value={value} onChange={(e) => onChange(e.target.value as Lang)}>
       {langs.map((l) => (
-        <option key={l} value={l} lang={l}>{LANG_NAMES[l]}</option>
+        <option key={l} value={l} lang={l} aria-label={narrow ? LANG_NAMES[l] : undefined}>{narrow ? l.toUpperCase() : LANG_NAMES[l]}</option>
       ))}
     </select>
   )
@@ -77,7 +80,7 @@ export function Field({ label, children, hint }: { label: string; children: Reac
   )
 }
 
-export const Icon = ({ label, onClick, children, disabled }: { label: string; onClick: () => void; children: ReactNode; disabled?: boolean }) => (
+export const Icon = ({ label, onClick, children, disabled }: { label: string; onClick: (e: MouseEvent<HTMLButtonElement>) => void; children: ReactNode; disabled?: boolean }) => (
   <button type="button" className="btn btn-ghost px-0" aria-label={label} title={label} onClick={onClick} disabled={disabled}>
     {children}
   </button>
@@ -89,7 +92,7 @@ export function Seg<T extends string | number>({ label, value, options, onChange
     <div role="group" aria-label={label} className="flex flex-wrap gap-1 rounded-ctl border border-edge p-1">
       {options.map(([v, text]) => (
         <button key={String(v)} type="button" aria-pressed={value === v} onClick={() => onChange(v)}
-          className="min-h-9 flex-1 whitespace-nowrap rounded-[4px] px-2 text-sm font-medium text-muted transition-colors duration-150 hover:text-ink aria-pressed:bg-ink aria-pressed:text-desk">
+          className="min-h-11 flex-1 whitespace-nowrap rounded-[4px] px-2 text-sm font-medium text-muted transition-colors duration-150 hover:text-ink aria-pressed:bg-ink aria-pressed:text-desk">
           {text}
         </button>
       ))}
@@ -113,4 +116,19 @@ export function SaveBanner() {
       <button type="button" className="btn" onClick={save}>{x.exportMine}</button>
     </div>
   )
+}
+
+/**
+ * Échec ou refus du téléchargement : `fail(texte)` pose un message role="alert" sous la barre collante de l'éditeur (`node`, voir `.edalert`).
+ * Il est ré-annoncé à chaque essai (la clé change) et s'efface quand `content` change : la personne a corrigé.
+ */
+export function useDownloadAlert(content: unknown) {
+  const [a, setA] = useState<{ text: string; n: number }>()
+  const n = useRef(0)
+  useEffect(() => setA(undefined), [content])
+  return {
+    fail: (text: string) => setA({ text, n: ++n.current }),
+    clear: () => setA(undefined),
+    node: a && <p key={a.n} role="alert" className="edalert m-0 border-b border-danger bg-desk px-[var(--m)] py-2 text-sm font-medium text-danger">{a.text}</p>,
+  }
 }

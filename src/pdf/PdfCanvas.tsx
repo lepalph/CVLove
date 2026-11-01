@@ -10,8 +10,8 @@ const loadPdfjs = () =>
   }))
 
 interface Props {
-  /** Fabrique les octets du PDF ; relancée quand `deps` change. */
-  make: () => Promise<Uint8Array>
+  /** Fabrique les octets du PDF ; relancée quand `deps` change. `signal` : levé quand ce rendu est abandonné (nouveau rendu, démontage). */
+  make: (signal: AbortSignal) => Promise<Uint8Array>
   deps: unknown[]
   /** Pages à afficher (1 = vignette). */
   maxPages?: number
@@ -30,13 +30,14 @@ export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, 
   const host = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const abort = new AbortController()
     let dead = false // posé au nettoyage (démontage ou nouveau rendu) : ce rendu n'a plus le droit de peindre ni de signaler une erreur
     const tasks: RenderTask[] = []
     let loading: PDFDocumentLoadingTask | undefined
     const timer = setTimeout(async () => {
       onState?.('busy')
       try {
-        const [lib, bytes] = await Promise.all([loadPdfjs(), make()])
+        const [lib, bytes] = await Promise.all([loadPdfjs(), make(abort.signal)])
         if (dead) return
         loading = lib.getDocument({ data: bytes })
         const doc = await loading.promise
@@ -69,6 +70,7 @@ export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, 
     }, debounce)
     return () => {
       dead = true
+      abort.abort()
       clearTimeout(timer)
       tasks.forEach((t) => t.cancel())
       void loading?.destroy()

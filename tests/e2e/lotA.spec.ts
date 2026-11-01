@@ -40,6 +40,10 @@ test('document vide : champs vides avec placeholders d’exemple, aperçu nommé
   await expect(page.getByRole('status').filter({ hasText: 'Modèle Minimal · Gouttière appliqué' })).toBeAttached()
   // le focus reste sur le bouton après le téléchargement
   const dl = page.getByRole('banner').getByRole('button', { name: 'Télécharger le PDF' })
+  // document vide : pas de PDF blanc, un message à la place
+  await dl.click()
+  await expect(page.getByRole('alert').filter({ hasText: 'Votre document est vide' })).toBeVisible()
+  await prenom.fill('Zoé')
   await dl.focus()
   const [d] = await Promise.all([page.waitForEvent('download'), dl.press('Enter')])
   expect(d.suggestedFilename()).toMatch(/^CV-.*\.pdf$/)

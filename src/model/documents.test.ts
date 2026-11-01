@@ -13,7 +13,7 @@ const v1 = {
       templateId: 'moderne',
       accent: '#1d4ed8',
       personal: {
-        firstName: 'Zoé', lastName: 'Durand', title: 'Designer', photo: 'data:image/jpeg;base64,/9j/AAAA',
+        firstName: 'Zoé', lastName: 'Durand', title: 'Designer', photo: 'data:image/jpeg;base64,/9j/4AAQAAAAAAAAAAAAAAAAAAD/wAARCAAKAAoDAAAAAAAAAAAA', // JPEG 10×10 bien formé (en-tête seul)
         fields: [
           { id: 'f1', kind: 'email', value: 'zoe@exemple.fr', visible: true },
           { id: 'f2', kind: 'phone', value: '+33 6 00 00 00 00', visible: false },

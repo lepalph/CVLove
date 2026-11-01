@@ -94,6 +94,7 @@ test('accueil : « Commencer avec ce modèle » (Moderne · Bandeau), puis chang
 
 test('photo ajoutée : présente dans le PDF', async ({ page }) => {
   await openEditor(page)
+  await page.getByLabel('Prénom').fill('Zoé')
   const base = await pdfOf((await (await download(page)).path())!)
   await page.locator('input[type=file][accept="image/*"]').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: png() })
   await expect(page.locator('img[src^="data:image/jpeg"]')).toBeVisible()
@@ -144,19 +145,69 @@ test('export JSON puis import après « Tout effacer »', async ({ page }) => {
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
 })
 
-test('rechargement : un brouillon est perdu (après confirmation), un CV enregistré est conservé', async ({ page }) => {
+test('import sur un CV rempli : on choisit de remplacer le document en cours ou d’ajouter un nouveau document', async ({ page }) => {
   await openEditor(page)
   await page.getByLabel('Prénom').fill('Zoé')
-  let asked = false
-  page.once('dialog', (x) => { asked = x.type() === 'beforeunload'; void x.accept() })
-  await page.reload()
-  expect(asked).toBe(true)
-  await page.getByRole('button', { name: 'Complet' }).click()
-  await expect(page.getByLabel('Prénom')).toHaveValue('')
+  await page.getByText('Fichier', { exact: true }).click()
+  const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Exporter (JSON)' }).click()])
+  const json = readFileSync((await d.path())!)
+  await page.getByLabel('Prénom').fill('Bob')
+  const file = { name: 'cvlove.json', mimeType: 'application/json', buffer: json }
+  await page.locator('#imp').setInputFiles(file)
+  const ask = page.getByRole('dialog', { name: 'Importer ce fichier' })
+  await expect(ask.getByRole('button', { name: 'Ajouter comme nouveau document' })).toBeFocused() // le choix sans perte est proposé d'abord
+  await ask.getByRole('button', { name: /^Remplacer/ }).click()
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  await page.getByLabel('Prénom').fill('Bob')
+  await page.locator('#imp').setInputFiles(file)
+  await ask.getByRole('button', { name: 'Ajouter comme nouveau document' }).click()
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(2)
+  await expect(page.locator('li[data-doc="Bob"]')).toBeVisible()
+})
+
+test('accueil : avec un CV déjà rempli, « Commencer avec ce modèle » crée un nouveau CV au lieu de modifier le premier', async ({ page }) => {
+  await openEditor(page)
   await page.getByLabel('Prénom').fill('Zoé')
-  await page.getByRole('button', { name: 'Enregistrer dans mon navigateur' }).click()
-  await expect(page.getByRole('button', { name: 'Enregistrer dans mon navigateur' })).toHaveCount(0)
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Commencer avec ce modèle (Moderne · Bandeau)' }).click()
+  await expect(page).toHaveURL(/#\/editeur/)
+  await page.goto('/#/documents')
+  await expect(page.locator('li[data-doc]')).toHaveCount(2)
+  await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
+})
+
+test('CV vierge : il suit la langue de l’interface', async ({ page }) => {
+  await page.goto('/#/documents')
+  await page.getByLabel('Langue de l’interface').selectOption('en')
+  await page.goto('/#/editeur')
+  await page.getByRole('button', { name: 'Full', exact: true }).click()
+  await expect(page.getByLabel('CV language')).toHaveValue('en')
+})
+
+test('deux onglets : chacun garde son CV, aucun n’efface celui de l’autre', async ({ page, context }) => {
+  await openEditor(page)
+  const other = await context.newPage() // ouvert avant toute saisie : son état initial est vide
+  await other.goto('/#/editeur')
+  await other.getByRole('button', { name: 'Complet' }).click()
+  await other.waitForTimeout(700) // un humain ne tape pas dans deux onglets à moins de 500 ms d'écart (voir la limite dans store.ts)
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.waitForTimeout(700)
+  await other.getByLabel('Prénom').fill('Bob')
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé') // l'onglet ne bascule pas sur le CV de l'autre
+  await other.waitForTimeout(700)
+  await page.goto('/#/documents')
+  await expect(page.locator('li[data-doc]')).toHaveCount(2)
+  await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
+  await expect(page.locator('li[data-doc="Bob"]')).toBeVisible()
+})
+
+test('rechargement : un CV rempli est conservé sans rien faire ; un CV vierge n’est pas écrit', async ({ page }) => {
+  await openEditor(page)
   await page.waitForTimeout(600)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cvlove:v2')!).state.documents)).toEqual([])
+  await page.getByLabel('Prénom').fill('Zoé')
   await page.reload()
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
 })
@@ -367,10 +418,19 @@ test('nouveau CV vide, nommé d’après la personne, exemple à la demande', as
   await page.getByRole('link', { name: 'Modifier' }).click()
   await page.getByLabel('Prénom').fill('Zoé')
   await page.getByRole('link', { name: 'Mes documents' }).click()
-  await expect(page.locator('li[data-doc="Zoé"]')).toContainText('Brouillon, pas encore enregistré')
+  await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
   page.once('dialog', (x) => x.accept())
   await page.getByRole('button', { name: 'Supprimer : Zoé' }).click()
   await expect(page.locator('li[data-doc]')).toHaveCount(0) // supprimable, remplacé par un brouillon vierge invisible
+  await page.getByRole('button', { name: 'Nouveau CV' }).click() // brouillon lui aussi : listé à la première saisie
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(0)
+  await page.getByRole('link', { name: 'Modifier' }).click()
+  await page.getByRole('button', { name: 'Complet' }).click() // un nouveau CV s'ouvre en mode guidé
+  await page.getByLabel('Prénom').fill('Léa')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(1)
+  await expect(page.locator('li[data-doc="Léa"]')).toBeVisible()
 })
 
 test('fichier trop gros : message clair, rien n’est importé', async ({ page }) => {

@@ -6,8 +6,6 @@ const FILES: Record<string, string> = {
   CVLoveDisplay: 'CVLoveDisplay', Montserrat: 'Montserrat', Tajawal: 'Tajawal',
 }
 
-export const FAMILIES = Object.keys(FILES)
-
 /**
  * `base` : préfixe d'URL (navigateur) ou chemin disque (Node, check:pdf).
  * Césure désactivée (sinon coupures sauvages, surtout en arabe).

@@ -44,7 +44,7 @@ const URL_RE = /^(https?:\/\/\S+|(www\.)?[\w-]+(\.[\w-]+)+\/\S*)$/i
 export function linked(value: string, kind?: string): ReactNode {
   const v = value.trim()
   let href = ''
-  if (kind === 'email' || (!kind && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))) href = `mailto:${v}`
+  if ((kind === 'email' || !kind) && /^[^\s@?&]+@[^\s@?&]+\.[^\s@?&]+$/.test(v)) href = `mailto:${v}` // pas de « ?bcc= » glissé dans le lien
   else if (kind === 'phone' || (!kind && /^\+?[\d\s().-]{7,}$/.test(v))) { const d = v.replace(/[^\d+]/g, ''); if (d) href = `tel:${d}` }
   else if ((kind === 'website' || kind === 'custom' || !kind) && URL_RE.test(v)) href = /^https?:/i.test(v) ? v : `https://${v}`
   else if (kind === 'website' && /^[\w-]+(\.[\w-]+)+$/.test(v)) href = `https://${v}`

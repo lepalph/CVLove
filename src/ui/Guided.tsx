@@ -86,7 +86,7 @@ export function Steps({ progress, names, hints, tips: tipList, filled, children 
   const next = () => setP({ ...p, i: i + 1, done: new Set(done).add(i) })
 
   return (
-    <div ref={top} className="flex scroll-mt-44 flex-col gap-6 lg:scroll-mt-0">
+    <div ref={top} className="flex flex-col gap-6">
       <nav aria-label={g.stepsLabel} className="flex items-center gap-3 sm:hidden">
         <span className="whitespace-nowrap font-mono text-sm text-muted">{fill(g.stepOf, i + 1, total)}</span>
         <select aria-label={g.stepsLabel} className="inp font-mono" value={i} onChange={(e) => setI(+e.target.value)}>

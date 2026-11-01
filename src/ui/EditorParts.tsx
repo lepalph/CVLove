@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
+import { letterUi } from '../i18n/letter'
 import { tips } from '../i18n/tips'
 import { ui } from '../i18n/ui'
 import { shell } from '../i18n/shell'
 import { v2 } from '../i18n/v2'
-import { exportDocs } from '../model/documents'
+import { exportDocs, parseImport } from '../model/documents'
 import { MAX_IMPORT_BYTES } from '../model/sanitize'
 import { LANGS, type Doc, type EditorMode } from '../model/types'
 import { PdfCanvas } from '../pdf/PdfCanvas'
 import { useStore } from '../store'
 import { LangSelect, Logo, Seg, useWide } from './bits'
 import { importAndOpen } from './Documents'
-import { externalCount } from './lib'
+import { externalCount, isEmptyCV } from './lib'
 
 /** Mode Guidé / Complet : dans l'en-tête sur grand écran, en tête du panneau sur mobile (`MobileTools`) ; jamais les deux dans le DOM. */
 function ModeSeg({ mode, onMode }: { mode: EditorMode; onMode: (m: EditorMode) => void }) {
@@ -20,32 +21,56 @@ function ModeSeg({ mode, onMode }: { mode: EditorMode; onMode: (m: EditorMode) =
   return <Seg label={g.mode} value={mode} onChange={onMode} options={[['guided', g.guided], ['full', g.full]]} />
 }
 
-/** Menu Fichier : enregistrer le document en JSON, ouvrir un JSON (ajouté à Mes documents et ouvert). */
+/**
+ * Menu Fichier : enregistrer le document en JSON, ouvrir un JSON. Si le document en cours a du contenu et que le fichier contient
+ * un seul document du même type, on demande : le remplacer, ou ajouter le fichier comme nouveau document (sinon : ajout direct).
+ */
 function FileMenu({ doc }: { doc: Doc }) {
   const uiLang = useStore((s) => s.uiLang)
   const t = ui[uiLang]
+  const tv = v2[uiLang]
   const ref = useRef<HTMLDetailsElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const ask = useRef<HTMLDialogElement>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string }>()
-  const close = () => ref.current?.removeAttribute('open')
+  const [pending, setPending] = useState<{ json: string; src: Doc }>()
+  const summary = useRef<HTMLElement>(null)
+  const close = () => { ref.current?.removeAttribute('open'); summary.current?.focus() } // le focus revient au déclencheur
   const onExport = () => {
     const url = URL.createObjectURL(new Blob([exportDocs([doc])], { type: 'application/json' }))
     Object.assign(document.createElement('a'), { href: url, download: `${doc.name.replace(/[^\p{L}\p{N}]+/gu, '-') || 'cvlove'}.json` }).click()
     setTimeout(() => URL.revokeObjectURL(url), 10_000)
     close()
   }
+  const add = (json: string) => {
+    importAndOpen(json)
+    const kind = useStore.getState().documents.find((d) => d.id === useStore.getState().activeId)?.kind
+    location.hash = kind === 'letter' ? '#/lettre' : '#/editeur'
+    setMsg({ ok: true, text: extra[uiLang].fileImported })
+  }
   const onImport = async (f?: File) => {
     if (!f) return
     close()
     if (f.size > MAX_IMPORT_BYTES) return setMsg({ ok: false, text: extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)) })
     try {
-      const imported = importAndOpen(await f.text())
-      const kind = useStore.getState().documents.find((d) => d.id === useStore.getState().activeId)?.kind
-      if (imported) location.hash = kind === 'letter' ? '#/lettre' : '#/editeur'
-      setMsg({ ok: true, text: extra[uiLang].fileImported })
+      const json = await f.text()
+      const docs = parseImport(json) // valide avant de poser la question
+      const empty = doc.kind === 'cv' && isEmptyCV(doc.data)
+      if (empty || docs.length !== 1 || docs[0].kind !== doc.kind) return add(json)
+      setPending({ json, src: docs[0] })
+      ask.current?.showModal()
     } catch {
       setMsg({ ok: false, text: t.importError })
     }
+  }
+  const choose = (how: 'replace' | 'add') => {
+    ask.current?.close()
+    if (!pending) return
+    if (how === 'replace') {
+      const ok = useStore.getState().replaceDoc(doc.id, pending.src)
+      setMsg(ok ? { ok, text: extra[uiLang].fileImported } : { ok, text: t.importError })
+    } else add(pending.json)
+    setPending(undefined)
   }
   useEffect(() => {
     if (!msg) return
@@ -53,27 +78,27 @@ function FileMenu({ doc }: { doc: Doc }) {
     return () => clearTimeout(id)
   }, [msg])
   return (
-    <details ref={ref} className="relative">
-      <summary className="btn list-none whitespace-nowrap [&::-webkit-details-marker]:hidden">{v2[uiLang].file}</summary>
-      <div className="absolute start-0 top-full z-30 mt-1 flex w-max lg:start-auto lg:end-0 flex-col gap-1 rounded-card border border-line bg-panel p-2 shadow-sheet">
-        <button type="button" className="btn btn-ghost justify-start" onClick={onExport}>{t.exportJson}</button>
-        <input id="imp" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
-        <button type="button" className="btn btn-ghost justify-start" onClick={() => fileRef.current?.click()}>{t.importJson}</button>
-      </div>
-      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`absolute start-0 top-full z-30 m-0 mt-1 w-max lg:start-auto lg:end-0 max-w-[20rem] rounded-ctl border border-line bg-panel px-3 py-2 text-sm shadow-sheet ${msg.ok ? '' : 'text-danger'}`}>{msg.text}</p>}
-    </details>
-  )
-}
-
-/** Enregistrer (brouillon seulement) et menu Fichier : dans l'en-tête sur grand écran, en haut du panneau sur mobile. */
-function DocTools({ doc }: { doc: Doc }) {
-  const uiLang = useStore((s) => s.uiLang)
-  const save = useStore((s) => s.save)
-  return (
-    <>
-      {doc.draft && <button type="button" className="btn whitespace-nowrap" title={v2[uiLang].draft} onClick={() => save(doc.id)}>{v2[uiLang].save}</button>}
-      <FileMenu doc={doc} />
-    </>
+    <div className="relative">
+      <details ref={ref} onKeyDown={(e) => { if (e.key === 'Escape' && ref.current?.open) { e.preventDefault(); close() } }}>
+        <summary ref={summary} className="btn list-none whitespace-nowrap [&::-webkit-details-marker]:hidden">{tv.file}</summary>
+        <div className="absolute start-0 top-full z-30 mt-1 flex w-max flex-col gap-1 rounded-card border border-line bg-panel p-2 shadow-sheet lg:start-auto lg:end-0">
+          <button type="button" className="btn btn-ghost justify-start" onClick={onExport}>{t.exportJson}</button>
+          <button type="button" className="btn btn-ghost justify-start" onClick={() => fileRef.current?.click()}>{t.importJson}</button>
+        </div>
+      </details>
+      <input id="imp" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
+      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`absolute start-0 top-full z-30 m-0 mt-1 w-max max-w-[min(20rem,calc(100vw-2rem))] rounded-ctl border border-line bg-panel px-3 py-2 text-sm shadow-sheet lg:start-auto lg:end-0 ${msg.ok ? '' : 'text-danger'}`}>{msg.text}</p>}
+      <dialog ref={ask} aria-labelledby="import-title" onClose={() => { setPending(undefined); summary.current?.focus() }}
+        className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-card border border-line bg-panel p-6 text-ink shadow-sheet backdrop:bg-black/40">
+        <h2 id="import-title" className="m-0 text-lg font-semibold tracking-tight">{tv.importTitle}</h2>
+        <div className="mt-4 flex flex-col gap-2">
+          {/* L'ajout, sans perte, vient en premier : showModal() lui donne le focus. */}
+          <button type="button" className="btn btn-primary justify-start" onClick={() => choose('add')}>{tv.importAdd}</button>
+          <button type="button" className="btn justify-start" onClick={() => choose('replace')}>{tv.importReplace.replace('{name}', `\u2068${doc.name}\u2069`)}</button>
+          <button type="button" className="btn btn-ghost" onClick={() => ask.current?.close()}>{letterUi[uiLang].cancel}</button>
+        </div>
+      </dialog>
+    </div>
   )
 }
 
@@ -109,7 +134,7 @@ export function EdHeader({ doc, mode, onMode, tab, onTab, onDownload, accent, no
       {wide && <div className="a-lang"><LangSelect label={t.uiLang} value={uiLang} onChange={setUiLang} langs={LANGS} /></div>}
       {/* aria-disabled et non disabled : un bouton désactivé perd le focus, et le clavier retombait sur le haut de la page après le téléchargement. */}
       <div className="a-dl flex items-center gap-2">
-        {wide && <DocTools doc={doc} />}
+        {wide && <FileMenu doc={doc} />}
         <button type="button" className="btn btn-primary whitespace-nowrap" onClick={onDownload}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="fill-none stroke-current stroke-2 sm:hidden"><path d="M12 4v11m-5-4 5 5 5-5M5 20h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
           <span className="max-sm:sr-only">{t.download}</span>
@@ -131,7 +156,7 @@ export function MobileTools({ doc, mode, onMode }: { doc: Doc; mode: EditorMode;
         <div className="flex-1"><ModeSeg mode={mode} onMode={onMode} /></div>
         <LangSelect label={ui[uiLang].uiLang} value={uiLang} onChange={setUiLang} langs={LANGS} />
       </div>
-      <div className="flex items-center gap-2"><DocTools doc={doc} /></div>
+      <div className="flex items-center gap-2"><FileMenu doc={doc} /></div>
     </div>
   )
 }
@@ -153,25 +178,42 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
   const [pages, setPages] = useState(0)
   const onState = (s: 'busy' | 'ready' | 'error', n?: number) => { setState(s); if (n) setPages(n) }
   const [zoom, setZoom] = useState(false)
+  const sheet = useRef<HTMLDivElement>(null)
+  const pagesText = tips[uiLang].pages.replace('{n}', String(pages))
+  const goPage = (i: number) => sheet.current?.querySelectorAll('canvas')[i]?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   return (
-    <div className={`${shown ? 'block' : 'hidden'} overflow-y-auto p-[var(--m)] lg:block lg:p-8`}>
-      <div className="mb-3 flex justify-end lg:hidden">
-        <button type="button" className="btn" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{x.zoom}</button>
-      </div>
-      <div className={zoom ? 'overflow-x-auto' : ''}>
-        <div className={`relative mx-auto ${zoom ? 'w-[200%]' : 'w-full max-w-[46rem]'}`}>
-          {empty && sample && <p aria-hidden="true" className="mb-3 text-center text-sm text-muted text-balance">{x.samplePreview}</p>}
-          {/* Les pages sont séparées par du fond (gap) ; la feuille blanche d'attente n'est là que tant qu'aucune page n'a été rendue. */}
-          <div role="img" aria-label={label} className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'}`}>
-            {(wide || shown) && <PdfCanvas className="grid gap-4 [&_canvas]:shadow-sheet" make={make} deps={[...deps, zoom]} debounce={300} onState={onState} />}
-            {empty && !sample && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
+    <>
+      <div className={`${shown ? 'block' : 'hidden'} overflow-y-auto p-[var(--m)] lg:block lg:p-8`}>
+        <div className="mb-3 flex flex-wrap items-center justify-end gap-2 bg-desk lg:sticky lg:-top-8 lg:z-10 lg:py-2">
+          {/* Plusieurs pages : annoncées en haut (avant, seulement sous la dernière) avec un saut direct vers chacune. */}
+          {pages > 1 && ( // `pages` survit au rendu suivant : la barre ne disparaît pas à chaque frappe
+            <div role="group" aria-label={pagesText} className="me-auto flex flex-wrap items-center gap-1 text-sm text-muted">
+              <span aria-hidden="true" className="me-1">{pagesText}</span>
+              {Array.from({ length: Math.min(pages, 20) }, (_, i) => (
+                <button key={i} type="button" className="btn btn-ghost min-w-11 px-2" aria-label={tips[uiLang].page.replace('{n}', String(i + 1))} onClick={() => goPage(i)}>{i + 1}</button>
+              ))}
+            </div>
+          )}
+          <button type="button" className="btn lg:hidden" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{x.zoom}</button>
+        </div>
+        <div className={zoom ? 'overflow-x-auto' : ''}>
+          <div className={`relative mx-auto ${zoom ? 'w-[200%]' : 'w-full max-w-[46rem]'}`}>
+            {empty && sample && <p aria-hidden="true" className="mb-3 text-center text-sm text-muted text-balance">{x.samplePreview}</p>}
+            {/* Les pages sont séparées par du fond (gap) ; la feuille blanche d'attente n'est là que tant qu'aucune page n'a été rendue. */}
+            <div ref={sheet} role="img" aria-label={label} className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'}`}>
+              {(wide || shown) && <PdfCanvas className="grid gap-4 [&_canvas]:shadow-sheet [&_canvas]:scroll-mt-16" make={make} deps={[...deps, zoom]} debounce={300} onState={onState} />}
+              {empty && !sample && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
+            </div>
           </div>
         </div>
+        {/* « En cours » n'est que visuel (il changerait à chaque frappe) ; l'échec, lui, est annoncé. */}
+        {state === 'error'
+          ? <p role="alert" className="mt-3 text-center text-sm text-danger">{t.previewError}</p>
+          : <p aria-hidden="true" className="mt-3 text-center text-sm text-muted">{state === 'busy' ? t.previewBusy : ' '}</p>}
       </div>
-      <p aria-hidden="true" className="mt-3 text-center text-sm text-muted">{state === 'busy' ? t.previewBusy : state === 'error' ? t.previewError : ' '}</p>
-      {state === 'ready' && pages > 1 && <p className="mt-1 text-center text-sm text-muted">{tips[uiLang].pages.replace('{n}', String(pages))}</p>}
+      {/* Hors du panneau : masqué (display:none) sur mobile quand l'onglet Modifier est actif, il ne serait pas annoncé. */}
       <p role="status" className="sr-only">{said}</p>
-    </div>
+    </>
   )
 }
 
@@ -187,14 +229,14 @@ export function EdFooter() {
     return () => po.disconnect()
   }, [])
   return (
-    <footer className="flex h-10 items-center gap-4 border-t border-line bg-desk px-[var(--m)] text-xs text-muted">
+    <footer className="relative flex h-10 items-center gap-4 border-t border-line bg-desk px-[var(--m)] text-xs text-muted">
       <p className="m-0 flex items-center gap-2 font-mono" role="status">
         <span aria-hidden="true" className={`size-2 rounded-full ${n === 0 ? 'bg-emerald-600' : 'bg-danger'}`} />
         {(n <= 1 ? x.netOne : x.netMany).replace('{n}', String(n))}
       </p>
-      <details className="relative">
+      <details>
         <summary className="flex min-h-10 cursor-pointer list-none items-center underline underline-offset-4 [&::-webkit-details-marker]:hidden">{x.netHow}</summary>
-        <p className="absolute bottom-full start-0 z-30 mb-1 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-line bg-panel p-4 text-sm leading-relaxed text-ink shadow-sheet">{x.netHelp}</p>
+        <p className="absolute bottom-full start-[var(--m)] z-30 mb-1 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-line bg-panel p-4 text-sm leading-relaxed text-ink shadow-sheet">{x.netHelp}</p>
       </details>
     </footer>
   )
