@@ -9,6 +9,9 @@ const loadPdfjs = () =>
     return lib
   }))
 
+/** Plafond de pages peintes (mémoire : un canvas par page) ; au-delà, l'aperçu le dit à l'écran. */
+export const MAX_PAGES = 30
+
 interface Props {
   /** Fabrique les octets du PDF ; relancée quand `deps` change. `signal` : levé quand ce rendu est abandonné (nouveau rendu, démontage). */
   make: (signal: AbortSignal) => Promise<Uint8Array>
@@ -26,7 +29,7 @@ interface Props {
  * puis échangé d'un coup, l'ancien reste visible pendant ce temps (pas de clignotement).
  * Le rendu précédent est annulé (RenderTask.cancel) dès qu'un nouveau PDF arrive.
  */
-export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, onState }: Props) {
+export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, className, onState }: Props) {
   const host = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -59,7 +62,13 @@ export function PdfCanvas({ make, deps, maxPages = 20, debounce = 0, className, 
           canvases.push(canvas)
         }
         if (dead) return
+        // Le remplacement des pages ne doit pas déplacer le défilement (frappe pendant qu'on lit une page plus bas).
+        const kept: [Element, number][] = []
+        for (let el: Element | null = host.current; el; el = el.parentElement) if (el.scrollTop) kept.push([el, el.scrollTop])
+        const y = scrollY
         host.current?.replaceChildren(...canvases)
+        kept.forEach(([el, top]) => el.scrollTop !== top && (el.scrollTop = top)) // seulement si elle a bougé : écrire la même valeur coupe un défilement animé
+        if (scrollY !== y) scrollTo({ top: y, behavior: 'instant' })
         onState?.('ready', doc.numPages)
       } catch (e) {
         if (!dead && (e as Error).name !== 'RenderingCancelledException') {

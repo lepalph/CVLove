@@ -9,7 +9,8 @@ import { v2 } from '../i18n/v2'
 import { exportDocs, parseImport } from '../model/documents'
 import { MAX_IMPORT_BYTES } from '../model/sanitize'
 import { LANGS, type Doc, type EditorMode } from '../model/types'
-import { PdfCanvas } from '../pdf/PdfCanvas'
+import { pagesText as pagesTexts } from '../i18n/pages'
+import { MAX_PAGES, PdfCanvas } from '../pdf/PdfCanvas'
 import { useStore } from '../store'
 import { LangSelect, Logo, Seg, useWide } from './bits'
 import { importAndOpen } from './Documents'
@@ -165,6 +166,13 @@ export function MobileTools({ doc, mode, onMode }: { doc: Doc; mode: EditorMode;
  * Colonne de l'aperçu : la feuille (nommée pour les lecteurs d'écran), un message quand le document est vide, un zoom sur mobile,
  * et la zone `role=status` où l'on annonce ce qui vient de changer (`said`). Le PDF n'est fabriqué que si l'aperçu est visible.
  */
+/** Flèche de la barre de pages ; elle se retourne en arabe (RTL) pour suivre le sens de lecture. */
+function Chevron({ next }: { next?: boolean }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" className={`size-4 ${next ? 'rtl:rotate-180' : 'rotate-180 rtl:rotate-0'}`} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m6 3 5 5-5 5" /></svg>
+  )
+}
+
 export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
   make: () => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
   /** Document vide : `make` rend l'exemple, signalé par une étiquette au lieu du message centré. */
@@ -180,6 +188,24 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
   const [zoom, setZoom] = useState(false)
   const sheet = useRef<HTMLDivElement>(null)
   const pagesText = tips[uiLang].pages.replace('{n}', String(pages))
+  const [current, setCurrent] = useState(0)
+  const shownPages = Math.min(pages, MAX_PAGES)
+  const cur = Math.min(current, Math.max(shownPages - 1, 0))
+  const pt = pagesTexts[uiLang]
+  // Page courante = celle dont la plus grande part est visible ; les canvas sont remplacés à chaque rendu, donc on réobserve à chaque « ready ».
+  useEffect(() => {
+    const cs = [...(sheet.current?.querySelectorAll('canvas') ?? [])]
+    if (state !== 'ready' || cs.length < 2) return
+    const seen = new Map<Element, number>()
+    const io = new IntersectionObserver((es) => {
+      for (const e of es) seen.set(e.target, e.isIntersecting ? e.intersectionRect.height : 0)
+      let best = -1, h = 0
+      cs.forEach((c, i) => { const v = seen.get(c) ?? 0; if (v > h) { h = v; best = i } })
+      if (best >= 0) setCurrent(best)
+    }, { threshold: Array.from({ length: 21 }, (_, i) => i / 20) })
+    cs.forEach((c) => io.observe(c))
+    return () => io.disconnect()
+  }, [state, pages])
   const goPage = (i: number) => sheet.current?.querySelectorAll('canvas')[i]?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   return (
     <>
@@ -189,9 +215,11 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
           {pages > 1 && ( // `pages` survit au rendu suivant : la barre ne disparaît pas à chaque frappe
             <div role="group" aria-label={pagesText} className="me-auto flex flex-wrap items-center gap-1 text-sm text-muted">
               <span aria-hidden="true" className="me-1">{pagesText}</span>
-              {Array.from({ length: Math.min(pages, 20) }, (_, i) => (
-                <button key={i} type="button" className="btn btn-ghost min-w-11 px-2" aria-label={tips[uiLang].page.replace('{n}', String(i + 1))} onClick={() => goPage(i)}>{i + 1}</button>
+              <button type="button" className="btn btn-ghost px-2" aria-label={pt.prev} disabled={cur === 0} onClick={() => goPage(cur - 1)}><Chevron /></button>
+              {Array.from({ length: shownPages }, (_, i) => (
+                <button key={i} type="button" className={`btn btn-ghost min-w-11 px-2 ${i === cur ? 'bg-sunk font-semibold text-ink' : ''}`} aria-current={i === cur ? 'page' : undefined} aria-label={tips[uiLang].page.replace('{n}', String(i + 1))} onClick={() => goPage(i)}>{i + 1}</button>
               ))}
+              <button type="button" className="btn btn-ghost px-2" aria-label={pt.next} disabled={cur >= shownPages - 1} onClick={() => goPage(cur + 1)}><Chevron next /></button>
             </div>
           )}
           <button type="button" className="btn lg:hidden" aria-pressed={zoom} onClick={() => setZoom(!zoom)}>{x.zoom}</button>
@@ -206,6 +234,7 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
             </div>
           </div>
         </div>
+        {pages > MAX_PAGES && <p className="mt-3 text-center text-sm text-muted text-balance">{pt.limited.replace('{shown}', String(MAX_PAGES)).replace('{total}', String(pages))}</p>}
         {/* « En cours » n'est que visuel (il changerait à chaque frappe) ; l'échec, lui, est annoncé. */}
         {state === 'error'
           ? <p role="alert" className="mt-3 text-center text-sm text-danger">{t.previewError}</p>
