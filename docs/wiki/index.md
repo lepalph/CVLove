@@ -12,7 +12,7 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 
 ## Fonctions
 - [Glisser-déposer et repli des sections](sections-glisser-replier.md) — (à venir).
-- [Aperçu multipage](apercu-multipage.md) — (à venir).
+- [Aperçu multipage](apercu-multipage.md) — 2026-11-02 : plafond 30 pages annoncé, page courante, précédente/suivante, défilement gardé.
 
 ## Panel d'inventeurs
 - [Brief du panel](panel-brief.md) — question, contraintes et méthode des 4 inventeurs.
