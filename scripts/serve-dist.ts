@@ -1,11 +1,11 @@
-// Sert dist/ avec les en-têtes de vercel.json (sans dépendance) : pour tester la CSP en local.
+// Sert dist/ (ou OUT_DIR) avec les en-têtes de vercel.json (sans dépendance) : pour tester la CSP en local.
 // Usage : tsx scripts/serve-dist.ts [port]   (port 0 ou absent : libre ; affiche « port N »)
 import { readFileSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const root = fileURLToPath(new URL('../dist/', import.meta.url))
+const root = fileURLToPath(new URL(`../${process.env.OUT_DIR ?? 'dist'}/`, import.meta.url))
 const rules: { source: RegExp; headers: { key: string; value: string }[] }[] = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8')).headers.map((h: any) => ({ ...h, source: new RegExp(`^${h.source}$`) }))
 const types: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json',

@@ -7,7 +7,7 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Règles des agents](regles-agents.md) — modèles, fichiers disjoints, commits, langues.
 
 ## Vérifications
-- [Vérification de la reprise](verification-reprise.md) — REPRISE.md confrontée au code et aux tests (à venir).
+- [Vérification de la reprise](verification-reprise.md) — 2026-11-02 : 7 affirmations fausses ou dépassées, e2e 50/51 à cause de serve-dist (corrigé).
 - [Audit des boutons](audit-boutons.md) — chaque bouton, attendu contre constaté (à venir).
 
 ## Fonctions
@@ -15,4 +15,5 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Aperçu multipage](apercu-multipage.md) — (à venir).
 
 ## Panel d'inventeurs
+- [Brief du panel](panel-brief.md) — question, contraintes et méthode des 4 inventeurs.
 - [Synthèse du panel](panel-synthese.md) — (à venir).
