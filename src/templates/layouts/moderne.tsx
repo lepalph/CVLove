@@ -33,7 +33,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const sideAt = right ? t.end : t.start // côté du bandeau
   const sections = visibleSections(cv)
   const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
+  const sideSections = sections.filter((s) => !MAIN_KINDS.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
 
   const bg = solid ? ink(t.accent, '#ffffff', 7) : right ? tint('#374151', 0.94) : tint(t.accent, 0.9) // aplat : texte blanc >= 7:1

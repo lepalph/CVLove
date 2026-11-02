@@ -27,3 +27,15 @@
 
 ## Revue du chief of staff (2026-11-02, `lepalph/CVLove@936ba5b`)
 - `collapsed` vit dans les données du CV : replier une section relance le rendu PDF (identique) et met à jour la date du document. Acceptable pour l'instant ; à sortir dans un état d'interface par document si la [performance](../REPRISE.md) de l'aperçu devient le sujet.
+
+## Ordre des sections dans le PDF (2026-11-02, base `lepalph/CVLove@6a8e660`)
+- Le 2026-11-02, l'utilisateur a signalé que « le déplacement doit suivre dans le PDF aussi ».
+- Cause : quatre modèles ne suivaient pas l'ordre de l'éditeur.
+  - `colonne-pleine`, `lateral-droit` et `moderne` plaçaient toujours « Centres d'intérêt » en fin de colonne latérale.
+  - `grille` rangeait sa grille dans un ordre fixe : formation, compétences, langues, intérêts.
+- Correction : ces quatre modèles prennent maintenant les sections dans l'ordre de l'éditeur, à l'intérieur de chaque groupe.
+- Contrôle : une règle « ordre » dans `scripts/check-pdf-ats.ts`, lancée par `pnpm check:pdf`. Elle met les intérêts en tête et vérifie qu'ils sortent avant les compétences, sur les 36 modèles. Sans le correctif, elle échoue sur 12 modèles.
+- Limite connue : dans un modèle à deux colonnes, une section ne change pas de colonne.
+  - Expérience, formation, projets et sections libres vont dans la colonne principale. Compétences, langues et intérêts vont dans la colonne latérale.
+  - Glisser « Compétences » au-dessus d'« Expérience » ne change donc rien dans ces modèles. L'ordre est respecté à l'intérieur de chaque colonne.
+  - Même chose pour `compact` et `grille`, qui ont une partie en flux et une partie en grille.

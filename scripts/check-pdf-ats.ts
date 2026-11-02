@@ -132,6 +132,17 @@ for (const t of templates) {
     if (!urls.has(u)) fail(`${t.id}/liens`, `lien absent du PDF : ${u}`)
 }
 
+// ---- Ordre : le PDF suit l'ordre choisi dans l'éditeur. Intérêts et compétences tombent dans le même groupe dans tous les modèles
+// (colonne latérale, grille ou flux), donc mettre les intérêts devant doit les sortir devant.
+for (const t of templates) {
+  const cv = sampleCV('fr', 'dev')
+  const i = cv.sections.findIndex((s) => s.kind === 'interests')
+  cv.sections.unshift(...cv.sections.splice(i, 1))
+  const flat = (await extract(await renderPdf(cv, designOf(t), fonts))).raw.replace(/\s+/g, ' ').toLowerCase()
+  const [a, b] = [cvLabels.fr.sections.interests, cvLabels.fr.sections.skills].map((x) => flat.indexOf(x.toLowerCase()))
+  if (a < 0 || b < 0 || a > b) fail(`${t.id}/ordre`, `« ${cvLabels.fr.sections.interests} » placé en premier dans l'éditeur sort après « ${cvLabels.fr.sections.skills} »`)
+}
+
 await loader.close()
 for (const p of problems) console.log(p)
 console.log(problems.length ? `${problems.length} problème(s)` : 'OK  check:pdf:b : ATS, pagination, arabe, deux-points, liens')

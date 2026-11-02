@@ -31,7 +31,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const contacts = contactList(cv, labels)
   const sections = visibleSections(cv)
   const full = sections.filter((s) => !GRID_KINDS.includes(s.kind))
-  const grid = GRID_KINDS.map((k) => sections.find((s) => s.kind === k)).filter((s): s is Section => !!s)
+  const grid = sections.filter((s) => GRID_KINDS.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
 
   const acc = ink(t.accent)
   const pillBg = tint(acc, 0.9)

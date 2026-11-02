@@ -32,7 +32,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const serif = variant === 'serif'
   const sections = visibleSections(cv)
   const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
+  const sideSections = sections.filter((s) => !MAIN_KINDS.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
   const ink = inkOf(t.accent) // accent lisible comme texte sur blanc (>= 4,5:1), même très clair
 
