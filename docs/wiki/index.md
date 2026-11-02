@@ -8,7 +8,7 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 
 ## Vérifications
 - [Vérification de la reprise](verification-reprise.md) — 2026-11-02 : 7 affirmations fausses ou dépassées, e2e 50/51 à cause de serve-dist (corrigé).
-- [Audit des boutons](audit-boutons.md) — chaque bouton, attendu contre constaté (à venir).
+- [Audit des boutons](audit-boutons.md) — 2026-11-02 : 101 contrôles, 2 KO corrigés (menu Fichier, bandeau de la lettre).
 
 ## Fonctions
 - [Glisser-déposer et repli des sections](sections-glisser-replier.md) — 2026-11-02 : poignée pointer events, moveSectionTo, repli gardé par document, limites.
@@ -16,4 +16,5 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 
 ## Panel d'inventeurs
 - [Brief du panel](panel-brief.md) — question, contraintes et méthode des 4 inventeurs.
-- [Synthèse du panel](panel-synthese.md) — (à venir).
+- [Synthèse du panel](panel-synthese.md) — 2026-11-02 : P0 annuler, date en une saisie, 3 corrections S ; P1 aperçu relié au formulaire.
+- Pages : [TRIZ](panel-triz.md), [Edison](panel-edison.md) (mesures), [Engelbart](panel-engelbart.md), [Rams](panel-rams.md) ; captures dans `captures/`.
