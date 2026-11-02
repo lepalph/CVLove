@@ -193,13 +193,14 @@ for (const vp of VPS) {
       const btns = group.getByRole('button')
       await expect(btns).toHaveCount(4)
       await expect(group.locator('xpath=..').locator('canvas').first()).toBeAttached({ timeout: 25_000 })
-      const shot = () => group.locator('xpath=..').locator('canvas').first().screenshot()
+      // PdfCanvas remplace ses canvas à chaque rendu : on lit l'image depuis le conteneur, stable, en une seule évaluation.
+      const shot = () => group.locator('xpath=..').evaluate((el) => el.querySelector('canvas')?.toDataURL() ?? '')
       let prev = await shot()
       for (let i = 1; i < 4; i++) {
         await btns.nth(i).click()
         await expect(btns.nth(i)).toHaveAttribute('aria-pressed', 'true')
         await expect(btns.nth(i - 1)).toHaveAttribute('aria-pressed', 'false')
-        await expect.poll(async () => !(await shot()).equals(prev), { timeout: 25_000 }).toBe(true)
+        await expect.poll(async () => (await shot()) !== prev, { timeout: 25_000 }).toBe(true)
         prev = await shot()
       }
     })
