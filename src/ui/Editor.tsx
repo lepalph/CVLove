@@ -13,6 +13,7 @@ import { ExampleTools } from './ExampleTools'
 import { Form } from './Form'
 import { Guided, useGuidedProgress } from './Guided'
 import { isEmptyCV, modelName } from './lib'
+import { UndoBar } from './UndoBar'
 import { sampleCV } from '../model/sample'
 
 export function Editor() {
@@ -89,6 +90,7 @@ export function Editor() {
         <PreviewPane shown={tab === 'preview'} make={() => renderLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said}
           label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />
       </main>
+      <UndoBar hidden={tab === 'preview'} />
       <EdFooter />
     </div>
   )

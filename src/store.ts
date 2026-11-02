@@ -6,6 +6,7 @@ import { blankCV, draftCVDoc, duplicateDoc, followName, freeName, migrateV1, new
 import { blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
 import { sampleCV, type SampleProfile } from './model/sample'
 import { sanitizeState } from './model/sanitize'
+import { restoreSnap, type Snap } from './model/undo'
 import { LANGS, type CV, type CVDoc, type Design, type Doc, type EditorMode, type Lang, type Letter, type LetterDoc } from './model/types'
 import { getTemplate } from './templates'
 import { isEmptyCV } from './ui/lib'
@@ -254,3 +255,26 @@ addEventListener('storage', (e) => {
   else sync()
 })
 addEventListener('visibilitychange', () => document.visibilityState === 'visible' && stale && sync())
+
+/** Dernière suppression annulable (au plus une, jamais écrite dans le stockage). `rid` = data-rid de l'élément à refocaliser, `n` change à chaque suppression. */
+export const useUndo = create<{ snap: (Snap & { label: string; rid: string; n: number }) | null }>(() => ({ snap: null }))
+let deletions = 0
+
+/** Supprime dans le CV actif en gardant son état d'avant : le bandeau « {label} supprimé(e) · Annuler » en dépend. */
+export function deleteWith(label: string, rid: string, fn: (cv: CV) => CV) {
+  const s = useStore.getState()
+  const d = selectCvDoc(s)
+  useUndo.setState({ snap: { docId: d.id, data: d.data, label, rid, n: ++deletions } })
+  s.update(fn)
+}
+
+/** Annule la dernière suppression ; renvoie le data-rid à refocaliser, ou null si rien n'a été rétabli (document changé ou disparu). */
+export function undoDelete(): string | null {
+  const snap = useUndo.getState().snap
+  useUndo.setState({ snap: null })
+  if (!snap) return null
+  const documents = restoreSnap(useStore.getState().documents, useStore.getState().activeId, snap)
+  if (!documents) return null
+  useStore.setState({ documents })
+  return snap.rid
+}

@@ -15,7 +15,8 @@ import {
 import { MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
 import { sampleCV } from '../model/sample'
 import { LANGS, SECTION_KINDS, type CVDoc, type Lang, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
-import { useCvDoc, useStore } from '../store'
+import { deleteWith, useCvDoc, useStore } from '../store'
+import { undoText } from '../i18n/undo'
 import { placeholders } from '../i18n/placeholders'
 import { Field, Icon, LangSelect, useWide } from './bits'
 import { useClearAll } from './ExampleTools'
@@ -136,14 +137,14 @@ export function PersonalCard() {
         <div className="mt-3 flex items-center gap-3">
           {cv.personal.photo && <img src={cv.personal.photo} alt="" className="size-14 rounded-full object-cover" />}
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { void onPhoto(e.target.files?.[0]); e.target.value = '' }} />
-          <button ref={photoBtn} type="button" className="btn" onClick={() => fileRef.current?.click()}>{cv.personal.photo ? t.photo : t.addPhoto}</button>
-          {cv.personal.photo && <button type="button" className="btn btn-ghost" onClick={() => { setPersonal({ photo: '' }); requestAnimationFrame(() => photoBtn.current?.focus()) }}>{t.removePhoto}</button>}
+          <button ref={photoBtn} data-rid="photo" type="button" className="btn" onClick={() => fileRef.current?.click()}>{cv.personal.photo ? t.photo : t.addPhoto}</button>
+          {cv.personal.photo && <button type="button" className="btn btn-ghost" onClick={() => { deleteWith(undoText[useStore.getState().uiLang].photo, 'photo', (c) => ({ ...c, personal: { ...c.personal, photo: '' } })); requestAnimationFrame(() => photoBtn.current?.focus()) }}>{t.removePhoto}</button>}
         </div>
         {photoMsg && <p role="alert" className="mt-2 text-sm text-danger">{photoMsg}</p>}
 
         <ul className="mt-4 flex flex-col gap-3">
           {cv.personal.fields.map((f) => (
-            <li key={f.id} className={`flex items-end gap-1 ${f.visible ? '' : 'opacity-60'}`}>
+            <li key={f.id} data-rid={f.id} className={`flex items-end gap-1 ${f.visible ? '' : 'opacity-60'}`}>
               {f.kind === 'custom' && (
                 <div className="w-2/5 max-w-48 shrink-0"><Field label={t.customLabel}><input className="inp" value={f.label ?? ''} onChange={(e) => update((c) => patchField(c, f.id, { label: e.target.value }))} /></Field></div>
               )}
@@ -154,7 +155,7 @@ export function PersonalCard() {
                 </Field>
               </div>
               <button type="button" className="btn btn-ghost" aria-label={`${f.visible ? t.hide : t.show}${t.onItem.replace('{x}', fieldName(f))}`} onClick={() => update((c) => patchField(c, f.id, { visible: !f.visible }))}>{f.visible ? t.hide : t.show}</button>
-              <Icon label={`${t.remove}${t.onItem.replace('{x}', fieldName(f))}`} onClick={(e) => removeThenFocus(e, 'field', () => update((c) => removeField(c, f.id)))}>×</Icon>
+              <Icon label={`${t.remove}${t.onItem.replace('{x}', fieldName(f))}`} onClick={(e) => removeThenFocus(e, 'field', () => deleteWith(fieldName(f), f.id, (c) => removeField(c, f.id)))}>×</Icon>
             </li>
           ))}
         </ul>
@@ -266,7 +267,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
   const sx = sectionsText[uiLang]
   const folded = !!s.collapsed
   return (
-    <li className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-10 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
+    <li data-rid={s.id} className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-10 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
       <div className="flex flex-wrap items-center gap-1">
         {grab && <button type="button" className="btn btn-ghost cursor-grab touch-none px-0 active:cursor-grabbing" aria-label={onSec(sx.drag)} title={onSec(sx.drag)} onPointerDown={grab}><svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className="fill-current text-muted">{[4, 8, 12].flatMap((y) => [6, 10].map((x) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.4" />))}</svg></button>}
         <button type="button" className="btn btn-ghost px-0" aria-expanded={!folded} aria-controls={`sec-${s.id}`} aria-label={onSec(folded ? sx.expand : sx.collapse)} title={onSec(folded ? sx.expand : sx.collapse)} onClick={() => update((c) => patchSection(c, s.id, { collapsed: folded ? undefined : true }))}>
@@ -279,7 +280,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
         <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, -1)))} disabled={i === 0}>↑</Icon>
         <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, 1)))} disabled={i === n - 1}>↓</Icon>
         <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
-        <Icon label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => update((c) => removeSection(c, s.id)))}>×</Icon>
+        <Icon label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => deleteWith(sectionTitle(s, labels), s.id, (c) => removeSection(c, s.id)))}>×</Icon>
       </div>
       {folded && <p className="mt-1 truncate text-sm text-muted">{sectionSummary(s, uiLang)}</p>}
       <div id={`sec-${s.id}`} hidden={folded}>
@@ -294,7 +295,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
           const eg = phItem(ph, s.kind, k)
           const onItem = (verb: string) => verb + t.onItem.replace('{x}', [it.title, it.subtitle].filter(Boolean).join(', ') || String(k + 1))
           return (
-            <li key={it.id} className="border-s-2 border-line ps-4">
+            <li key={it.id} data-rid={it.id} className="border-s-2 border-line ps-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 {ti && <Field label={ti}><input className="inp" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
                 {(s.kind === 'skills' || s.kind === 'languages') && (
@@ -329,7 +330,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
                 <div className="mt-2 flex justify-end gap-1">
                   <Icon label={onItem(t.up)} onClick={(e) => moveThenFocus(e, () => update((c) => moveItem(c, s.id, it.id, -1)))} disabled={k === 0}>↑</Icon>
                   <Icon label={onItem(t.down)} onClick={(e) => moveThenFocus(e, () => update((c) => moveItem(c, s.id, it.id, 1)))} disabled={k === s.items.length - 1}>↓</Icon>
-                  <Icon label={onItem(t.remove)} onClick={(e) => removeThenFocus(e, 'item', () => update((c) => removeItem(c, s.id, it.id)))}>×</Icon>
+                  <Icon label={onItem(t.remove)} onClick={(e) => removeThenFocus(e, 'item', () => deleteWith([it.title, it.subtitle].filter(Boolean).join(', ') || String(k + 1), it.id, (c) => removeItem(c, s.id, it.id)))}>×</Icon>
                 </div>
               )}
             </li>
