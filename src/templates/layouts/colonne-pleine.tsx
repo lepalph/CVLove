@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Colonne pleine', en: 'Full column', es: 'Columna completa', de: 'Volle Spalte', it: 'Colonna piena', pt: 'Coluna cheia', ar: 'عمود كامل' },
   category: 'creatif',
   columns: 2,
+  apart: ['skills', 'languages', 'interests'],
   photo: true,
   styles: [
     { name: 'Encre', variant: 'ink', preset: { accent: '#1d4ed8', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'bars' } },
@@ -22,7 +23,6 @@ export const meta: LayoutMeta = {
 
 const MUTED = '#5c564d'
 const SIDE = 196
-const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -31,8 +31,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const plate = variant === 'plate'
   const sideAt = right ? t.end : t.start
   const sections = visibleSections(cv)
-  const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = sections.filter((s) => !MAIN_KINDS.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
+  const mainSections = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const sideSections = sections.filter((s) => meta.apart!.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
 
   const bg = ink(t.accent, '#ffffff', 7) // texte blanc >= 7:1 sur l'aplat, quel que soit l'accent

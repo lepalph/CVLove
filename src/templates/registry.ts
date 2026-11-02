@@ -7,7 +7,7 @@ export function buildTemplates(metas: Record<string, LayoutMeta>, loaders: Recor
     .flatMap(([path, m]) =>
       m.styles.map((s, i): TemplateDef => ({
         id: `${m.id}-${i + 1}`, layoutId: m.id, layoutName: m.name, styleName: s.name, styleNo: (i + 1) as 1 | 2 | 3, category: m.category,
-        columns: m.columns, photo: m.photo, variant: s.variant, preset: s.preset, load: loaders[path],
+        columns: m.columns, photo: m.photo, apart: m.apart, variant: s.variant, preset: s.preset, load: loaders[path],
       })),
     )
 }

@@ -134,3 +134,22 @@ test('défilement automatique près du bord du panneau', async ({ page }) => {
   await page.keyboard.press('Escape')
   await page.mouse.up()
 })
+
+test('modèle à deux colonnes : un déplacement que le PDF ne montre pas est expliqué sous la section', async ({ page }) => {
+  await open(page)
+  await page.getByRole('button', { name: 'Moderne · Bandeau' }).click()
+  const t = await titles(page)
+  const k = t.indexOf('Compétences')
+  const note = page.locator('li p[aria-hidden=true]', { hasText: 'Avec ce modèle, la section Compétences reste dans sa colonne' })
+  // Compétences (colonne latérale) passe au-dessus d'une section de la colonne principale : le PDF ne bouge pas, on le dit
+  expect(['Expérience professionnelle', 'Formation']).toContain(t[k - 1])
+  await page.getByRole('button', { name: 'Monter la section Compétences' }).click()
+  await expect(note).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'reste dans sa colonne' })).toHaveCount(1) // aussi annoncé
+  // retour : elle repasse la même section de la colonne principale, la note reste
+  await page.getByRole('button', { name: 'Descendre la section Compétences' }).click()
+  await expect(note).toBeVisible()
+  // modèle à une colonne : la note n'a plus d'objet
+  await page.getByRole('button', { name: 'Classique · Académique' }).click()
+  await expect(note).toHaveCount(0)
+})

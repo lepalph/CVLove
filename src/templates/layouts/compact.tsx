@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Compact', en: 'Compact', es: 'Compacto', de: 'Kompakt', it: 'Compatto', pt: 'Compacto', ar: 'مضغوط' },
   category: 'simple',
   columns: 2,
+  apart: ['skills', 'languages', 'interests', 'projects', 'custom'],
   photo: false,
   styles: [
     { name: 'Dense', variant: 'plain', preset: { accent: '#374151', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'text' } },
@@ -21,7 +22,6 @@ export const meta: LayoutMeta = {
 }
 
 const MUTED = '#6b645b'
-const GRID_KINDS = ['skills', 'languages', 'interests', 'projects', 'custom']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -30,8 +30,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const strip = variant === 'strip'
   const sections = visibleSections(cv)
   // flux pleine largeur d'abord (profil, expérience, formation), puis les autres sections en grille de 2 colonnes
-  const flow = sections.filter((s) => !GRID_KINDS.includes(s.kind))
-  const grid = sections.filter((s) => GRID_KINDS.includes(s.kind))
+  const flow = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const grid = sections.filter((s) => meta.apart!.includes(s.kind))
   const cols = [grid.filter((_, i) => i % 2 === 0), grid.filter((_, i) => i % 2 === 1)]
   const contacts = contactList(cv, labels)
   const ink = inkOf(t.accent) // accent lisible comme texte sur blanc (>= 4,5:1), même très clair

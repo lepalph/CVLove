@@ -20,6 +20,7 @@ import { undoText } from '../i18n/undo'
 import { placeholders } from '../i18n/placeholders'
 import { Field, Icon, LangSelect, useWide } from './bits'
 import { useClearAll } from './ExampleTools'
+import { getTemplate } from '../templates'
 import { isEmptyCV, isExampleCV } from './lib'
 import { DesignPanel } from './DesignPanel'
 import { LetterLink } from './LetterLink'
@@ -154,7 +155,10 @@ export function PersonalCard() {
                     value={f.value} onChange={(e) => update((c) => patchField(c, f.id, { value: e.target.value }))} autoComplete={AUTOCOMPLETE[f.kind]} />
                 </Field>
               </div>
-              <button type="button" className="btn btn-ghost" aria-label={`${f.visible ? t.hide : t.show}${t.onItem.replace('{x}', fieldName(f))}`} onClick={() => update((c) => patchField(c, f.id, { visible: !f.visible }))}>{f.visible ? t.hide : t.show}</button>
+              <Icon label={`${f.visible ? t.hide : t.show}${t.onItem.replace('{x}', fieldName(f))}`} onClick={() => update((c) => patchField(c, f.id, { visible: !f.visible }))}>
+                {/* l'œil montre l'état (barré = masqué dans le PDF), le nom accessible dit l'action */}
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" className="fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />{!f.visible && <path d="m3 3 18 18" />}</svg>
+              </Icon>
               <Icon label={`${t.remove}${t.onItem.replace('{x}', fieldName(f))}`} onClick={(e) => removeThenFocus(e, 'field', () => deleteWith(fieldName(f), f.id, (c) => removeField(c, f.id)))}>×</Icon>
             </li>
           ))}
@@ -172,21 +176,33 @@ export function PersonalCard() {
  * proposent alors les types de `add` qui n'existent pas encore (les sections libres restent toujours ajoutables). `title === false` : pas de titre.
  */
 export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: readonly SectionKind[]; add?: readonly SectionKind[]; title?: string | false }) {
-  const cv = useCvDoc().data
+  const { data: cv, design } = useCvDoc()
   const update = useStore((s) => s.update)
   const uiLang = useStore((s) => s.uiLang)
   const t = ui[uiLang]
   const labels = cvLabels[cv.lang]
+  const apart = getTemplate(design.templateId).apart
   const shown = cv.sections.map((s, i) => ({ s, i })).filter(({ s }) => !only || only.includes(s.kind))
   const addable = add.filter((k) => k === 'custom' || !cv.sections.some((s) => s.kind === k)) // une section déjà présente ne se rajoute pas
   const [picking, setPicking] = useState(!!only) // mode complet : un seul bouton « Ajouter une section », qui déplie les types
   const addRef = useRef<HTMLButtonElement>(null)
   const sx = sectionsText[uiLang]
   const [said, setSaid] = useState('') // annonce du dernier déplacement (zone role=status toujours présente)
+  const [note, setNote] = useState<{ id: string; text: string }>() // déplacement que le PDF ne montre pas (modèle à deux colonnes)
+  /** Après un déplacement de `id` vers le rang `to` (rangs d'avant le déplacement) : annonce, et note si la section a passé une section de l'autre colonne. */
+  const moved = (id: string, to: number) => {
+    const from = cv.sections.findIndex((s) => s.id === id)
+    const s = cv.sections[from]
+    const name = sectionTitle(s, labels)
+    const side = (k: SectionKind) => !!apart?.includes(k)
+    const crossed = cv.sections.slice(Math.min(from, to), Math.max(from, to) + 1).some((x) => side(x.kind) !== side(s.kind))
+    setNote(crossed ? { id, text: sx.apart.replace('{x}', name) } : undefined)
+    setSaid(`${sx.moved.replace('{x}', name).replace('{n}', String(to + 1)).replace('{total}', String(cv.sections.length))}${crossed ? `. ${sx.apart.replace('{x}', name)}` : ''}`)
+  }
   const { list, drag, start } = useSectionDrag(shown.map(({ s }) => s.id), (id, pos) => {
     const to = shown[pos].i
     update((c) => moveSectionTo(c, id, to))
-    setSaid(sx.moved.replace('{x}', sectionTitle(cv.sections.find((s) => s.id === id)!, labels)).replace('{n}', String(to + 1)).replace('{total}', String(cv.sections.length)))
+    moved(id, to)
   })
   const ids = shown.map(({ s }) => s.id)
   const anyFolded = shown.some(({ s }) => s.collapsed)
@@ -199,7 +215,7 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
         <div className="relative">
           <ul ref={list} className="flex flex-col gap-6">
             {shown.map(({ s, i }) => (
-              <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} grab={(e) => start(e, s.id)} dy={drag?.id === s.id ? drag.dy : undefined} />
+              <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} grab={(e) => start(e, s.id)} dy={drag?.id === s.id ? drag.dy : undefined} onMoved={(to) => moved(s.id, to)} note={apart && note?.id === s.id ? note.text : undefined} />
             ))}
           </ul>
           {drag && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-20 h-0.5 -translate-y-px bg-ink" style={{ top: drag.bar }} />}
@@ -254,7 +270,7 @@ export const Card = ({ title, action, children }: { title?: string; action?: Rea
   </section>
 )
 
-export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: number; n: number; t: UI; std: string; grab?: (e: PointerEvent<HTMLElement>) => void; dy?: number }) {
+export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note }: { s: Section; i: number; n: number; t: UI; std: string; grab?: (e: PointerEvent<HTMLElement>) => void; dy?: number; onMoved?: (to: number) => void; note?: string }) {
   const update = useStore((st) => st.update)
   const labels = cvLabels[useCvDoc().data.lang]
   const uiLang = useStore((st) => st.uiLang)
@@ -283,6 +299,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
           <svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className={`fill-none stroke-current stroke-2 transition-transform duration-150 motion-reduce:transition-none ${folded ? 'rtl:rotate-180' : 'rotate-90'}`}><path d="m6 3.5 4.5 4.5L6 12.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>
+      {note && <p aria-hidden="true" className="m-0 text-sm text-muted">{note}</p>}
       <div id={`sec-${s.id}`} hidden={folded}>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
@@ -340,8 +357,8 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
       {multi && <button type="button" data-add="item" className="btn mt-3" onClick={() => update((c) => addItem(c, s.id))}>+ {t.addItem}</button>}
       {/* Actions de la section : seulement section ouverte, en bas, pour que la ligne repliée reste propre (voir docs/wiki/audit-ux-editeur.md). */}
       <div className="mt-4 flex flex-wrap items-center justify-end gap-1">
-        <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, -1)))} disabled={i === 0}>↑</Icon>
-        <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, 1)))} disabled={i === n - 1}>↓</Icon>
+        <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => { update((c) => moveSection(c, s.id, -1)); onMoved?.(i - 1) })} disabled={i === 0}>↑</Icon>
+        <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => { update((c) => moveSection(c, s.id, 1)); onMoved?.(i + 1) })} disabled={i === n - 1}>↓</Icon>
         <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
         <button type="button" className="btn btn-ghost text-danger" aria-label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => deleteWith(sectionTitle(s, labels), s.id, (c) => removeSection(c, s.id)))}>{t.remove}</button>
       </div>

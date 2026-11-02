@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Marge latérale', en: 'Side column', es: 'Columna lateral', de: 'Seitenspalte', it: 'Colonna laterale', pt: 'Coluna lateral', ar: 'عمود جانبي' },
   category: 'moderne',
   columns: 2,
+  apart: ['skills', 'languages', 'interests'],
   photo: false,
   styles: [
     { name: 'Filet', variant: 'rule', preset: { accent: '#374151', fontPair: 'source', photoShape: 'circle', skillDisplay: 'text' } },
@@ -23,7 +24,6 @@ export const meta: LayoutMeta = {
 const MUTED = '#6b645b'
 const COL = 150 // colonne étroite
 const GAP = 24 // espace de part et d'autre du filet
-const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -31,8 +31,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const caps = variant === 'caps'
   const serif = variant === 'serif'
   const sections = visibleSections(cv)
-  const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = sections.filter((s) => !MAIN_KINDS.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
+  const mainSections = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const sideSections = sections.filter((s) => meta.apart!.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
   const ink = inkOf(t.accent) // accent lisible comme texte sur blanc (>= 4,5:1), même très clair
 

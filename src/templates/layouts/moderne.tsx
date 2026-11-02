@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Moderne', en: 'Modern', es: 'Moderno', de: 'Modern', it: 'Moderno', pt: 'Moderno', ar: 'عصري' },
   category: 'moderne',
   columns: 2,
+  apart: ['skills', 'languages', 'interests'],
   photo: true,
   styles: [
     { name: 'Bandeau', variant: 'band', preset: { accent: '#c2410c', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'text' } },
@@ -23,7 +24,6 @@ export const meta: LayoutMeta = {
 const MUTED = '#6b645b'
 const CONTACT: Record<Lang, string> = { fr: 'Contact', en: 'Contact', es: 'Contacto', de: 'Kontakt', it: 'Contatto', pt: 'Contacto', ar: 'التواصل' }
 const SIDE = 188 // largeur du bandeau latéral
-const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -32,8 +32,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const right = variant === 'right'
   const sideAt = right ? t.end : t.start // côté du bandeau
   const sections = visibleSections(cv)
-  const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = sections.filter((s) => !MAIN_KINDS.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
+  const mainSections = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const sideSections = sections.filter((s) => meta.apart!.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
 
   const bg = solid ? ink(t.accent, '#ffffff', 7) : right ? tint('#374151', 0.94) : tint(t.accent, 0.9) // aplat : texte blanc >= 7:1

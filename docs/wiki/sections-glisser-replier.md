@@ -39,3 +39,10 @@
   - Expérience, formation, projets et sections libres vont dans la colonne principale. Compétences, langues et intérêts vont dans la colonne latérale.
   - Glisser « Compétences » au-dessus d'« Expérience » ne change donc rien dans ces modèles. L'ordre est respecté à l'intérieur de chaque colonne.
   - Même chose pour `compact` et `grille`, qui ont une partie en flux et une partie en grille.
+
+## Note quand le PDF ne suit pas (2026-11-02, base `lepalph/CVLove@7237ec5`)
+- Pour la limite ci-dessus, l'utilisateur avait le choix entre un message dans l'éditeur ou le choix de la colonne par section. Il n'a pas répondu. Le chief of staff a retenu le message, en version contextuelle : rien n'est affiché tant qu'un déplacement fonctionne.
+- La note apparaît sous la section déplacée seulement si celle-ci a passé une section de l'autre colonne, au glisser comme avec ↑↓. Elle est lue aussi dans l'annonce `role=status`. Elle disparaît au déplacement suivant ou quand on passe à un modèle à une colonne.
+- La répartition sort des composants et passe dans les métadonnées : `meta.apart` (types de section du bloc à part) dans `moderne`, `colonne-pleine`, `lateral-droit`, `grille` et `compact`. L'éditeur et le PDF lisent donc la même liste.
+- Le choix de la colonne par section est écarté pour l'instant. Il demande un nouveau champ dans le modèle de données et une option dans 5 modèles. À reprendre si l'utilisateur le demande.
+- Test : `tests/e2e/sections.spec.ts`, « modèle à deux colonnes : un déplacement que le PDF ne montre pas est expliqué ». Le cas négatif (déplacement dans la même colonne, sans note) n'est pas testé.

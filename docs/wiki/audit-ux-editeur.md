@@ -41,6 +41,7 @@ Heuristiques après : 31/40 (78 %, bon). Cohérence passe de 2 à 4, esthétique
 
 ## Ce qui reste (P1)
 - **Champs de contact.** Chaque ligne a encore « Masquer » et « × » en texte. On pourrait passer « Masquer » en icône œil, avec son nom accessible, comme on l'a fait pour les sections.
+  - Fait le 2026-11-02 (base `lepalph/CVLove@7237ec5`) : un œil, barré quand le champ est masqué. Le nom accessible n'a pas changé (« Masquer … », « Afficher … »), la cible fait toujours 44 px.
 - **Panneau Design dans le formulaire.** Les trois rangées de filtres du catalogue (catégorie, colonnes, photo) prennent un écran entier avant les modèles.
 - **Doubles traits.** Les entrées ont un trait à gauche et les sections un trait en haut : il y a 2 types de séparateurs dans la même colonne.
 - **Dark mode et 768 px.** Ni l'un ni l'autre n'a été capturé pendant cet audit.

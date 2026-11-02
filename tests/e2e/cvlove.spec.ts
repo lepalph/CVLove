@@ -63,7 +63,7 @@ const openEditor = async (page: Page, sample = false) => {
   }
   await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })
 }
-const canvasShot = (page: Page) => page.locator('canvas').last().screenshot()
+const canvasShot = (page: Page) => page.getByRole('img', { name: /Aperçu/ }).evaluate((el) => [...el.querySelectorAll('canvas')].pop()?.toDataURL() ?? '') // pas de screenshot() : le canvas est remplacé pendant la capture (F06)
 const download = async (page: Page) => {
   const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Télécharger le PDF' }).click()])
   return d
@@ -74,7 +74,7 @@ test('accueil → éditeur, édition du prénom, aperçu mis à jour', async ({ 
   await page.waitForTimeout(1500)
   const before = await canvasShot(page)
   await page.getByLabel('Prénom').fill('Zoé')
-  await expect.poll(async () => !(await canvasShot(page)).equals(before), { timeout: 10_000 }).toBe(true)
+  await expect.poll(async () => (await canvasShot(page)) !== before, { timeout: 10_000 }).toBe(true)
 })
 
 test('accueil : « Commencer avec ce modèle » (Moderne · Bandeau), puis changement de modèle sans perte du prénom', async ({ page }) => {
