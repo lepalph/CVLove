@@ -176,7 +176,6 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
   const update = useStore((s) => s.update)
   const uiLang = useStore((s) => s.uiLang)
   const t = ui[uiLang]
-  const x = extra[uiLang]
   const labels = cvLabels[cv.lang]
   const shown = cv.sections.map((s, i) => ({ s, i })).filter(({ s }) => !only || only.includes(s.kind))
   const addable = add.filter((k) => k === 'custom' || !cv.sections.some((s) => s.kind === k)) // une section déjà présente ne se rajoute pas
@@ -190,17 +189,13 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
     setSaid(sx.moved.replace('{x}', sectionTitle(cv.sections.find((s) => s.id === id)!, labels)).replace('{n}', String(to + 1)).replace('{total}', String(cv.sections.length)))
   })
   const ids = shown.map(({ s }) => s.id)
+  const anyFolded = shown.some(({ s }) => s.collapsed)
   return (
-      <Card title={title === false ? undefined : (title ?? t.sections)}>
+      <Card title={title === false ? undefined : (title ?? t.sections)} action={shown.length > 1 && (anyFolded
+        ? <button type="button" className="btn btn-ghost text-sm text-muted" onClick={() => update((c) => setCollapsed(c, false, ids))}>{sx.expandAll}</button>
+        : <button type="button" className="btn btn-ghost text-sm text-muted" onClick={() => update((c) => setCollapsed(c, true, ids))}>{sx.collapseAll}</button>)}>
         <p role="status" className="sr-only">{said}</p>
         {!only && cv.sections.length === 0 && <p className="text-base text-muted">{t.sectionsEmpty}</p>}
-        {shown.length > 0 && <p className="mb-4 text-sm text-muted">{x.visibilityHint}</p>}
-        {shown.length > 1 && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            <button type="button" className="btn" onClick={() => update((c) => setCollapsed(c, true, ids))}>{sx.collapseAll}</button>
-            <button type="button" className="btn" onClick={() => update((c) => setCollapsed(c, false, ids))}>{sx.expandAll}</button>
-          </div>
-        )}
         <div className="relative">
           <ul ref={list} className="flex flex-col gap-6">
             {shown.map(({ s, i }) => (
@@ -247,9 +242,14 @@ export function DataCard() {
   )
 }
 
-export const Card = ({ title, children }: { title?: string; children: React.ReactNode }) => (
+export const Card = ({ title, action, children }: { title?: string; action?: React.ReactNode; children: React.ReactNode }) => (
   <section className="border-t border-line pt-6 first:border-t-0 first:pt-0">
-    {title && <h2 className="mb-4 text-xl font-semibold tracking-tight">{title}</h2>}
+    {(title || action) && (
+      <div className="mb-4 flex items-center justify-between gap-2">
+        {title && <h2 className="m-0 text-xl font-semibold tracking-tight">{title}</h2>}
+        {action}
+      </div>
+    )}
     {children}
   </section>
 )
@@ -266,23 +266,23 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
   const onSec = (verb: string) => verb + t.onSection.replace('{x}', sectionTitle(s, labels))
   const sx = sectionsText[uiLang]
   const folded = !!s.collapsed
+  const toggle = () => update((c) => patchSection(c, s.id, { collapsed: folded ? undefined : true }))
   return (
-    <li data-rid={s.id} className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-10 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
-      <div className="flex flex-wrap items-center gap-1">
-        {grab && <button type="button" className="btn btn-ghost cursor-grab touch-none px-0 active:cursor-grabbing" aria-label={onSec(sx.drag)} title={onSec(sx.drag)} onPointerDown={grab}><svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className="fill-current text-muted">{[4, 8, 12].flatMap((y) => [6, 10].map((x) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.4" />))}</svg></button>}
-        <button type="button" className="btn btn-ghost px-0" aria-expanded={!folded} aria-controls={`sec-${s.id}`} aria-label={onSec(folded ? sx.expand : sx.collapse)} title={onSec(folded ? sx.expand : sx.collapse)} onClick={() => update((c) => patchSection(c, s.id, { collapsed: folded ? undefined : true }))}>
-          <svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className={`fill-none stroke-current stroke-2 transition-transform duration-150 motion-reduce:transition-none ${folded ? '-rotate-90 rtl:rotate-90' : ''}`}><path d="m4 6 4 4 4-4" /></svg>
+    <li data-rid={s.id} className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-30 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
+      <div className="flex items-center gap-1">
+        {/* Titre et résumé : un clic replie ou déplie (raccourci souris) ; le clavier passe par le chevron. */}
+        <div className="min-w-0 flex-1 cursor-pointer py-1" onClick={toggle}>
+          <h3 tabIndex={-1} className="text-base font-semibold">
+            {sectionTitle(s, labels)}
+            {!s.visible && <span className="ms-2 text-sm font-normal text-muted">({t.hidden})</span>}
+          </h3>
+          {folded && <p className="m-0 truncate text-sm text-muted">{sectionSummary(s, uiLang)}</p>}
+        </div>
+        {grab && <button type="button" className="btn btn-ghost cursor-grab touch-none px-0 text-muted active:cursor-grabbing" aria-label={onSec(sx.drag)} title={onSec(sx.drag)} onPointerDown={grab}><svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className="fill-current">{[4, 8, 12].flatMap((y) => [6, 10].map((x) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.4" />))}</svg></button>}
+        <button type="button" className="btn btn-ghost px-0" aria-expanded={!folded} aria-controls={`sec-${s.id}`} aria-label={onSec(folded ? sx.expand : sx.collapse)} title={onSec(folded ? sx.expand : sx.collapse)} onClick={toggle}>
+          <svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className={`fill-none stroke-current stroke-2 transition-transform duration-150 motion-reduce:transition-none ${folded ? 'rtl:rotate-180' : 'rotate-90'}`}><path d="m6 3.5 4.5 4.5L6 12.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
-        <h3 tabIndex={-1} className="min-w-24 flex-1 text-base font-semibold">
-          {sectionTitle(s, labels)}
-          {!s.visible && <span className="ms-2 text-sm font-normal text-muted">({t.hidden})</span>}
-        </h3>
-        <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, -1)))} disabled={i === 0}>↑</Icon>
-        <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, 1)))} disabled={i === n - 1}>↓</Icon>
-        <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
-        <Icon label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => deleteWith(sectionTitle(s, labels), s.id, (c) => removeSection(c, s.id)))}>×</Icon>
       </div>
-      {folded && <p className="mt-1 truncate text-sm text-muted">{sectionSummary(s, uiLang)}</p>}
       <div id={`sec-${s.id}`} hidden={folded}>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
@@ -338,6 +338,13 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
         })}
       </ul>
       {multi && <button type="button" data-add="item" className="btn mt-3" onClick={() => update((c) => addItem(c, s.id))}>+ {t.addItem}</button>}
+      {/* Actions de la section : seulement section ouverte, en bas, pour que la ligne repliée reste propre (voir docs/wiki/audit-ux-editeur.md). */}
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-1">
+        <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, -1)))} disabled={i === 0}>↑</Icon>
+        <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => update((c) => moveSection(c, s.id, 1)))} disabled={i === n - 1}>↓</Icon>
+        <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
+        <button type="button" className="btn btn-ghost text-danger" aria-label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => deleteWith(sectionTitle(s, labels), s.id, (c) => removeSection(c, s.id)))}>{t.remove}</button>
+      </div>
       </div>
     </li>
   )
@@ -357,17 +364,19 @@ function DatePick({ legend, lang, value, onChange, disabled, notBefore }: { lege
   const d = datesText[lang]
   const id = useId()
   const [draft, setDraft] = useState<string | null>(null) // texte en cours de saisie ; null = on affiche la valeur gardée
-  const [error, setError] = useState('')
+  const [typed, setError] = useState('') // erreur de la dernière saisie
+  const before = (v: string) => { const n = Math.min(v.length, notBefore?.length ?? 0); return !!n && v.slice(0, n) < notBefore!.slice(0, n) }
   const commit = () => {
     if (draft === null) return
     const r = parseMonthInput(draft, lang)
     if (!r.ok) return setError(d.invalid)
-    const n = Math.min(r.value.length, notBefore?.length ?? 0)
-    if (n && r.value.slice(0, n) < notBefore!.slice(0, n)) return setError(d.beforeStart)
+    if (before(r.value)) return setError(d.beforeStart)
     setError('')
     setDraft(null)
     if (r.value !== value) onChange(r.value)
   }
+  // la date de début a pu changer après coup : l'ordre se revérifie sur la valeur gardée, pas seulement en sortie de ce champ
+  const error = typed || (draft === null && !disabled && value && before(value) ? d.beforeStart : '')
   return (
     <div>
       <label htmlFor={id} className="mb-1 block text-sm font-medium">{legend}</label>

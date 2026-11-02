@@ -69,6 +69,7 @@ test('replier une section ne relance aucun rendu PDF', async ({ page }) => {
   const canvas = page.locator('main [role=img] canvas').first()
   await canvas.evaluate((c) => { (c as HTMLCanvasElement & { mark?: boolean }).mark = true })
   await page.getByRole('button', { name: /^Replier la section/ }).first().click()
+  await page.getByRole('button', { name: 'Tout déplier' }).click() // un seul bouton global : « Tout déplier » dès qu'une section est repliée
   await page.getByRole('button', { name: 'Tout replier' }).click()
   await page.waitForTimeout(1500) // debounce 300 ms + rendu : largement dépassés
   expect(await page.locator('main [role=img] canvas').first().evaluate((c) => (c as HTMLCanvasElement & { mark?: boolean }).mark === true)).toBe(true)

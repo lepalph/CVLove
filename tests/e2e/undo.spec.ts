@@ -17,7 +17,7 @@ for (const c of configs) {
     const u = undoText[c.lang]
     const banner = (page: Page) => page.getByRole('status').filter({ has: page.getByRole('button', { name: u.undo, exact: true }) })
     const sections = (page: Page) => page.locator('h3[tabindex="-1"]')
-    const removeIn = (page: Page, h3: number) => sections(page).nth(h3).locator('xpath=ancestor::li[1]').getByRole('button', { name: new RegExp(`^${t.remove}`) }).first()
+    const removeIn = (page: Page, h3: number) => sections(page).nth(h3).locator('xpath=ancestor::li[1]').getByRole('button', { name: new RegExp(`^${t.remove}${t.onSection.split('{x}')[0]}`) }).last() // l'action de la section, pas le × d'une entrée
     const title = async (page: Page, i: number) => (await sections(page).nth(i).innerText()).trim()
     const stored = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('cvlove:v2') ?? '{"state":{"documents":[]}}').state.documents.find((d: { kind: string }) => d.kind === 'cv')?.data.sections.length)
 

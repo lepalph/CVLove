@@ -113,7 +113,7 @@ function FileMenu({ doc }: { doc: Doc }) {
 /**
  * Témoin « Enregistré sur cet appareil » : apparaît quand l'écriture dans localStorage a rattrapé le document (jamais pour un brouillon vierge),
  * disparaît sur erreur de stockage (le bandeau prend le relais). Une fois affiché il reste pendant la frappe : le texte ne change pas, donc une seule annonce.
- * Hors flux (absolu) et insensible à la souris : il ne déplace ni ne bloque rien.
+ * Dans le pied, à côté du compteur « 0 requête » (même sujet : tout reste ici). Avant le 2026-11-02 il flottait sous l'en-tête et recouvrait les champs.
  */
 function SavedMark({ doc }: { doc: Doc }) {
   const { error, savedAt } = useSaveStatus()
@@ -125,8 +125,8 @@ function SavedMark({ doc }: { doc: Doc }) {
     else if (savedAt >= doc.updatedAt) setOn(true)
   }, [error, blank, savedAt, doc.updatedAt])
   return (
-    <p role="status" className="pointer-events-none absolute start-[var(--m)] top-full z-10 m-0 mt-0.5 rounded-ctl bg-desk px-1 text-xs leading-4 text-muted">
-      {on && saved[uiLang]}
+    <p role="status" className="m-0 ms-auto flex min-w-0 items-center gap-1.5 truncate">
+      {on && <><svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" className="shrink-0 fill-none stroke-current stroke-2"><path d="m3.5 8.5 3 3 6-7" strokeLinecap="round" strokeLinejoin="round" /></svg>{saved[uiLang]}</>}
     </p>
   )
 }
@@ -169,7 +169,6 @@ export function EdHeader({ doc, mode, onMode, tab, onTab, onDownload, accent, no
           <span className="max-sm:sr-only">{t.download}</span>
         </button>
       </div>
-      <SavedMark doc={doc} />
       {note && <p aria-hidden="true" className="pointer-events-none absolute end-[var(--m)] top-full z-30 m-0 mt-1 rounded-ctl border border-line bg-panel px-3 py-2 text-sm font-medium shadow-sheet">{note}</p>}
     </header>
   )
@@ -276,7 +275,7 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
 }
 
 /** Pied d'éditeur : compteur « 0 requête vers un autre site » mesuré en direct, et comment le vérifier soi-même. */
-export function EdFooter() {
+export function EdFooter({ doc }: { doc: Doc }) {
   const x = extra[useStore((s) => s.uiLang)]
   const [n, setN] = useState(0)
   useEffect(() => {
@@ -296,6 +295,7 @@ export function EdFooter() {
         <summary className="flex min-h-10 cursor-pointer list-none items-center underline underline-offset-4 [&::-webkit-details-marker]:hidden">{x.netHow}</summary>
         <p className="absolute bottom-full start-[var(--m)] z-30 mb-1 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-line bg-panel p-4 text-sm leading-relaxed text-ink shadow-sheet">{x.netHelp}</p>
       </details>
+      <SavedMark doc={doc} />
     </footer>
   )
 }

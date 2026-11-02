@@ -74,7 +74,7 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
         <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design)} deps={[letter, design]} empty={empty} sample said={said}
           label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
       </main>
-      <EdFooter />
+      <EdFooter doc={doc!} />
     </div>
   )
 }

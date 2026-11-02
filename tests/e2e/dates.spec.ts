@@ -112,3 +112,17 @@ test.describe('mobile', () => {
     await expect(start).toHaveValue('03/2020')
   })
 })
+
+test('changer le début après la fin signale l’erreur sur la fin', async ({ page }) => {
+  await page.goto('/#/editeur')
+  await page.getByRole('button', { name: 'Complet', exact: true }).click()
+  await page.getByRole('button', { name: 'Informatique' }).click()
+  const s2 = page.getByLabel('Début').nth(1), e2 = page.getByLabel('Fin').nth(1) // 2e expérience de l'exemple, terminée
+  await s2.fill(`01/${new Date().getFullYear()}`)
+  await s2.blur()
+  await expect(e2).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByText('La fin ne peut pas précéder le début.')).toBeVisible()
+  await s2.fill('01/2010')
+  await s2.blur()
+  await expect(e2).not.toHaveAttribute('aria-invalid', 'true')
+})

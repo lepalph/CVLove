@@ -91,7 +91,7 @@ export function Editor() {
           label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />
       </main>
       <UndoBar hidden={tab === 'preview'} />
-      <EdFooter />
+      <EdFooter doc={doc} />
     </div>
   )
 }

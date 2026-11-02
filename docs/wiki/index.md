@@ -16,6 +16,7 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 
 ## P0 du panel (2026-11-02)
 - [Annuler une suppression](annuler-suppression.md) — bandeau 8 s et Ctrl/Cmd+Z ; depuis le 2026-11-02, ne rétablit que l'élément supprimé.
+- [Audit UX de l'éditeur](audit-ux-editeur.md) — 2026-11-02 : sections épurées (chevron › à droite, actions en bas), témoin dans le pied, ordre des dates ; Nielsen 26 → 31/40.
 - [Date en une saisie](date-une-saisie.md) — un champ MM/AAAA à la place des listes, `parseMonthInput`, revient sur un choix de la ronde 2 v3.
 - [Corrections S](corrections-s.md) — note PDF non bloquante, repli sans rendu PDF, témoin « Enregistré sur cet appareil ».
 - [Bilan du 2026-11-02](bilan-2026-11-02.md) — résultats de la suite complète et suites à donner.
