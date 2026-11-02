@@ -11,7 +11,8 @@ import { MAX_IMPORT_BYTES } from '../model/sanitize'
 import { LANGS, type Doc, type EditorMode } from '../model/types'
 import { pagesText as pagesTexts } from '../i18n/pages'
 import { MAX_PAGES, PdfCanvas } from '../pdf/PdfCanvas'
-import { useStore } from '../store'
+import { saved } from '../i18n/saved'
+import { isBlankDraft, useSaveStatus, useStore } from '../store'
 import { LangSelect, Logo, Seg, useWide } from './bits'
 import { importAndOpen } from './Documents'
 import { externalCount, isEmptyCV } from './lib'
@@ -88,7 +89,7 @@ function FileMenu({ doc }: { doc: Doc }) {
     <div className="relative">
       <details ref={ref} onBlur={(e) => { if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node)) e.currentTarget.removeAttribute('open') }} onKeyDown={(e) => { if (e.key === 'Escape' && ref.current?.open) { e.preventDefault(); close() } }}>
         <summary ref={summary} className="btn list-none whitespace-nowrap [&::-webkit-details-marker]:hidden">{tv.file}</summary>
-        <div className="absolute start-0 top-full z-30 mt-1 flex w-max flex-col gap-1 rounded-card border border-line bg-panel p-2 shadow-sheet lg:start-auto lg:end-0">
+        <div className="absolute start-0 top-full z-40 mt-1 flex w-max flex-col gap-1 rounded-card border border-line bg-panel p-2 shadow-sheet lg:start-auto lg:end-0">
           <button type="button" className="btn btn-ghost justify-start" onClick={onExport}>{t.exportJson}</button>
           <button type="button" className="btn btn-ghost justify-start" onClick={() => fileRef.current?.click()}>{t.importJson}</button>
         </div>
@@ -106,6 +107,27 @@ function FileMenu({ doc }: { doc: Doc }) {
         </div>
       </dialog>
     </div>
+  )
+}
+
+/**
+ * Témoin « Enregistré sur cet appareil » : apparaît quand l'écriture dans localStorage a rattrapé le document (jamais pour un brouillon vierge),
+ * disparaît sur erreur de stockage (le bandeau prend le relais). Une fois affiché il reste pendant la frappe : le texte ne change pas, donc une seule annonce.
+ * Hors flux (absolu) et insensible à la souris : il ne déplace ni ne bloque rien.
+ */
+function SavedMark({ doc }: { doc: Doc }) {
+  const { error, savedAt } = useSaveStatus()
+  const uiLang = useStore((s) => s.uiLang)
+  const blank = isBlankDraft(doc)
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    if (error || blank || savedAt === null) setOn(false)
+    else if (savedAt >= doc.updatedAt) setOn(true)
+  }, [error, blank, savedAt, doc.updatedAt])
+  return (
+    <p role="status" className="pointer-events-none absolute start-[var(--m)] top-full z-10 m-0 mt-0.5 rounded-ctl bg-desk px-1 text-xs leading-4 text-muted">
+      {on && saved[uiLang]}
+    </p>
   )
 }
 
@@ -147,7 +169,8 @@ export function EdHeader({ doc, mode, onMode, tab, onTab, onDownload, accent, no
           <span className="max-sm:sr-only">{t.download}</span>
         </button>
       </div>
-      {note && <p aria-hidden="true" className="absolute end-[var(--m)] top-full z-30 m-0 mt-1 rounded-ctl border border-line bg-panel px-3 py-2 text-sm font-medium shadow-sheet">{note}</p>}
+      <SavedMark doc={doc} />
+      {note && <p aria-hidden="true" className="pointer-events-none absolute end-[var(--m)] top-full z-30 m-0 mt-1 rounded-ctl border border-line bg-panel px-3 py-2 text-sm font-medium shadow-sheet">{note}</p>}
     </header>
   )
 }

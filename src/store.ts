@@ -69,7 +69,7 @@ export const selectLetterDoc = (s: Pick<State, 'documents' | 'activeId'>): Lette
 export const useLetterDoc = () => useStore(selectLetterDoc)
 
 /** Résultat de la dernière écriture dans localStorage : `error` = stockage plein ou refusé (la saisie reste en mémoire). */
-export const useSaveStatus = create<{ error: 'quota' | 'unavailable' | null }>(() => ({ error: null }))
+export const useSaveStatus = create<{ error: 'quota' | 'unavailable' | null; savedAt: number | null }>(() => ({ error: null, savedAt: null }))
 
 const safe = <T,>(fn: () => T): T | null => {
   try { return fn() } catch { return null }
@@ -90,7 +90,7 @@ export function flushSave() {
     pending = null
     lastWrite = Date.now()
     localStorage.removeItem('cvlove:v1') // migré : le doublon (photo comprise) ne doit pas remplir le quota
-    if (useSaveStatus.getState().error) useSaveStatus.setState({ error: null })
+    useSaveStatus.setState({ error: null, savedAt: lastWrite }) // savedAt : sert au témoin « Enregistré » (SavedMark), rien d'autre
   } catch (e) {
     useSaveStatus.setState({ error: e instanceof DOMException && e.name === 'QuotaExceededError' ? 'quota' : 'unavailable' })
   }

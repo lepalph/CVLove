@@ -63,6 +63,18 @@ export const moveSectionTo = (cv: CV, id: string, index: number): CV => {
 export const setCollapsed = (cv: CV, collapsed: boolean, ids?: string[]): CV => ({
   ...cv, sections: cv.sections.map((s) => (!ids || ids.includes(s.id) ? { ...s, collapsed: collapsed || undefined } : s)),
 })
+/** Vrai si `a` et `b` ne diffèrent que par `collapsed` : le PDF est alors identique, l'aperçu n'a pas à être refait (comparaison par référence, sans sérialiser). */
+export const sameRendered = (a: CV, b: CV): boolean => {
+  if (a === b) return true
+  const ks = Object.keys(a) as (keyof CV)[]
+  if (ks.length !== Object.keys(b).length || ks.some((k) => k !== 'sections' && a[k] !== b[k])) return false
+  return a.sections.length === b.sections.length && a.sections.every((s, i) => {
+    const t = b.sections[i]
+    const { collapsed: _a, ...ra } = s, { collapsed: _b, ...rb } = t
+    const kk = Object.keys(ra) as (keyof typeof ra)[]
+    return kk.length === Object.keys(rb).length && kk.every((k) => ra[k] === rb[k as keyof typeof rb])
+  })
+}
 export const patchSection = (cv: CV, id: string, patch: Partial<Section>): CV => ({
   ...cv, sections: cv.sections.map((s) => (s.id === id ? { ...s, ...patch } : s)),
 })

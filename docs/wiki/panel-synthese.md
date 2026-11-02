@@ -24,6 +24,7 @@ Le 2026-11-02, le chief of staff a fait cette synthèse à partir des pages [TRI
    - la note PDF ne recouvre plus le menu Fichier ;
    - `collapsed` sort des dépendances du rendu ;
    - un témoin discret « Enregistré sur cet appareil » apparaît après chaque sauvegarde (TRIZ 5 et le court terme de [REPRISE.md](../REPRISE.md)).
+   - Fait le 2026-11-02 : voir [Corrections P0 du 2026-11-02](corrections-s.md).
 
 **P1, ensuite :**
 - l'aperçu relié au formulaire, dans les deux sens (M), à vérifier sur les modèles en deux colonnes ;
