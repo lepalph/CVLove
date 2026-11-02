@@ -1119,8 +1119,7 @@ for (const vp of VPS) {
 
 
     test(`[G06] menu Fichier : un clic ailleurs referme le menu (${vp.name})`, async ({ page }) => {
-      // BUG: le menu Fichier (<details>) reste ouvert après un clic en dehors, src/ui/EditorParts.tsx:82
-      test.fail()
+      // BUG: le menu Fichier (<details>) reste ouvert après un clic en dehors
       await edit(page)
       await page.locator('summary', { hasText: v2.fr.file }).click()
       const exp = page.getByRole('button', { name: ui.fr.exportJson })
@@ -1156,8 +1155,7 @@ for (const vp of VPS) {
 
     for (const kind of ['cv', 'lettre'] as const) {
       test(`[I05] ${kind} : si le stockage est plein, un bandeau d'alerte propose d'exporter (${vp.name})`, async ({ page }) => {
-        // BUG: l’éditeur de lettre n’affiche pas le bandeau SaveBanner quand le stockage est plein, src/ui/LetterEditor.tsx:66
-        if (kind === 'lettre') test.fail()
+        // BUG: l’éditeur de lettre n’affiche pas le bandeau SaveBanner quand le stockage est plein
         await page.addInitScript(() => {
           const set = Storage.prototype.setItem
           Storage.prototype.setItem = function (k: string, v: string) {

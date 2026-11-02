@@ -73,6 +73,12 @@ function FileMenu({ doc }: { doc: Doc }) {
     } else add(pending.json)
     setPending(undefined)
   }
+  // <details> ne se referme pas seul : clic extérieur ici, sortie du focus par `onBlur` plus bas.
+  useEffect(() => {
+    const out = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) ref.current?.removeAttribute('open') }
+    document.addEventListener('pointerdown', out)
+    return () => document.removeEventListener('pointerdown', out)
+  }, [])
   useEffect(() => {
     if (!msg) return
     const id = setTimeout(() => setMsg(undefined), 6000)
@@ -80,7 +86,7 @@ function FileMenu({ doc }: { doc: Doc }) {
   }, [msg])
   return (
     <div className="relative">
-      <details ref={ref} onKeyDown={(e) => { if (e.key === 'Escape' && ref.current?.open) { e.preventDefault(); close() } }}>
+      <details ref={ref} onBlur={(e) => { if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node)) e.currentTarget.removeAttribute('open') }} onKeyDown={(e) => { if (e.key === 'Escape' && ref.current?.open) { e.preventDefault(); close() } }}>
         <summary ref={summary} className="btn list-none whitespace-nowrap [&::-webkit-details-marker]:hidden">{tv.file}</summary>
         <div className="absolute start-0 top-full z-30 mt-1 flex w-max flex-col gap-1 rounded-card border border-line bg-panel p-2 shadow-sheet lg:start-auto lg:end-0">
           <button type="button" className="btn btn-ghost justify-start" onClick={onExport}>{t.exportJson}</button>

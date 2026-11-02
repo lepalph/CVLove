@@ -9,7 +9,7 @@ import { sampleLetter } from '../model/sample'
 import { renderLetterLazy } from '../pdf/lazy'
 import { useLetterDoc, useStore } from '../store'
 import { getLetterLayout } from '../templates/letterTemplates'
-import { Field, LangSelect, SkipLink, useDownloadAlert } from './bits'
+import { Field, LangSelect, SaveBanner, SkipLink, useDownloadAlert } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
 import { DesignSettings } from './DesignPanel'
 import { LetterExampleTools } from './ExampleTools'
@@ -63,6 +63,7 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
     <div className="flex min-h-0 flex-1 flex-col">
       <SkipLink />
       <EdHeader doc={doc!} mode={mode} onMode={setLetterMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} />
+      <SaveBanner />
       {dl.node}
       <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>

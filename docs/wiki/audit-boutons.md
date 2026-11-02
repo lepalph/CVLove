@@ -209,3 +209,10 @@ Tests : `tests/e2e/boutons.spec.ts`, lancés sur un build figé (`OUT_DIR=.froze
 ## Historique
 
 - 2026-11-02 : première version, sur `lepalph/CVLove@d75f031`. 2 KO trouvés (menu Fichier, bandeau de la lettre), tests marqués `test.fail()`.
+
+## Corrections du 2026-11-02
+
+- KO 1 (menu Fichier) corrigé dans `src/ui/EditorParts.tsx` : un `pointerdown` sur `document` et un `onBlur` du `<details>` (focus qui sort) referment le menu ; Échap et le retour du focus sur « Fichier » sont inchangés.
+- KO 2 (stockage plein, lettre) corrigé dans `src/ui/LetterEditor.tsx` : `<SaveBanner />` monté après `EdHeader`, comme dans `Editor.tsx`.
+- `tests/e2e/boutons.spec.ts` : les deux `test.fail()` ([G06], [I05] lettre) sont retirés. Les deux tests échouaient avant le correctif (4 échecs sur 6 exécutions : G06 et I05 lettre, bureau et mobile) et passent après.
+- Suite sur le code intégré (pages, sections, audit) : `tsc --noEmit` sans erreur ; `pnpm test` 124/124 ; `check:pdf` 499/499 rendus valides ; e2e 173 réussis, 1 ignoré (E03 mobile, voulu), 0 échec. Aucun test de boutons cassé par les poignées ni les chevrons.
