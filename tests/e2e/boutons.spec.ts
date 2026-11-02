@@ -71,14 +71,15 @@ const download = async (page: Page, name = ui.fr.download) => {
   const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('banner').getByRole('button', { name }).click()])
   return d
 }
-const screenshotOfPreview = (page: Page) => page.getByRole('img', { name: /Aperçu/ }).locator('canvas').last().screenshot()
+// PdfCanvas remplace ses canvas à chaque rendu : on lit l'image depuis le conteneur, stable, en une seule évaluation.
+const screenshotOfPreview = (page: Page) => page.getByRole('img', { name: /Aperçu/ }).evaluate((el) => [...el.querySelectorAll('canvas')].pop()?.toDataURL() ?? '')
 /** Après `act`, la feuille d'aperçu doit avoir changé. */
 const previewChanges = async (page: Page, act: () => Promise<unknown>) => {
   await expect(page.getByRole('img', { name: /Aperçu/ }).locator('canvas').first()).toBeAttached({ timeout: 25_000 })
   await page.waitForTimeout(800)
   const before = await screenshotOfPreview(page)
   await act()
-  await expect.poll(async () => !(await screenshotOfPreview(page)).equals(before), { timeout: 20_000 }).toBe(true)
+  await expect.poll(async () => (await screenshotOfPreview(page)) !== before, { timeout: 20_000 }).toBe(true)
 }
 
 /** Éditeur de CV (français). `full` : mode complet ; `sample` : exemple « Informatique » (Camille Marchand). */
