@@ -14,6 +14,12 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Glisser-déposer et repli des sections](sections-glisser-replier.md) — 2026-11-02 : poignée pointer events, moveSectionTo, repli gardé par document, limites.
 - [Aperçu multipage](apercu-multipage.md) — 2026-11-02 : plafond 30 pages annoncé, page courante, précédente/suivante, défilement gardé.
 
+## P0 du panel (2026-11-02)
+- [Annuler une suppression](annuler-suppression.md) — bandeau 8 s et Ctrl/Cmd+Z ; limite : rétablit tout le CV d'avant la suppression.
+- [Date en une saisie](date-une-saisie.md) — un champ MM/AAAA à la place des listes, `parseMonthInput`, revient sur un choix de la ronde 2 v3.
+- [Corrections S](corrections-s.md) — note PDF non bloquante, repli sans rendu PDF, témoin « Enregistré sur cet appareil ».
+- [Bilan du 2026-11-02](bilan-2026-11-02.md) — résultats de la suite complète et suites à donner.
+
 ## Panel d'inventeurs
 - [Brief du panel](panel-brief.md) — question, contraintes et méthode des 4 inventeurs.
 - [Synthèse du panel](panel-synthese.md) — 2026-11-02 : P0 annuler, date en une saisie, 3 corrections S ; P1 aperçu relié au formulaire.

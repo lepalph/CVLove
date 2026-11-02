@@ -1,5 +1,7 @@
 # Reprise du travail (état au 2 novembre 2026)
 
+> Depuis le 2026-11-02, la suite du travail est consignée dans [docs/wiki/](wiki/index.md) (chantier « éditeur maniable », bilan dans `wiki/bilan-2026-11-02.md`).
+
 Note pour reprendre CVLove sur un autre poste ou dans une nouvelle session Claude. À lire avec `SPEC.md` et `CONTRIBUTING.md`.
 
 ## Contexte

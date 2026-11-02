@@ -10,11 +10,11 @@ export interface UndoText {
 }
 
 export const undoText: Record<Lang, UndoText> = {
-  fr: { deleted: '{x} supprimé(e)', undo: 'Annuler', photo: 'Photo' },
+  fr: { deleted: 'Supprimé\u00a0: {x}', undo: 'Annuler', photo: 'Photo' },
   en: { deleted: '{x} deleted', undo: 'Undo', photo: 'Photo' },
   de: { deleted: '{x} gelöscht', undo: 'Rückgängig', photo: 'Foto' },
-  es: { deleted: '{x} eliminado/a', undo: 'Deshacer', photo: 'Foto' },
-  it: { deleted: '{x} eliminato/a', undo: 'Annulla', photo: 'Foto' },
-  pt: { deleted: '{x} removido(a)', undo: 'Desfazer', photo: 'Foto' },
+  es: { deleted: 'Eliminado: {x}', undo: 'Deshacer', photo: 'Foto' },
+  it: { deleted: 'Eliminato: {x}', undo: 'Annulla', photo: 'Foto' },
+  pt: { deleted: 'Removido: {x}', undo: 'Desfazer', photo: 'Foto' },
   ar: { deleted: 'تم حذف {x}', undo: 'تراجع', photo: 'صورة' },
 }

@@ -16,7 +16,7 @@ function undo() {
 }
 
 /**
- * Bandeau « {x} supprimé(e) · Annuler » (8 s, un seul : une nouvelle suppression le remplace), en bas de la colonne du formulaire,
+ * Bandeau « Supprimé : {x} · Annuler » (8 s, un seul : une nouvelle suppression le remplace), en bas de la colonne du formulaire,
  * au-dessus du pied d'éditeur : ni l'aperçu ni la barre d'actions ne sont masqués. Ctrl/Cmd+Z l'actionne hors d'un champ de texte.
  * Région live toujours présente. `hidden` : onglet Aperçu sur mobile.
  */

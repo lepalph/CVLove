@@ -260,7 +260,7 @@ addEventListener('visibilitychange', () => document.visibilityState === 'visible
 export const useUndo = create<{ snap: (Snap & { label: string; rid: string; n: number }) | null }>(() => ({ snap: null }))
 let deletions = 0
 
-/** Supprime dans le CV actif en gardant son état d'avant : le bandeau « {label} supprimé(e) · Annuler » en dépend. */
+/** Supprime dans le CV actif en gardant son état d'avant : le bandeau « Supprimé : {label} · Annuler » en dépend. */
 export function deleteWith(label: string, rid: string, fn: (cv: CV) => CV) {
   const s = useStore.getState()
   const d = selectCvDoc(s)
