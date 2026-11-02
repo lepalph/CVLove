@@ -74,6 +74,7 @@ for (const c of configs) {
       await removeIn(page, 0).click()
       await expect(sections(page)).toHaveCount(n - 1)
       // le focus est sur un champ voisin : Ctrl+Z n'annule pas la suppression
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))) // le × rend le focus dans une frame : ne pas le laisser reprendre celui du champ
       await page.locator('input.inp').first().focus()
       await page.keyboard.press('Control+z')
       await expect(sections(page)).toHaveCount(n - 1)
@@ -99,6 +100,18 @@ for (const c of configs) {
       await banner(page).getByRole('button', { name: u.undo }).click()
       await expect(fields).toHaveCount(1)
       await expect(fields.locator('input')).toBeFocused()
+    })
+
+    test('Annuler ne rétablit que l’élément : ce qui a été saisi pendant le bandeau reste', async ({ page }) => {
+      await open(page)
+      const n = await sections(page).count()
+      const second = await title(page, 1)
+      await removeIn(page, 1).click()
+      await page.getByLabel(t.firstName, { exact: true }).fill('Zoé')
+      await banner(page).getByRole('button', { name: u.undo }).click()
+      await expect(sections(page)).toHaveCount(n)
+      expect(await title(page, 1)).toBe(second)
+      await expect(page.getByLabel(t.firstName, { exact: true })).toHaveValue('Zoé')
     })
 
     test('le bandeau disparaît après 8 s', async ({ page }) => {

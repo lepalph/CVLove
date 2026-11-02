@@ -257,7 +257,7 @@ addEventListener('storage', (e) => {
 addEventListener('visibilitychange', () => document.visibilityState === 'visible' && stale && sync())
 
 /** Dernière suppression annulable (au plus une, jamais écrite dans le stockage). `rid` = data-rid de l'élément à refocaliser, `n` change à chaque suppression. */
-export const useUndo = create<{ snap: (Snap & { label: string; rid: string; n: number }) | null }>(() => ({ snap: null }))
+export const useUndo = create<{ snap: (Snap & { label: string; n: number }) | null }>(() => ({ snap: null }))
 let deletions = 0
 
 /** Supprime dans le CV actif en gardant son état d'avant : le bandeau « Supprimé : {label} · Annuler » en dépend. */
@@ -268,7 +268,7 @@ export function deleteWith(label: string, rid: string, fn: (cv: CV) => CV) {
   s.update(fn)
 }
 
-/** Annule la dernière suppression ; renvoie le data-rid à refocaliser, ou null si rien n'a été rétabli (document changé ou disparu). */
+/** Annule la dernière suppression (l'élément seul : le reste du CV garde ce qui a été saisi depuis) ; renvoie le data-rid à refocaliser, ou null si rien n'a été rétabli. */
 export function undoDelete(): string | null {
   const snap = useUndo.getState().snap
   useUndo.setState({ snap: null })

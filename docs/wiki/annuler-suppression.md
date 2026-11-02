@@ -16,7 +16,7 @@ Fait le 2026-11-02, sur la base `lepalph/CVLove@4dfd4c3` (P0 n° 1 de la [synth�
 - Quitter l'éditeur efface l'instantané.
 
 ## Limites
-- On rétablit tout le contenu du CV, pas seulement l'élément supprimé : ce qui a été saisi entre la suppression et « Annuler » (au plus 8 s, ou plus avec Ctrl+Z) est perdu. Le design, lui, n'est pas touché.
+- On rétablit tout le contenu du CV, pas seulement l'élément supprimé : ce qui a été saisi entre la suppression et « Annuler » (au plus 8 s, ou plus avec Ctrl+Z) est perdu. Le design, lui, n'est pas touché. *Remplacé le 2026-11-02, voir plus bas.*
 - Ctrl+Z juste après un ×, quand le focus est déjà passé sur un champ voisin (`removeThenFocus`), garde son effet natif : il faut cliquer « Annuler » ou sortir du champ.
 - Le délai de 8 s ne se met pas en pause au survol ni au focus.
 - La lettre n'a rien à supprimer (pas de liste ni de section), donc elle n'est pas concernée. « Tout effacer » (confirmation) et la suppression d'un document (Mes documents, confirmation) ne passent pas par le bandeau.
@@ -24,3 +24,12 @@ Fait le 2026-11-02, sur la base `lepalph/CVLove@4dfd4c3` (P0 n° 1 de la [synth�
 
 ## Preuves
 - `src/model/undo.test.ts`, `src/i18n/undo.test.ts` ; `tests/e2e/undo.spec.ts` (bureau, mobile 390 px, arabe) ; suite complète `OUT_DIR=.frozen/undo E2E_PORT=4351 pnpm test:e2e` : 188 passés, 1 ignoré.
+
+## 2026-11-02 : Annuler ne rétablit plus que l'élément supprimé
+Changement fait sur la base `lepalph/CVLove@eb3cc4b`.
+- L'instantané garde toujours le CV d'avant (`Snap = { docId, data, rid }`), mais `restoreSnap` ne le recopie plus en entier. Il prend dans cet instantané l'élément dont l'id est `rid` (section, entrée, champ, ou `'photo'`) et le remet dans le CV tel qu'il est au moment d'annuler, juste après sa voisine précédente encore présente. Le reste, y compris ce qui a été saisi pendant le bandeau, ne bouge pas.
+- Rien n'est rétabli dans deux cas : l'élément est déjà là, ou la section d'une entrée supprimée a disparu entre-temps.
+- Preuves : `src/model/undo.test.ts` (6 tests, dont la saisie gardée) et le test e2e « Annuler ne rétablit que l'élément » dans `tests/e2e/undo.spec.ts`, en bureau, mobile et arabe.
+- Le test Ctrl+Z était instable : il a échoué 1 fois sur 4. La cause : le × rend le focus dans un `requestAnimationFrame`, qui pouvait arriver après le `focus()` du test. Le test attend maintenant deux frames.
+- Les autres limites restent : Ctrl+Z natif juste après un ×, et un délai de 8 s qui ne se met pas en pause.
+
