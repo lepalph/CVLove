@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
-import { monthNames } from '../model/dates'
+import { useId, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
+import { formatMonthInput, parseMonthInput } from '../model/dates'
+import { datesText } from '../i18n/dates'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { extra } from '../i18n/extra'
 import { sectionsText, sectionSummary } from '../i18n/sections'
@@ -309,7 +310,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy }: { s: Section; i: nu
                 {dated && (
                   <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
                     <DatePick legend={t.start} lang={uiLang} value={it.start} onChange={(start) => set({ start })} />
-                    <DatePick legend={t.end} lang={uiLang} value={it.end} disabled={it.current} onChange={(end) => set({ end })} />
+                    <DatePick legend={t.end} lang={uiLang} value={it.end} disabled={it.current} notBefore={it.start} onChange={(end) => set({ end })} />
                     <label className="sm:col-span-2 flex min-h-11 items-center gap-2 text-sm">
                       <input type="checkbox" className="size-5 accent-ink" checked={it.current} onChange={(e) => set({ current: e.target.checked })} />
                       {t.current}
@@ -346,34 +347,38 @@ const QUOTES: Partial<Record<Lang, [string, string]>> = { fr: ['« ', ' »'], en
 const quote = (lang: Lang, x: string) => { const [a, b] = QUOTES[lang] ?? ['«', '»']; return a + x + b }
 
 /**
- * Date AAAA-MM en deux listes natives, Mois et Année. Année seule -> « AAAA » (le PDF n'affiche alors que l'année) ;
- * un mois choisi avant l'année attend l'année (état local) plutôt que d'inventer une année.
+ * Date en un seul champ texte (« 03/2021 », « mars 2021 », « 2021 »…), lue par `parseMonthInput`. Stockage inchangé : AAAA-MM ou AAAA.
+ * On valide en sortie de champ (ou Entrée) : le texte est alors normalisé en MM/AAAA. Un texte invalide reste affiché avec son erreur ;
+ * la valeur gardée n'est pas touchée. Pas d'inputmode numérique : il masquerait les lettres des noms de mois.
+ * `notBefore` : date de début, la fin ne peut pas la précéder (on compare sur la précision commune : année, ou année + mois).
  */
-function DatePick({ legend, lang, value, onChange, disabled }: { legend: string; lang: Lang; value: string; onChange: (v: string) => void; disabled?: boolean }) {
-  const t = ui[lang]
-  const [y, m = ''] = value.split('-')
-  const [pending, setPending] = useState('')
-  const month = m || pending
-  const top = new Date().getFullYear() + 1
-  const years = Array.from({ length: top - 1959 }, (_, i) => String(top - i))
-  if (y && !years.includes(y)) years.push(y)
-  const names = useMemo(() => monthNames(lang, 'short'), [lang]) // court : « sept. » tient dans la colonne
-  const setMonth = (v: string) => { setPending(v); if (y) onChange(v ? `${y}-${v}` : y) }
-  const setYear = (v: string) => { setPending(month); onChange(v ? (month ? `${v}-${month}` : v) : '') }
+function DatePick({ legend, lang, value, onChange, disabled, notBefore }: { legend: string; lang: Lang; value: string; onChange: (v: string) => void; disabled?: boolean; notBefore?: string }) {
+  const d = datesText[lang]
+  const id = useId()
+  const [draft, setDraft] = useState<string | null>(null) // texte en cours de saisie ; null = on affiche la valeur gardée
+  const [error, setError] = useState('')
+  const commit = () => {
+    if (draft === null) return
+    const r = parseMonthInput(draft, lang)
+    if (!r.ok) return setError(d.invalid)
+    const n = Math.min(r.value.length, notBefore?.length ?? 0)
+    if (n && r.value.slice(0, n) < notBefore!.slice(0, n)) return setError(d.beforeStart)
+    setError('')
+    setDraft(null)
+    if (r.value !== value) onChange(r.value)
+  }
   return (
-    <fieldset disabled={disabled} className="m-0 min-w-0 border-0 p-0">
-      <legend className="mb-1 p-0 text-sm font-medium">{legend}</legend>
-      <div className="grid grid-cols-2 gap-2">
-        <select className="inp" aria-label={`${legend} : ${t.month}`} value={month} onChange={(e) => setMonth(e.target.value)}>
-          <option value="">{t.month}</option>
-          {names.map((n, i) => <option key={i} value={String(i + 1).padStart(2, '0')}>{n}</option>)}
-        </select>
-        <select className="inp" aria-label={`${legend} : ${t.year}`} value={y} onChange={(e) => setYear(e.target.value)}>
-          <option value="">{t.year}</option>
-          {years.map((v) => <option key={v} value={v}>{v}</option>)}
-        </select>
-      </div>
-    </fieldset>
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium">{legend}</label>
+      <input
+        id={id} className={`inp ${error ? 'border-danger' : ''}`} dir="ltr" autoComplete="off" disabled={disabled}
+        placeholder={d.placeholder} value={draft ?? formatMonthInput(value)}
+        aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-err` : undefined}
+        onChange={(e) => { setDraft(e.target.value); setError('') }}
+        onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit() } }}
+      />
+      {error && <p id={`${id}-err`} className="mt-1 text-sm text-danger">{error}</p>}
+    </div>
   )
 }
 

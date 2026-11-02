@@ -19,17 +19,17 @@ for (const [btn, first, who] of [['Vente et accueil', 'Nadia', 'Nadia Perrin'], 
   })
 }
 
-test('dates : listes Mois et Année dans un groupe Début / Fin', async ({ page }) => {
+test('dates : un champ texte par date, Début / Fin, plus de listes', async ({ page }) => {
   await openFull(page)
   await page.getByRole('button', { name: 'Vente et accueil' }).click()
-  const debut = page.getByRole('group', { name: 'Début' }).first()
-  await expect(debut.getByRole('combobox')).toHaveCount(2)
-  await debut.getByLabel('Mois').selectOption({ label: 'mars' })
-  await debut.getByLabel('Année').selectOption('2020')
-  await expect(debut.getByLabel('Mois')).toHaveValue('03')
-  await expect(debut.getByLabel('Année')).toHaveValue('2020')
-  await debut.getByLabel('Mois').selectOption('')
-  await expect(debut.getByLabel('Année')).toHaveValue('2020') // année seule : conservée
+  const debut = page.getByLabel('Début', { exact: true }).first()
+  await expect(debut).toHaveAttribute('placeholder', 'MM/AAAA')
+  await debut.fill('mars 2020')
+  await debut.blur()
+  await expect(debut).toHaveValue('03/2020')
+  await debut.fill('2020')
+  await debut.blur()
+  await expect(debut).toHaveValue('2020') // année seule : conservée
   await expect(page.locator('input[type=month]')).toHaveCount(0)
 })
 
