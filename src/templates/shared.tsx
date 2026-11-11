@@ -3,7 +3,8 @@ import { Text as PdfText, View, type TextProps, type ViewProps } from '@react-pd
 import type { CVLabels } from '../i18n/labels'
 import { visibleFields } from '../model/cv'
 import { formatDay, formatPeriod } from '../model/dates'
-import type { CV, Item } from '../model/types'
+import { CEFR, type CV, type Item } from '../model/types'
+import { cefrText } from '../i18n/cefr'
 import type { Theme } from './theme'
 
 /**
@@ -44,7 +45,7 @@ const URL_RE = /^(https?:\/\/\S+|(www\.)?[\w-]+(\.[\w-]+)+\/\S*)$/i
 export function linked(value: string, kind?: string): ReactNode {
   const v = value.trim()
   let href = ''
-  if (kind === 'email' || (!kind && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))) href = `mailto:${v}`
+  if ((kind === 'email' || !kind) && /^[^\s@?&]+@[^\s@?&]+\.[^\s@?&]+$/.test(v)) href = `mailto:${v}` // pas de « ?bcc= » glissé dans le lien
   else if (kind === 'phone' || (!kind && /^\+?[\d\s().-]{7,}$/.test(v))) { const d = v.replace(/[^\d+]/g, ''); if (d) href = `tel:${d}` }
   else if ((kind === 'website' || kind === 'custom' || !kind) && URL_RE.test(v)) href = /^https?:/i.test(v) ? v : `https://${v}`
   else if (kind === 'website' && /^[\w-]+(\.[\w-]+)+$/.test(v)) href = `https://${v}`
@@ -108,23 +109,35 @@ export function entryMeta(it: Item, cv: CV, labels: CVLabels) {
   }
 }
 
+/** Élément court d'une colonne latérale (certification) : titre en gras, puis « organisme · date ». `soft` : couleur de la 2e ligne. */
+export function SideEntry({ it, cv, labels, t, color, soft = color }: { it: Item; cv: CV; labels: CVLabels; t: Theme; color?: string; soft?: string }) {
+  const { period, sub } = entryMeta(it, cv, labels)
+  const line = [sub, period].filter(Boolean).join(' · ')
+  return (
+    <View wrap={false} style={{ marginTop: t.m(4) }}>
+      <Text style={{ fontWeight: 700, color }}>{it.title}</Text>
+      {!!line && <Text style={{ color: soft }}>{line}</Text>}
+    </View>
+  )
+}
+
 /**
- * Niveau 1-5 d'une compétence ou d'une langue, selon design.skillDisplay : barres, points, ou mot (si l'item n'a pas de texte libre).
+ * Niveau 1-5 d’une compétence ou d’une langue, selon design.skillDisplay : barres, points ou mot.
  * `color` / `track` : trait plein / trait vide, à fournir sur un fond coloré. Rien si l'item n'a pas de niveau.
  */
 export function SkillLevel({ it, t, color = ink(t.accent), track, width = 54 }: { it: Item; t: Theme; color?: string; track?: string; width?: number }) {
-  const level = Math.max(0, Math.min(5, Math.round(it.level ?? 0)))
+  const n = it.cefr ? CEFR.length : 5 // langues : 7 crans du CECRL ; compétences : 5
+  const level = it.cefr ? CEFR.indexOf(it.cefr) + 1 : Math.max(0, Math.min(5, Math.round(it.level ?? 0)))
   if (!level) return null
   const empty = track ?? tint(color, 0.78)
   const mode = t.design.skillDisplay
-  if (mode === 'text')
-    return it.text.trim() ? null : <Text style={{ color, fontSize: t.s(8.5) }}>{t.labels.levels[level - 1]}</Text>
+  if (mode === 'text') return <Text style={{ color, fontSize: t.s(8.5) }}>{it.cefr ? cefrText(it.cefr, t.lang) : t.labels.levels[level - 1]}</Text>
   const dots = mode === 'dots'
   const gap = dots ? 3 : 2
-  const w = dots ? 5 : (width - gap * 4) / 5
+  const w = dots ? 5 : (width - gap * (n - 1)) / n
   return (
     <View style={{ flexDirection: t.row, gap }}>
-      {[1, 2, 3, 4, 5].map((i) => (
+      {Array.from({ length: n }, (_, k) => k + 1).map((i) => (
         <View key={i} style={{ width: w, height: dots ? 5 : 3.5, borderRadius: dots ? 2.5 : 1, backgroundColor: i <= level ? color : empty }} />
       ))}
     </View>

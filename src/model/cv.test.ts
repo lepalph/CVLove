@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { detectLang } from '../i18n/ui'
 import {
-  addItem, addSection, applyDesignPatch, DEFAULT_DESIGN, emptyCV, moveItem, moveSection, patchItem, patchSection, pdfFileName, removeItem, removeSection,
+  addItem, addSection, applyDesignPatch, DEFAULT_DESIGN, emptyCV, moveItem, moveSection, moveSectionTo, patchItem, setCollapsed, patchSection, pdfFileName, removeItem, removeSection,
   setLang, visibleSections,
 } from './cv'
-import { cleanDesign } from './sanitize'
+import { cleanDesign, sanitizeCV } from './sanitize'
 import { formatDay, formatMonth, formatPeriod, isRtl } from './dates'
 import { sampleCV } from './sample'
 import { LANGS } from './types'
@@ -25,6 +25,34 @@ describe('sections', () => {
     expect(cv.sections.map((s) => s.id)).toEqual([a, c, b])
     expect(moveSection(cv, a, -1).sections).toBe(cv.sections)
     expect(moveSection(cv, b, 1).sections).toBe(cv.sections)
+  })
+
+  it('déplace une section à un rang donné, une seule mise à jour', () => {
+    let cv = emptyCV()
+    for (const k of ['profile', 'experience', 'skills', 'education'] as const) cv = addSection(cv, k)
+    const [a, b, c, d] = cv.sections.map((s) => s.id)
+    expect(moveSectionTo(cv, a, 2).sections.map((s) => s.id)).toEqual([b, c, a, d])
+    expect(moveSectionTo(cv, d, 0).sections.map((s) => s.id)).toEqual([d, a, b, c])
+    expect(moveSectionTo(cv, b, 99).sections.map((s) => s.id)).toEqual([a, c, d, b])
+    expect(moveSectionTo(cv, b, 1)).toBe(cv)
+    expect(moveSectionTo(cv, 'x', 0)).toBe(cv)
+  })
+
+  it('replie des sections (toutes, ou celles données)', () => {
+    let cv = emptyCV()
+    for (const k of ['profile', 'experience'] as const) cv = addSection(cv, k)
+    const [a, b] = cv.sections.map((s) => s.id)
+    expect(setCollapsed(cv, true).sections.map((s) => s.collapsed)).toEqual([true, true])
+    cv = setCollapsed(cv, true, [b])
+    expect(cv.sections.map((s) => s.collapsed)).toEqual([undefined, true])
+    expect(setCollapsed(cv, false).sections.some((s) => s.collapsed)).toBe(false)
+    expect(a).toBeTruthy()
+  })
+
+  it("l'état replié survit à l'import, seul `true` est gardé", () => {
+    const cv = addSection(addSection(emptyCV(), 'profile'), 'skills')
+    const raw = { ...cv, sections: [{ ...cv.sections[0], collapsed: true }, { ...cv.sections[1], collapsed: 'oui' }] }
+    expect(sanitizeCV(raw).sections.map((s) => s.collapsed)).toEqual([true, undefined])
   })
 
   it('ajoute, réordonne et supprime des items', () => {

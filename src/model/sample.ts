@@ -1,7 +1,8 @@
 import { emptyCV, newField, uid } from './cv'
 import { letterFromCV } from './letter'
 import { firstContent, retailContent } from './sampleProfiles'
-import type { CV, Item, Lang, Letter, SectionKind } from './types'
+import { newSections } from '../i18n/newSections'
+import { NEW_KINDS, type CV, type Item, type Lang, type Letter, type SectionKind } from './types'
 
 /** Données d'exemple, fictives. Le contenu est celui de la langue (fr, en, ar) ; les autres langues reprennent l'anglais. */
 type Row = Partial<Omit<Item, 'id'>>
@@ -31,7 +32,7 @@ const fr: Content = {
       { title: 'Back-end', text: 'Node.js, PostgreSQL, API REST', level: 4 },
       { title: 'Outils', text: 'Git, Docker, CI/CD, Playwright', level: 4 },
     ]],
-    ['languages', [{ title: 'Français', text: 'Langue maternelle', level: 5 }, { title: 'Anglais', text: 'Courant (C1)', level: 4 }, { title: 'Espagnol', text: 'Intermédiaire (B1)', level: 3 }]],
+    ['languages', [{ title: 'Français', text: '', cefr: 'native' }, { title: 'Anglais', text: '', cefr: 'C1' }, { title: 'Espagnol', text: '', cefr: 'B1' }]],
     ['projects', [{ title: 'Potager partagé', subtitle: 'Application open source', start: '2022-01', text: "Application web pour organiser les arrosages d'un jardin collectif ; 300 utilisateurs actifs." }]],
     ['interests', [{ title: 'Escalade' }, { title: 'Photographie argentique' }, { title: 'Cuisine japonaise' }]],
   ],
@@ -55,7 +56,7 @@ const en: Content = {
       { title: 'Back-end', text: 'Node.js, PostgreSQL, REST APIs', level: 4 },
       { title: 'Tools', text: 'Git, Docker, CI/CD, Playwright', level: 4 },
     ]],
-    ['languages', [{ title: 'French', text: 'Native', level: 5 }, { title: 'English', text: 'Fluent (C1)', level: 4 }, { title: 'Spanish', text: 'Intermediate (B1)', level: 3 }]],
+    ['languages', [{ title: 'French', text: '', cefr: 'native' }, { title: 'English', text: '', cefr: 'C1' }, { title: 'Spanish', text: '', cefr: 'B1' }]],
     ['projects', [{ title: 'Shared Vegetable Garden', subtitle: 'Open-source app', start: '2022-01', text: 'Web app to schedule watering in a community garden; 300 active users.' }]],
     ['interests', [{ title: 'Climbing' }, { title: 'Film photography' }, { title: 'Japanese cooking' }]],
   ],
@@ -73,12 +74,18 @@ const ar: Content = {
     ]],
     ['education', [{ title: 'ماجستير في علوم الحاسوب', subtitle: 'جامعة محمد الخامس', start: '2016-09', end: '2018-06' }]],
     ['skills', [{ title: 'الواجهات الأمامية', text: 'React, TypeScript, Tailwind CSS', level: 5 }, { title: 'الخلفية', text: 'Node.js, PostgreSQL', level: 4 }]],
-    ['languages', [{ title: 'العربية', text: 'اللغة الأم', level: 5 }, { title: 'الفرنسية', text: 'طلاقة', level: 5 }, { title: 'الإنجليزية', text: 'جيد جدًا', level: 4 }]],
+    ['languages', [{ title: 'العربية', text: '', cefr: 'native' }, { title: 'الفرنسية', text: '', cefr: 'C2' }, { title: 'الإنجليزية', text: '', cefr: 'C1' }]],
     ['interests', [{ title: 'التصوير' }, { title: 'تسلق الجبال' }, { title: 'الطبخ' }]],
   ],
 }
 
 const contents: Partial<Record<Lang, Content>> = { fr, en, ar }
+
+/** Contrôles (check:pdf, tests) : ajoute bénévolat, certifications et publications, remplis avec les exemples gris de la langue du CV. */
+export const withNewSections = (cv: CV): CV => ({
+  ...cv,
+  sections: [...cv.sections, ...NEW_KINDS.map((kind) => ({ id: uid(), kind, title: '', visible: true, items: [it({ ...newSections[cv.lang].ph[kind], start: '2021-03' })] }))],
+})
 
 export type SampleProfile = 'retail' | 'first' | 'dev'
 export const SAMPLE_PROFILES: readonly SampleProfile[] = ['retail', 'first', 'dev']

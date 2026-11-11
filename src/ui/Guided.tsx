@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { sectionTitle, cvLabels } from '../i18n/labels'
 import { guide } from '../i18n/guide'
+import { guideLight } from '../i18n/guideLight'
 import { tips } from '../i18n/tips'
 import { ui } from '../i18n/ui'
 import { fullName, visibleSections } from '../model/cv'
-import type { SectionKind } from '../model/types'
+import { NEW_KINDS, SECTION_KINDS, type SectionKind } from '../model/types'
 import { useCvDoc, useStore } from '../store'
-import { getTemplate } from '../templates'
+import { getTemplate, templates } from '../templates'
 import { LANG_NAMES } from './bits'
 import { DesignSettings, ModelGallery } from './DesignPanel'
 import { LetterLink } from './LetterLink'
@@ -14,13 +15,15 @@ import { shortStep, modelName, isEmptyCV } from './lib'
 import { useClearAll } from './ExampleTools'
 import { exportJson, LanguageCard, PersonalCard, SectionsCard } from './Form'
 
-/** Ordre des étapes ; `guide.steps` et `guide.hints` suivent le même ordre. */
-const STEPS = ['model', 'identity', 'profile', 'experience', 'education', 'skills', 'others', 'design', 'download'] as const
+/** Ordre des étapes ; `guide.steps` et `guide.hints` suivent le même ordre, sauf la dernière (design + téléchargement : `guideLight`). */
+const STEPS = ['model', 'identity', 'profile', 'experience', 'education', 'skills', 'others', 'design'] as const
 
 /** Sections qui remplissent une étape (les autres étapes comptent comme remplies dès qu'on les a passées par Suivant). */
 const FILLS: Partial<Record<(typeof STEPS)[number], SectionKind[]>> = {
-  profile: ['profile'], experience: ['experience'], education: ['education'], skills: ['skills', 'languages'], others: ['projects', 'interests', 'custom'],
+  profile: ['profile'], experience: ['experience'], education: ['education'], skills: ['skills', 'languages'], others: ['projects', 'interests', 'custom', ...NEW_KINDS],
 }
+/** Étape Autres sections : les nouveaux types n'y sont pas proposés (ajout depuis le mode complet), mais s'ils existent ils s'y modifient. */
+const OTHERS_ADD = SECTION_KINDS.filter((k) => !(NEW_KINDS as readonly string[]).includes(k))
 
 const fill = (text: string, n: number, total: number) => text.replace('{n}', String(n)).replace('{total}', String(total))
 
@@ -49,8 +52,11 @@ export function Guided({ progress, onDownload, downloading, saved }: { progress:
     if (step === 'identity') return !!fullName(cv)
     return FILLS[step] ? FILLS[step]!.some((k) => kinds.includes(k)) : true
   }
+  const gl = guideLight[uiLang]
+  const names = [...g.steps.slice(0, STEPS.length - 1), gl.lastStep]
+  const hints = [...g.hints.slice(0, STEPS.length - 1), gl.lastHint]
   return (
-    <Steps progress={progress} names={g.steps} hints={g.hints} tips={tips[uiLang].steps} filled={filled}>
+    <Steps progress={progress} names={names} hints={hints} tips={tips[uiLang].steps} filled={filled}>
       {(i) => <StepBody step={STEPS[i]} onDownload={onDownload} downloading={downloading} saved={saved} />}
     </Steps>
   )
@@ -86,7 +92,7 @@ export function Steps({ progress, names, hints, tips: tipList, filled, children 
   const next = () => setP({ ...p, i: i + 1, done: new Set(done).add(i) })
 
   return (
-    <div ref={top} className="flex scroll-mt-44 flex-col gap-6 lg:scroll-mt-0">
+    <div ref={top} className="flex flex-col gap-6">
       <nav aria-label={g.stepsLabel} className="flex items-center gap-3 sm:hidden">
         <span className="whitespace-nowrap font-mono text-sm text-muted">{fill(g.stepOf, i + 1, total)}</span>
         <select aria-label={g.stepsLabel} className="inp font-mono" value={i} onChange={(e) => setI(+e.target.value)}>
@@ -141,17 +147,23 @@ function StepBody({ step, onDownload, downloading, saved }: { step: (typeof STEP
     case 'experience': return <SectionsCard only={['experience']} add={['experience']} title={false} />
     case 'education': return <SectionsCard only={['education']} add={['education']} title={false} />
     case 'skills': return <SectionsCard only={['skills', 'languages']} add={['skills', 'languages']} title={false} />
-    case 'others': return <SectionsCard only={['projects', 'interests', 'custom']} title={false} />
-    case 'design': return <DesignSettings />
-    case 'download': return <Finish onDownload={onDownload} downloading={downloading} saved={saved} />
+    case 'others': return <SectionsCard only={FILLS.others} add={OTHERS_ADD} title={false} />
+    case 'design': return <><DesignSettings /><Finish onDownload={onDownload} downloading={downloading} saved={saved} /></>
   }
 }
+
+/** Les 6 modèles de l'étape Modèle : une ou deux colonnes, avec ou sans photo, sobre ou créatif. */
+const SHORT_LIST = ['classique-1', 'executif-1', 'minimal-2', 'moderne-1', 'compact-1', 'creatif-1']
 
 /** Étape Modèle : rappelle le modèle choisi (venu de l'accueil ou d'ici) et amène sa vignette dans la vue. */
 function ModelStep() {
   const uiLang = useStore((s) => s.uiLang)
   const id = useCvDoc().design.templateId
   const ref = useRef<HTMLDivElement>(null)
+  const [all, setAll] = useState(false)
+  const gl = guideLight[uiLang]
+  // Le modèle déjà choisi reste visible même hors des 6.
+  const only = SHORT_LIST.includes(id) ? SHORT_LIST : [...SHORT_LIST, id]
   // Seulement si la vignette est hors de l'écran : sinon on garderait le haut du panneau (exemples, étapes) caché.
   useEffect(() => {
     const el = ref.current?.querySelector('ul [aria-pressed="true"]')
@@ -160,7 +172,8 @@ function ModelStep() {
   return (
     <div ref={ref} className="flex flex-col gap-4">
       <p className="m-0 text-base font-medium">{tips[uiLang].chosen.replace('{name}', modelName(getTemplate(id), uiLang))}</p>
-      <ModelGallery tall />
+      <ModelGallery tall only={all ? undefined : only} />
+      <button type="button" className="btn btn-ghost self-start" onClick={() => setAll(!all)}>{all ? gl.showFew : gl.showAll.replace('{n}', String(templates.length))}</button>
     </div>
   )
 }
@@ -181,7 +194,7 @@ function Finish({ onDownload, downloading, saved }: { onDownload: () => void; do
   ]
   return (
     <>
-      <div>
+      <div className="border-t border-line pt-5">
         <h3 className="text-base font-semibold">{g.recap}</h3>
         <p className="mt-1 text-lg font-medium">{fullName(cv) || '—'}</p>
         <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">

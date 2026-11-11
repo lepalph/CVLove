@@ -55,6 +55,10 @@
   button:disabled { cursor: not-allowed; opacity: 0.5; }
   button[aria-busy="true"] { cursor: progress; opacity: 0.7; }
   [id] { scroll-margin-top: 4.5rem; }
+  /* L'en-tête collant (67 px ici, 64 px à l'accueil ; ~117 px sur 2 lignes ; + le message d'échec du téléchargement) ne masque pas l'élément focalisé au clavier (2.4.11). */
+  html { scroll-padding-top: 5rem; }
+  html:has(.edalert) { scroll-padding-top: 9rem; }
+  @media (max-width: 25rem) { html { scroll-padding-top: 8rem; } html:has(.edalert) { scroll-padding-top: 12rem; } }
   h1[tabindex="-1"] { outline: none; }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -70,6 +74,8 @@
     transition: border-color 150ms var(--ease-snappy);
   }
   .inp:hover { border-color: var(--c-ink); }
+  .undo-in { animation: undo-in 150ms var(--ease-snappy); }
+  @keyframes undo-in { from { opacity: 0; transform: translateY(0.5rem); } }
   .inp::placeholder { color: var(--c-ph); opacity: 1; }
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
@@ -103,6 +109,13 @@
     .edbar > .a-mode { grid-area: mode; } .edbar > .a-lang { grid-area: lang; }
   }
   @media (max-height: 600px) { .edbar { position: relative; } }
+  /* Sous 25 rem (de, it, pt : onglets longs), les onglets passent sur une 2e ligne : une seule ligne débordait à 320 px (1.4.10). */
+  @media (max-width: 25rem) { .edbar { grid-template-columns: 1fr auto; grid-template-areas: "logo dl" "tabs tabs"; } }
+
+  /* Message d'échec du téléchargement (useDownloadAlert) : il suit la barre collante, dont il reprend la hauteur (une ou deux lignes). */
+  .edalert { position: sticky; top: 4.1rem; z-index: 15; }
+  @media (max-width: 25rem) { .edalert { top: 7.3rem; } }
+  @media (min-width: 64rem), (max-height: 600px) { .edalert { position: relative; top: auto; } }
 
   /* Bureau : l'éditeur (CV et lettre) occupe exactement la fenêtre, la page ne défile jamais ; seuls le panneau gauche et l'aperçu défilent.
      Cause du défaut d'avant : les panneaux avaient une hauteur « 100dvh - 7rem » supposée égale à en-tête + pied, mais l'en-tête réel est plus haut. */
@@ -121,6 +134,13 @@
   background-image: linear-gradient(to right, var(--c-line) 1px, transparent 1px), linear-gradient(to bottom, var(--c-line) 1px, transparent 1px);
   background-size: 5.5rem calc(5.5rem * 1.414);
   mask-image: radial-gradient(ellipse 80% 90% at 70% 40%, #000 20%, transparent 75%);
+}
+
+/* Contraste forcé (Windows) : les fonds sont remplacés, donc « pressé » se lit par un trait intérieur et non par la couleur (1.4.1) ; les pastilles de couleur gardent leur teinte. */
+@media (forced-colors: active) {
+  [aria-pressed="true"], [aria-current="step"] { outline: 3px solid Highlight; outline-offset: -3px; }
+  [aria-pressed="true"]:focus-visible, [aria-current="step"]:focus-visible { outline-offset: 2px; } /* le focus se distingue de l'état pressé */
+  [aria-pressed] > span.rounded-full[style] { forced-color-adjust: none; }
 }
 
 /* Arabe : pas d'espacement entre les lettres (elles ne se lient plus) ni de police mono (sans glyphes arabes). Hors couches pour passer devant les utilitaires. */

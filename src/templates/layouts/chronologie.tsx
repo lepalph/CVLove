@@ -23,7 +23,7 @@ export const meta: LayoutMeta = {
 const MUTED = '#6b645b'
 const DATE_W = 100 // colonne des dates, à gauche de la frise
 const RAIL_W = 16 // colonne de la frise
-const TIMELINE = ['experience', 'education']
+const TIMELINE = ['experience', 'volunteering', 'education']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)

@@ -2,7 +2,7 @@ import { Document, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { Entry, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf, tint } from '../shared'
+import { Entry, SideEntry, SkillLevel, Text, contactList, entryMeta, fixBidi, ink as inkOf, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Marge latérale', en: 'Side column', es: 'Columna lateral', de: 'Seitenspalte', it: 'Colonna laterale', pt: 'Coluna lateral', ar: 'عمود جانبي' },
   category: 'moderne',
   columns: 2,
+  apart: ['skills', 'languages', 'certifications', 'interests'],
   photo: false,
   styles: [
     { name: 'Filet', variant: 'rule', preset: { accent: '#374151', fontPair: 'source', photoShape: 'circle', skillDisplay: 'text' } },
@@ -23,7 +24,6 @@ export const meta: LayoutMeta = {
 const MUTED = '#6b645b'
 const COL = 150 // colonne étroite
 const GAP = 24 // espace de part et d'autre du filet
-const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -31,8 +31,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const caps = variant === 'caps'
   const serif = variant === 'serif'
   const sections = visibleSections(cv)
-  const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
+  const mainSections = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const sideSections = sections.filter((s) => meta.apart!.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
   const ink = inkOf(t.accent) // accent lisible comme texte sur blanc (>= 4,5:1), même très clair
 
@@ -73,6 +73,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const sideBody = (s: Section) =>
     s.kind === 'interests'
       ? s.items.filter((i) => i.title.trim()).map((i) => <Text key={i.id} style={{ marginTop: 2 }}>{i.title}</Text>)
+      : s.kind === 'certifications' ? s.items.map((it) => <SideEntry key={it.id} it={it} cv={cv} labels={labels} t={t} soft={MUTED} />)
       : s.items.map((it) => (
           <View key={it.id} wrap={false} style={{ marginTop: t.m(4) }}>
             <Text style={{ fontWeight: 700 }}>{it.title}</Text>

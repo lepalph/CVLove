@@ -11,12 +11,14 @@ export function makeTheme({ lang }: { lang: Lang }, design: Design, labels: CVLa
   const rtl = isRtl(lang)
   const body = fontFor(lang, 'body', design.fontPair)
   const head = fontFor(lang, 'head', design.fontPair)
-  const s = (n: number) => +(n * design.fontScale).toFixed(2)
-  const m = (n: number) => +(n * MARGIN_FACTOR[design.margins]).toFixed(1)
+  const fit = design.fitPage === true // « Tenir sur 1 page » : texte à 0,9 (sans passer sous 8 pt), marges et interligne resserrés
+  const s = (n: number) => { const b = n * design.fontScale; return +(fit ? Math.max(Math.min(b, 8), b * 0.9) : b).toFixed(2) }
+  const m = (n: number) => +(n * MARGIN_FACTOR[design.margins] * (fit ? 0.7 : 1)).toFixed(1)
+  const lh = fit ? Math.max(1.2, design.lineHeight - 0.15) : design.lineHeight
   const pageStyle = (padV: number, padH: number) => ({
     fontFamily: body,
     fontSize: s(9.5),
-    lineHeight: lang === 'ar' ? Math.max(design.lineHeight, 1.5) : design.lineHeight, // l'arabe a de grands jambages et des diacritiques
+    lineHeight: lang === 'ar' ? Math.max(lh, 1.5) : lh, // l'arabe a de grands jambages et des diacritiques
     color: '#1f1b16',
     paddingVertical: m(padV),
     paddingHorizontal: m(padH),

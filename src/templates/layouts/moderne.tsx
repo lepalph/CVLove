@@ -2,7 +2,7 @@ import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Lang, Section } from '../../model/types'
-import { Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
+import { Entry, SideEntry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Moderne', en: 'Modern', es: 'Moderno', de: 'Modern', it: 'Moderno', pt: 'Moderno', ar: 'عصري' },
   category: 'moderne',
   columns: 2,
+  apart: ['skills', 'languages', 'certifications', 'interests'],
   photo: true,
   styles: [
     { name: 'Bandeau', variant: 'band', preset: { accent: '#c2410c', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'text' } },
@@ -23,7 +24,6 @@ export const meta: LayoutMeta = {
 const MUTED = '#6b645b'
 const CONTACT: Record<Lang, string> = { fr: 'Contact', en: 'Contact', es: 'Contacto', de: 'Kontakt', it: 'Contatto', pt: 'Contacto', ar: 'التواصل' }
 const SIDE = 188 // largeur du bandeau latéral
-const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -32,8 +32,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const right = variant === 'right'
   const sideAt = right ? t.end : t.start // côté du bandeau
   const sections = visibleSections(cv)
-  const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
+  const mainSections = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const sideSections = sections.filter((s) => meta.apart!.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
 
   const bg = solid ? ink(t.accent, '#ffffff', 7) : right ? tint('#374151', 0.94) : tint(t.accent, 0.9) // aplat : texte blanc >= 7:1
@@ -75,6 +75,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const sideBody = (s: Section) =>
     s.kind === 'interests'
       ? s.items.filter((i) => i.title.trim()).map((i) => <Text key={i.id} style={{ marginTop: 2, color: fg }}>{i.title}</Text>)
+      : s.kind === 'certifications' ? s.items.map((it) => <SideEntry key={it.id} it={it} cv={cv} labels={labels} t={t} color={fg} />)
       : s.items.map((it) => (
           <View key={it.id} wrap={false} style={{ marginTop: t.m(4) }}>
             <Text style={{ fontWeight: 700, color: fg }}>{it.title}</Text>
@@ -100,10 +101,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(26), lineHeight: 1.15 }}>{fullName(cv)}</Text>
           {!!personal.title.trim() && <Text style={{ fontSize: t.s(12.5), color: acc, marginTop: 4 }}>{personal.title}</Text>}
         </View>
-        {mainSections.map((s) => (
-          <SectionFlow key={s.id} gap={t.m(18)} title={mainTitle(s)}>{mainBody(s)}</SectionFlow>
-        ))}
-        {/* Déclarée en dernier : le nom et le poste sortent avant la colonne dans le texte extrait (ATS) ; position absolue = rendu inchangé. */}
+        {/* Juste après le nom (texte extrait : nom d'abord, ATS) et AVANT le flux : react-pdf pose un enfant absolu sur la page où il tombe dans le flux, donc déclaré en dernier il finissait sur la dernière page. */}
         <View style={{ position: 'absolute', top: t.m(38), [sideAt]: 0, width: SIDE, paddingHorizontal: 20, color: fg }}>
           {!!personal.photo && <View style={{ alignItems: 'center', marginBottom: 14 }}><Image src={personal.photo} style={t.photo(100)} /></View>}
           {contacts.length > 0 && (
@@ -119,6 +117,9 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
             </View>
           ))}
         </View>
+        {mainSections.map((s) => (
+          <SectionFlow key={s.id} gap={t.m(18)} title={mainTitle(s)}>{mainBody(s)}</SectionFlow>
+        ))}
       </Page>
     </Document>
   )

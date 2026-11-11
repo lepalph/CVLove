@@ -1,7 +1,7 @@
 import { DEFAULT_DESIGN, emptyCV, uid } from './cv'
 import { blankLetter } from './letter'
 import {
-  FIELD_KINDS, FONT_PAIRS, LANGS, MARGINS, PAGE_SIZES, PHOTO_SHAPES, SECTION_KINDS, SKILL_DISPLAYS,
+  CEFR, FIELD_KINDS, FONT_PAIRS, LANGS, MARGINS, PAGE_SIZES, PHOTO_SHAPES, SECTION_KINDS, ONE_DATE_KINDS, SKILL_DISPLAYS, cefrFromLevel,
   type CV, type Design, type Doc, type EditorMode, type Field, type Item, type Lang, type Letter, type Section,
 } from './types'
 
@@ -21,9 +21,53 @@ const bool = (x: unknown, def: boolean) => (typeof x === 'boolean' ? x : def)
 const oneOf = <T extends string>(list: readonly T[], x: unknown, def: T): T => (list as readonly unknown[]).includes(x) ? (x as T) : def
 const num = (x: unknown, min: number, max: number, def: number) => (typeof x === 'number' && Number.isFinite(x) ? Math.min(max, Math.max(min, x)) : def)
 
-/** Seules les images embarquées passent : une URL distante ferait faire une requête réseau au rendu (react-pdf fait un fetch). */
-export const cleanPhoto = (p: unknown): string =>
-  typeof p === 'string' && p.length <= MAX_PHOTO_CHARS && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]*={0,2}$/.test(p) ? p : ''
+/** Côté maximal d'une photo : au-delà, une image très compressible (quelques Ko, 20 000 px de côté) bloquerait le rendu du PDF. */
+export const MAX_PHOTO_SIDE = 4000
+
+/**
+ * Largeur et hauteur d'un PNG ou d'un JPEG, null si le fichier n'est pas bien formé. Strict exprès (on refuse ce qu'on ne sait pas lire) :
+ * un PNG forgé (bloc de longueur négative, faux bloc avant l'IHDR) bloquait le décodeur de react-pdf ou cachait sa vraie taille.
+ */
+export function imageSize(b64: string, mime: 'png' | 'jpeg'): [number, number] | null {
+  let s: string
+  try { s = atob(b64) } catch { return null }
+  const u8 = (i: number) => s.charCodeAt(i)
+  const be16 = (i: number) => (u8(i) << 8) | u8(i + 1)
+  const be32 = (i: number) => be16(i) * 65536 + be16(i + 2)
+  if (mime === 'png') {
+    if (!s.startsWith('\x89PNG\r\n\x1a\n') || s.slice(12, 16) !== 'IHDR' || be32(8) !== 13) return null
+    // Chaque bloc : longueur, type, données, CRC ; tous doivent tenir dans le fichier, jusqu'au bloc final IEND.
+    for (let i = 8; i + 12 <= s.length; ) {
+      const len = be32(i)
+      if (len > s.length - i - 12) return null
+      if (s.slice(i + 4, i + 8) === 'IEND') return [be32(16), be32(20)]
+      i += 12 + len
+    }
+    return null
+  }
+  if (u8(0) !== 0xff || u8(1) !== 0xd8) return null
+  // On saute de segment en segment (longueur en tête de chaque segment) jusqu'au SOF, qui porte les dimensions ; 0xFF répétés = bourrage.
+  for (let i = 2; i + 9 < s.length; ) {
+    if (u8(i) !== 0xff) return null
+    const m = u8(i + 1)
+    if (m === 0xff) { i++; continue }
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return [be16(i + 7), be16(i + 5)]
+    const len = be16(i + 2)
+    if (len < 2) return null
+    i += 2 + len
+  }
+  return null
+}
+
+/** Seules les images embarquées passent (une URL distante ferait faire une requête réseau au rendu), en PNG ou JPEG lisible et de taille raisonnable. */
+export function cleanPhoto(p: unknown): string {
+  const m = typeof p === 'string' && p.length <= MAX_PHOTO_CHARS ? /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/]*={0,2})$/.exec(p) : null
+  const size = m && imageSize(m[2], m[1] as 'png' | 'jpeg')
+  return size && size[0] > 0 && size[1] > 0 && Math.max(...size) <= MAX_PHOTO_SIDE ? (p as string) : ''
+}
+
+/** Texte total d'un document importé (photo exclue) : au-delà, l'aperçu PDF bloquerait l'onglet à chaque ouverture. */
+export const MAX_DOC_TEXT = 300_000
 
 export function cleanDesign(d: unknown): Design {
   const o = obj(d)
@@ -34,6 +78,7 @@ export function cleanDesign(d: unknown): Design {
   }
   return {
     ...(Object.keys(custom).length ? { custom } : {}),
+    ...(o.fitPage === true ? { fitPage: true } : {}),
     templateId: str(o.templateId).slice(0, 64) || DEFAULT_DESIGN.templateId,
     accent: typeof o.accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(o.accent) ? o.accent : DEFAULT_DESIGN.accent,
     fontPair: oneOf(FONT_PAIRS, o.fontPair, DEFAULT_DESIGN.fontPair),
@@ -60,10 +105,22 @@ const cleanItem = (i: unknown): Item => {
   }
 }
 
+/** Langues : `cefr` valide gardé, sinon l'ancien `level` 1 à 5 est migré ; `level` n'existe plus pour les langues. */
+const cleanLanguage = (i: Item, raw: unknown): Item => {
+  const { level, ...rest } = i
+  const c = obj(raw).cefr
+  const cefr = CEFR.find((x) => x === c) ?? (level ? cefrFromLevel(level) : undefined)
+  return cefr ? { ...rest, cefr } : rest
+}
+
 const cleanSection = (s: Obj): Section => ({
   id: str(s.id) || uid(), kind: s.kind as Section['kind'], title: str(s.title), visible: bool(s.visible, true),
-  items: arr(s.items, MAX.items).filter(isObj).map(cleanItem),
+  ...(s.collapsed === true ? { collapsed: true } : {}),
+  items: arr(s.items, MAX.items).filter(isObj).map((i) => (s.kind === 'languages' ? cleanLanguage(cleanItem(i), i) : ONE_DATE_KINDS.includes(s.kind as Section['kind']) ? oneDate(cleanItem(i)) : cleanItem(i))),
 })
+
+/** Certifications et publications : le formulaire n'a ni fin, ni « en cours », ni lieu, ni description ; on ne garde rien qui s'imprimerait sans pouvoir se modifier. */
+const oneDate = (i: Item): Item => ({ ...i, place: '', end: '', current: false, text: '' })
 
 /** Un CV toujours valide : langue, champs, sections et items reconstruits un à un (les clés inconnues, dont `__proto__`, sont écartées). */
 export function sanitizeCV(d: unknown): CV {

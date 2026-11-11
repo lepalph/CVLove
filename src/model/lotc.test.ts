@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { FONT_PAIRS, LANGS } from './types'
 import { parseImport } from './documents'
-import { cleanPhoto, sanitizeCV, sanitizeDoc, sanitizeState } from './sanitize'
+import { cleanPhoto, imageSize, sanitizeCV, sanitizeDoc, sanitizeState } from './sanitize'
 import { sampleCV } from './sample'
 
-const PNG = 'data:image/png;base64,iVBORw0KGgo='
+const b64 = (bytes: number[]) => Buffer.from(bytes).toString('base64')
+const be32 = (n: number) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]
+const chunk = (type: string, data: number[]) => [...be32(data.length), ...[...type].map((c) => c.charCodeAt(0)), ...data, 0, 0, 0, 0]
+const SIG = [0x89, 0x50, 0x4e, 0x47, 13, 10, 26, 10]
+/** PNG bien formé (signature, IHDR, IEND ; CRC non vérifiés). */
+const png = (w: number, h: number) => b64([...SIG, ...chunk('IHDR', [...be32(w), ...be32(h), 8, 2, 0, 0, 0]), ...chunk('IEND', [])])
+// JPEG : SOI, un segment APP0 de 16 octets à sauter, puis SOF0 (hauteur puis largeur).
+const jpeg = (w: number, h: number, pad: number[] = []) => b64([0xff, 0xd8, 0xff, 0xe0, 0, 16, ...Array(14).fill(0), ...pad, 0xff, 0xc0, 0, 17, 8, h >> 8, h & 255, w >> 8, w & 255, 3, ...Array(9).fill(0)])
+const PNG = `data:image/png;base64,${png(1, 1)}`
 const blank = () => sanitizeDoc({ kind: 'cv', data: {} })!
 
 describe('sanitizeCV : toujours un CV rendable', () => {
@@ -48,10 +56,12 @@ describe('photo : data:image base64 uniquement', () => {
     ['data:image/svg+xml;base64,PHN2Zz4='], ['data:image/svg+xml,<svg onload=alert(1)>'], ['data:text/html;base64,PGI+'],
     ['data:image/png;base64,AAAA"><script>'], [42], [null],
   ])('refuse %s', (p) => expect(cleanPhoto(p)).toBe(''))
-  it('accepte jpeg, png, webp ; refuse plus de 1,5 Mo', () => {
+  it('accepte jpeg et png bien formés ; refuse webp (que react-pdf ne lit pas), l’illisible et plus de 1,5 Mo', () => {
     expect(cleanPhoto(PNG)).toBe(PNG)
-    expect(cleanPhoto('data:image/jpeg;base64,/9j/AAAA')).not.toBe('')
-    expect(cleanPhoto('data:image/webp;base64,UklGRg==')).not.toBe('')
+    expect(cleanPhoto(`data:image/jpeg;base64,${jpeg(10, 10)}`)).not.toBe('')
+    expect(cleanPhoto('data:image/jpeg;base64,/9j/AAAA')).toBe('')
+    expect(cleanPhoto('data:image/webp;base64,UklGRg==')).toBe('')
+    expect(cleanPhoto(`data:image/jpeg;base64,${png(10, 10)}`)).toBe('') // type annoncé ≠ contenu
     expect(cleanPhoto('data:image/png;base64,' + 'A'.repeat(1_600_000))).toBe('')
   })
 })
@@ -117,5 +127,32 @@ describe('sanitizeState (hydratation)', () => {
     expect(s.activeId).toBe('x')
     expect(s.uiLang).toBe('de')
     expect(sanitizeState({ documents: [a], uiLang: 'xx' }, blank).uiLang).toBeUndefined()
+  })
+})
+
+describe('import : photo et texte démesurés refusés', () => {
+  it('lit les dimensions PNG et JPEG', () => {
+    expect(imageSize(png(640, 480), 'png')).toEqual([640, 480])
+    expect(imageSize(jpeg(512, 300), 'jpeg')).toEqual([512, 300])
+    expect(imageSize(jpeg(512, 300, [0xff, 0xff]), 'jpeg')).toEqual([512, 300]) // octets de bourrage
+    expect(imageSize('AAAA', 'png')).toBeNull()
+  })
+  it('refuse une photo de plus de 4000 px de côté, garde les autres', () => {
+    expect(cleanPhoto(`data:image/png;base64,${png(20000, 20000)}`)).toBe('')
+    expect(cleanPhoto(`data:image/jpeg;base64,${jpeg(300, 5000)}`)).toBe('')
+    const ok = `data:image/jpeg;base64,${jpeg(512, 512)}`
+    expect(cleanPhoto(ok)).toBe(ok)
+  })
+  it('refuse les PNG et JPEG forgés (bloc de longueur négative, faux bloc avant l’IHDR, octet parasite)', () => {
+    const loop = b64([...SIG, ...chunk('IHDR', [...be32(10), ...be32(10), 8, 2, 0, 0, 0]), ...be32(0xfffffff4), 0x49, 0x44, 0x41, 0x54])
+    expect(cleanPhoto(`data:image/png;base64,${loop}`)).toBe('')
+    const ghost = b64([...SIG, ...chunk('tEXt', [1, 2, 3]), ...chunk('IHDR', [...be32(8000), ...be32(8000), 8, 2, 0, 0, 0]), ...chunk('IEND', [])])
+    expect(cleanPhoto(`data:image/png;base64,${ghost}`)).toBe('')
+    expect(cleanPhoto(`data:image/jpeg;base64,${jpeg(300, 300, [0x00])}`)).toBe('')
+  })
+  it('refuse un document au texte démesuré', () => {
+    const cv = { ...sampleCV('fr'), sections: [{ kind: 'profile', title: '', visible: true, items: Array.from({ length: 20 }, () => ({ text: 'x'.repeat(19_000) })) }] }
+    expect(() => parseImport(JSON.stringify({ app: 'cvlove', version: 2, documents: [{ kind: 'cv', data: cv }] }))).toThrow('invalid')
+    expect(() => parseImport(JSON.stringify(cv))).toThrow('invalid')
   })
 })

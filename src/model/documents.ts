@@ -1,6 +1,6 @@
 import { extra } from '../i18n/extra'
 import { DEFAULT_DESIGN, emptyCV, fullName, isCVData, newSection, uid } from './cv'
-import { MAX_IMPORT_BYTES, cleanDesign, sanitizeCV, sanitizeDocs } from './sanitize'
+import { MAX_DOC_TEXT, MAX_IMPORT_BYTES, cleanDesign, sanitizeCV, sanitizeDocs } from './sanitize'
 import type { CV, CVDoc, Design, Doc, Lang } from './types'
 
 /** CV vierge avec les sections de base (une ligne vide chacune), prêt à remplir. */
@@ -24,8 +24,11 @@ export const newCVDoc = (name: string, data: CV, design: Design = DEFAULT_DESIGN
   id: uid(), kind: 'cv', name, updatedAt: Date.now(), design, data, editorMode: 'guided',
 })
 
+/** CV vierge créé d'office : un brouillon, enregistré dès sa première saisie. */
+export const draftCVDoc = (lang: Lang): CVDoc => ({ ...newCVDoc(untitledName(lang), blankCV(lang)), draft: true })
+
 /** Copie profonde avec de nouveaux identifiants de document (les ids internes peuvent rester : ils ne sont uniques que dans un document). */
-export const duplicateDoc = (d: Doc, name: string): Doc => ({ ...structuredClone(d), id: uid(), name, updatedAt: Date.now() })
+export const duplicateDoc = (d: Doc, name: string): Doc => ({ ...structuredClone(d), id: uid(), name, updatedAt: Date.now(), draft: undefined })
 
 export const patchDoc = (docs: Doc[], id: string, patch: Partial<Doc>): Doc[] =>
   docs.map((d) => (d.id === id ? ({ ...d, ...patch } as Doc) : d))
@@ -40,16 +43,20 @@ export function freeName(docs: Doc[], base: string): string {
 /** Fichier d'export : un ou plusieurs documents. */
 export const exportDocs = (docs: Doc[]) => JSON.stringify({ app: 'cvlove', version: 2, documents: docs }, null, 2)
 
+const tooLong = (d: Doc) =>
+  JSON.stringify(d.kind === 'cv' ? { ...d.data, personal: { ...d.data.personal, photo: '' } } : d.data).length > MAX_DOC_TEXT
+
 /** Import : fichier v2 (documents), ou ancien export v1 (un CV nu). Lève `Error('invalid')` sinon. */
 export function parseImport(json: string): Doc[] {
   if (json.length > MAX_IMPORT_BYTES) throw new Error('invalid')
   const d = JSON.parse(json)
   if (d && Array.isArray(d.documents)) {
     const docs = sanitizeDocs(d.documents.filter((x: any) => (x?.kind === 'cv' && isCVData(x.data)) || (x?.kind === 'letter' && x.data)))
-    if (!docs.length) throw new Error('invalid')
+    if (!docs.length || docs.some(tooLong)) throw new Error('invalid')
     return docs.map((x) => ({ ...x, id: uid(), updatedAt: Date.now() }))
   }
   if (isCVData(d)) {
+    if (tooLong({ kind: 'cv', data: d } as Doc)) throw new Error('invalid')
     const { templateId, accent, ...data } = d as CV & { templateId?: string; accent?: string }
     return [{ ...newCVDoc('CV', sanitizeCV(data), cleanDesign(designFromV1({ templateId, accent }))), editorMode: 'full' }]
   }

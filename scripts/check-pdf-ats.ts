@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { cvLabels } from '../src/i18n/labels'
 import { DEFAULT_DESIGN } from '../src/model/cv'
-import { sampleCV } from '../src/model/sample'
-import type { CV, Design, Field, Lang } from '../src/model/types'
+import { sampleCV, withNewSections } from '../src/model/sample'
+import { NEW_KINDS, type CV, type Design, type Field, type Lang } from '../src/model/types'
 import { startLoader } from './vite-load'
 
 const fonts = fileURLToPath(new URL('../public/fonts/', import.meta.url))
@@ -37,7 +37,7 @@ const fail = (name: string, msg: string) => { problems.push(`KO  ${name}  ${msg}
 
 // ---- 1. ATS : mots entiers, ligature, apostrophe ----
 function atsCV(): CV {
-  const cv = sampleCV('fr', 'dev')
+  const cv = withNewSections(sampleCV('fr', 'dev')) // titres des 3 nouvelles sections compris
   cv.personal.firstName = 'Sophie'
   cv.personal.lastName = 'Lefèvre-Duchâtel'
   cv.sections.find((s) => s.kind === 'profile')!.items[0].text = 'Responsable ﬁnancier : pilotage de l’équipe commerciale, coût d’offre réduit, œuvre à l’efﬁcacité des échanges.'
@@ -79,11 +79,11 @@ for (const t of templates) {
 }
 
 // ---- 2. Pagination : CV long, Letter, 115 %, marges larges, accent très clair ----
-function longCV(): CV {
-  const cv = sampleCV('fr', 'dev')
+function longCV(n = 6): CV {
+  const cv = withNewSections(sampleCV('fr', 'dev'))
   const exp = cv.sections.find((s) => s.kind === 'experience')!
   const bullet = (j: number, k: number) => `- Poste${j}×${k} Pilotage de l’équipe commerciale et définition de la stratégie d’offre ; coût réduit de 12 € par dossier, taux de réussite à 87 %, œuvre à l’efficacité des échanges.`
-  exp.items = Array.from({ length: 6 }, (_, j) => ({ ...exp.items[0], id: `p${j}`, title: `Poste ${j + 1} Responsable développement`, text: [1, 2, 3, 4, 5].map((k) => bullet(j + 1, k)).join('\n'), current: false, start: `20${10 + j}-01`, end: `20${11 + j}-12` }))
+  exp.items = Array.from({ length: n }, (_, j) => ({ ...exp.items[0], id: `p${j}`, title: `Poste ${j + 1} Responsable développement`, text: [1, 2, 3, 4, 5].map((k) => bullet(j + 1, k)).join('\n'), current: false, start: `20${10 + j}-01`, end: `20${11 + j}-12` }))
   return cv
 }
 const MAX_PAGES = 7
@@ -102,6 +102,16 @@ for (const t of templates.filter((x: { id: string }) => x.id.endsWith('-1'))) {
     for (const job of page.filter((l) => /^Poste \d Responsable/.test(l.text.trim())))
       if (page.filter((l) => l !== job && l.y < job.y - 3).length < 2) fail(`${t.id}/pagination`, `intitulé « ${job.text.trim()} » en bas de la page ${p}, sans son contenu`)
   }
+}
+
+// Page 1 : nom et contact (colonne latérale comprise) sur la première page d'un CV de 3 pages ou plus, pas sur la dernière.
+for (const t of templates) {
+  const cv = longCV(9)
+  const email = cv.personal.fields.find((f) => f.kind === 'email' && f.visible)!.value
+  const { lines, pages } = await extract(await renderPdf(cv, designOf(t), fonts))
+  const flat = (p: number) => lines.filter((l) => l.page === p).map((l) => l.text).join('').replace(/\s+/g, '').toLowerCase() // sans espaces : noms espacés (executif)
+  if (pages < 3) fail(`${t.id}/page-1`, `${pages} page(s) : le CV long ne teste plus rien`)
+  for (const w of [cv.personal.firstName, email]) if (!flat(1).includes(w.replace(/\s+/g, '').toLowerCase())) fail(`${t.id}/page-1`, `« ${w} » absent de la page 1 (${pages} pages)`)
 }
 
 // ---- 3. Arabe sous une langue latine : chaque glyphe arabe doit avoir une police ----
@@ -130,6 +140,34 @@ for (const t of templates) {
   for (let p = 1; p <= doc.numPages; p++) for (const a of await (await doc.getPage(p)).getAnnotations()) if (a.url) urls.add(a.url.replace(/\/$/, ''))
   for (const u of ['mailto:sophie@example.com', 'tel:+33612345678', 'https://sophie.example.com', 'https://github.com/sophie/cv'])
     if (!urls.has(u)) fail(`${t.id}/liens`, `lien absent du PDF : ${u}`)
+}
+
+// ---- Ordre : le PDF suit l'ordre choisi dans l'éditeur. Intérêts et compétences tombent dans le même groupe dans tous les modèles
+// (colonne latérale, grille ou flux), donc mettre les intérêts devant doit les sortir devant.
+for (const t of templates) {
+  const cv = sampleCV('fr', 'dev')
+  const i = cv.sections.findIndex((s) => s.kind === 'interests')
+  cv.sections.unshift(...cv.sections.splice(i, 1))
+  const flat = (await extract(await renderPdf(cv, designOf(t), fonts))).raw.replace(/\s+/g, ' ').toLowerCase()
+  const [a, b] = [cvLabels.fr.sections.interests, cvLabels.fr.sections.skills].map((x) => flat.indexOf(x.toLowerCase()))
+  if (a < 0 || b < 0 || a > b) fail(`${t.id}/ordre`, `« ${cvLabels.fr.sections.interests} » placé en premier dans l'éditeur sort après « ${cvLabels.fr.sections.skills} »`)
+}
+
+// Nouvelles sections (bénévolat, certifications, publications) : mises en tête, dans l'ordre inverse de SECTION_KINDS. Chacune doit sortir
+// avant les sections qui la suivent dans l'éditeur et tombent dans le même groupe (`apart` ou non) : l'ordre vaut à l'intérieur d'une colonne.
+for (const t of templates) {
+  const cv = withNewSections(sampleCV('fr', 'dev'))
+  const added = cv.sections.splice(-NEW_KINDS.length).reverse()
+  cv.sections.unshift(...added)
+  const flat = (await extract(await renderPdf(cv, designOf(t), fonts))).raw.replace(/\s+/g, ' ').toLowerCase()
+  const at = (k: keyof typeof cvLabels.fr.sections) => flat.indexOf(cvLabels.fr.sections[k].toLowerCase())
+  const apart = cv.sections.filter((s) => t.apart?.includes(s.kind))
+  // compact remplit sa grille en alternant les deux colonnes, et le texte extrait suit une colonne puis l'autre : on compare dans chaque colonne
+  const group = (s: (typeof cv.sections)[number]) => (!apart.includes(s) ? 'flux' : t.layoutId === 'compact' ? `grille${apart.indexOf(s) % 2}` : 'à part')
+  for (const [i, a] of added.entries())
+    for (const b of cv.sections.slice(i + 1).filter((x) => group(x) === group(a)))
+      if (at(a.kind) < 0 || at(b.kind) < 0 || at(a.kind) > at(b.kind))
+        fail(`${t.id}/ordre`, `« ${cvLabels.fr.sections[a.kind]} » placé avant « ${cvLabels.fr.sections[b.kind]} » dans l'éditeur sort après (ou manque)`)
 }
 
 await loader.close()

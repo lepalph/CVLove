@@ -7,7 +7,7 @@ const fillCV = async (page: Page, first = 'Zoé') => {
   await page.goto('/#/editeur')
   await page.getByRole('button', { name: 'Complet' }).click()
   await page.getByLabel('Prénom').fill(first)
-  await page.waitForTimeout(400)
+  await page.waitForTimeout(600)
 }
 
 /** Crée une lettre depuis Mes documents ; l'éditeur de lettre s'ouvre. */
@@ -75,6 +75,7 @@ test('accueil : « Reprendre mon CV » seulement si un CV existe, sans débordem
 })
 
 test('Mes documents : focus rendu après Renommer, annonce après Dupliquer', async ({ page }) => {
+  await fillCV(page)
   await page.goto('/#/documents')
   const row = page.locator('li[data-doc]').first()
   const rename = row.getByRole('button', { name: /^Renommer/ })
@@ -92,7 +93,7 @@ test('Mes documents : focus rendu après Renommer, annonce après Dupliquer', as
 test('import : le CV vide jamais modifié est retiré, le document importé devient actif ; pluriels', async ({ page }) => {
   await page.goto('/#/editeur')
   await page.goto('/#/documents')
-  await expect(page.locator('li[data-doc]')).toHaveCount(1)
+  await expect(page.locator('li[data-doc]')).toHaveCount(0) // brouillon vierge : pas listé
   const cv = (name: string) => ({
     id: name, kind: 'cv', name, updatedAt: 1, design: { templateId: 'classique-1', accent: '#c2410c' }, editorMode: 'full',
     data: { lang: 'fr', personal: { firstName: name, lastName: '', title: '', fields: [] }, sections: [] },
@@ -110,6 +111,10 @@ test.describe('en-GB', () => {
   test('dates au format du navigateur quand il correspond à la langue (jj/mm/aaaa)', async ({ page }) => {
     await page.goto('/#/documents')
     await page.getByLabel('Interface language').selectOption('en')
+    await page.getByRole('button', { name: 'New CV' }).click()
+    await page.getByRole('button', { name: 'Full', exact: true }).click()
+    await page.getByLabel('First name').fill('Zoé')
+    await page.goto('/#/documents')
     await expect(page.locator('li[data-doc]').first()).toContainText(/Edited \d{2}\/\d{2}\/\d{4}/)
   })
 })

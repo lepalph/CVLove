@@ -1,22 +1,17 @@
 import { useRef, useState } from 'react'
+import { documentsList } from '../i18n/documentsList'
 import { extra } from '../i18n/extra'
 import { formatDate, importedText, shell } from '../i18n/shell'
 import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
-import { fullName } from '../model/cv'
 import { MAX_IMPORT_BYTES } from '../model/sanitize'
 import { exportDocs } from '../model/documents'
 import { LANGS, type Doc } from '../model/types'
-import { useStore } from '../store'
-import { isEmptyCV } from './lib'
+import { isBlankDraft, useStore, wipeStorage } from '../store'
+import { byRecent, shownName } from './docList'
+import { isExampleCV } from './lib'
 import { LANG_NAMES, LangSelect, Logo, SaveBanner, SkipLink } from './bits'
-
-/** Nom affiché : un nom automatique (« CV », « CV 2 », « Lettre ») est complété par la personne, pour distinguer plusieurs documents. */
-const shownName = (d: Doc) => {
-  const who = d.kind === 'cv' ? fullName(d.data) : d.data.sender.name.trim()
-  return who && /^(CV|Lettre)( \d+)?$/.test(d.name) ? `${d.name} · ${who}` : d.name
-}
 
 const download = (name: string, json: string) => {
   const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
@@ -24,12 +19,26 @@ const download = (name: string, json: string) => {
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
+/**
+ * Ajoute les documents d'un fichier JSON, ouvre le premier et renvoie leur nombre (lève `Error('invalid')` si illisible).
+ * Un brouillon vierge laisse sa place aux documents importés (voir `dropBlankDrafts`) ; un CV enregistré n'est jamais retiré.
+ */
+export function importAndOpen(json: string): number {
+  const { importDocs, openDoc, documents } = useStore.getState()
+  const known = new Set(documents.map((d) => d.id))
+  const n = importDocs(json)
+  const first = useStore.getState().documents.find((d) => !known.has(d.id))
+  if (first) openDoc(first.id)
+  return n
+}
+
 /** #/documents : liste des CV (et lettres) ; créer, ouvrir, dupliquer, renommer, supprimer, exporter / importer en JSON. */
 export function Documents() {
-  const { documents, activeId, uiLang, setUiLang, openDoc, createCV, createLetter, duplicate, rename, remove, importDocs } = useStore()
+  const { documents, activeId, uiLang, setUiLang, openDoc, createCV, createLetter, duplicate, rename, remove } = useStore()
   const t = v2[uiLang]
   const L = letterUi[uiLang]
-  const cvs = documents.filter((d) => d.kind === 'cv')
+  const listed = byRecent(documents.filter((d) => !isBlankDraft(d))) // brouillon vierge : rien à lister
+  const cvs = listed.filter((d) => d.kind === 'cv')
   const [asking, setAsking] = useState(false)
   const [source, setSource] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
@@ -47,18 +56,9 @@ export function Documents() {
     setSaid('')
     if (f.size > MAX_IMPORT_BYTES) return setErr(extra[uiLang].tooBig.replace('{mb}', String(MAX_IMPORT_BYTES / 1e6)))
     try {
-      const before = useStore.getState()
-      const n = importDocs(await f.text())
+      const n = importAndOpen(await f.text())
       setErr('')
       setSaid(importedText(uiLang, n))
-      // Un CV vide jamais rempli ne sert plus à rien : il laisse la place au premier document importé.
-      const now = useStore.getState().documents
-      const first = now[before.documents.length]
-      const active = before.documents.find((d) => d.id === before.activeId)
-      if (active?.kind === 'cv' && isEmptyCV(active.data) && first) {
-        if (now.slice(before.documents.length).some((d) => d.kind === 'cv')) remove(active.id)
-        openDoc(first.id)
-      }
     } catch {
       setErr(t.importError)
     }
@@ -76,7 +76,10 @@ export function Documents() {
     setSaid(shell[uiLang].duplicated.replace('{name}', s.documents.find((d) => d.id === s.activeId)?.name ?? ''))
   }
   const del = (d: Doc) => {
-    if (confirm(t.deleteConfirm.replace('{name}', d.name))) remove(d.id)
+    if (!confirm(t.deleteConfirm.replace('{name}', d.name))) return
+    remove(d.id)
+    setSaid('')
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('#main h1')?.focus()) // la ligne disparaît avec son bouton
   }
 
   return (
@@ -93,14 +96,14 @@ export function Documents() {
       </header>
       <SaveBanner />
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[75rem] px-[var(--m)] py-10 outline-none">
-        <h1 className="text-balance text-[2rem] font-semibold leading-[1.1] tracking-[-0.04em]">{t.docs}</h1>
+        <h1 tabIndex={-1} className="text-balance text-[2rem] font-semibold outline-none leading-[1.1] tracking-[-0.04em]">{t.docs}</h1>
         <p className="mt-3 max-w-[34rem] text-pretty text-lg text-muted">{t.docsSub}</p>
         <div className="mt-6 flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary" onClick={() => open(createCV())}>{t.newCV}</button>
           <button type="button" className="btn" aria-expanded={asking} onClick={() => { setAsking(!asking); setSource(cvs[0]?.id ?? '') }}>{L.newLetter}</button>
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => { void onImport(e.target.files?.[0]); e.target.value = '' }} />
           <button type="button" className="btn" onClick={() => fileRef.current?.click()}>{t.importFile}</button>
-          <button type="button" className="btn" onClick={() => download('cvlove-documents.json', exportDocs(documents))}>{t.exportAll}</button>
+          <button type="button" className="btn" onClick={() => download('cvlove-documents.json', exportDocs(documents.filter((d) => !isBlankDraft(d))))}>{t.exportAll}</button>
         </div>
         {asking && (
           <form className="mt-4 flex max-w-[34rem] flex-wrap items-end gap-2 rounded-card border border-line p-4" aria-label={L.newLetter}
@@ -119,8 +122,9 @@ export function Documents() {
         <p role="status" className="mt-3 text-sm text-muted empty:hidden">{said}</p>
         {err && <p role="alert" className="mt-3 text-sm text-danger">{err}</p>}
 
-        <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs}>
-          {documents.map((d) => (
+        {!listed.length && <p className="mt-8 max-w-[34rem] text-pretty text-muted">{documentsList[uiLang].empty}</p>}
+        <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs} hidden={!listed.length}>
+          {listed.map((d) => (
             <li key={d.id} data-doc={d.name} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
               <div className="min-w-[12rem] flex-1">
                 {editing === d.id ? (
@@ -131,10 +135,11 @@ export function Documents() {
                       if (e.key === 'Escape') { finishRename(d.id, null); focusRename(d.id) }
                     }} />
                 ) : (
-                  <p className="text-lg font-semibold tracking-tight">{shownName(d)}</p>
+                  <p className="text-lg font-semibold tracking-tight">{shownName(d, uiLang)}</p>
                 )}
                 <p className="mt-0.5 font-mono text-xs text-muted">
                   {d.kind === 'cv' ? t.kindCV : t.kindLetter} · {LANG_NAMES[d.data.lang]} · {t.updated} {formatDate(d.updatedAt, uiLang)}
+                  {d.kind === 'cv' && isExampleCV(d.data) && <> · <span className="text-ink">{documentsList[uiLang].example}</span></>}
                   {d.id === activeId && <> · <span className="text-ink">{t.active}</span></>}
                 </p>
               </div>
@@ -148,6 +153,8 @@ export function Documents() {
             </li>
           ))}
         </ul>
+        {/* Poste partagé : tout retirer d'un coup (la copie de secours `cvlove:corrupt` comprise), après avoir pu exporter. */}
+        <button type="button" className="btn btn-ghost mt-8 text-danger" onClick={() => { if (confirm(t.wipeConfirm)) { wipeStorage(); location.reload() } }}>{t.wipeAll}</button>
       </main>
     </>
   )

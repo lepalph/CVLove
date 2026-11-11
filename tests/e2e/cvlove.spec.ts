@@ -63,7 +63,7 @@ const openEditor = async (page: Page, sample = false) => {
   }
   await expect(page.locator('canvas').first()).toBeAttached({ timeout: 20_000 })
 }
-const canvasShot = (page: Page) => page.locator('canvas').last().screenshot()
+const canvasShot = (page: Page) => page.getByRole('img', { name: /Aperçu/ }).evaluate((el) => [...el.querySelectorAll('canvas')].pop()?.toDataURL() ?? '') // pas de screenshot() : le canvas est remplacé pendant la capture (F06)
 const download = async (page: Page) => {
   const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Télécharger le PDF' }).click()])
   return d
@@ -74,7 +74,7 @@ test('accueil → éditeur, édition du prénom, aperçu mis à jour', async ({ 
   await page.waitForTimeout(1500)
   const before = await canvasShot(page)
   await page.getByLabel('Prénom').fill('Zoé')
-  await expect.poll(async () => !(await canvasShot(page)).equals(before), { timeout: 10_000 }).toBe(true)
+  await expect.poll(async () => (await canvasShot(page)) !== before, { timeout: 10_000 }).toBe(true)
 })
 
 test('accueil : « Commencer avec ce modèle » (Moderne · Bandeau), puis changement de modèle sans perte du prénom', async ({ page }) => {
@@ -94,6 +94,7 @@ test('accueil : « Commencer avec ce modèle » (Moderne · Bandeau), puis chang
 
 test('photo ajoutée : présente dans le PDF', async ({ page }) => {
   await openEditor(page)
+  await page.getByLabel('Prénom').fill('Zoé')
   const base = await pdfOf((await (await download(page)).path())!)
   await page.locator('input[type=file][accept="image/*"]').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: png() })
   await expect(page.locator('img[src^="data:image/jpeg"]')).toBeVisible()
@@ -134,6 +135,7 @@ test('langue du CV : EN change les titres pas le contenu, AR passe en RTL', asyn
 test('export JSON puis import après « Tout effacer »', async ({ page }) => {
   await openEditor(page)
   await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByText('Fichier', { exact: true }).click()
   const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Exporter (JSON)' }).click()])
   const json = readFileSync((await d.path())!)
   page.once('dialog', (x) => x.accept())
@@ -143,8 +145,68 @@ test('export JSON puis import après « Tout effacer »', async ({ page }) => {
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
 })
 
-test('rechargement : données conservées', async ({ page }) => {
+test('import sur un CV rempli : on choisit de remplacer le document en cours ou d’ajouter un nouveau document', async ({ page }) => {
   await openEditor(page)
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.getByText('Fichier', { exact: true }).click()
+  const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Exporter (JSON)' }).click()])
+  const json = readFileSync((await d.path())!)
+  await page.getByLabel('Prénom').fill('Bob')
+  const file = { name: 'cvlove.json', mimeType: 'application/json', buffer: json }
+  await page.locator('#imp').setInputFiles(file)
+  const ask = page.getByRole('dialog', { name: 'Importer ce fichier' })
+  await expect(ask.getByRole('button', { name: 'Ajouter comme nouveau document' })).toBeFocused() // le choix sans perte est proposé d'abord
+  await ask.getByRole('button', { name: /^Remplacer/ }).click()
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  await page.getByLabel('Prénom').fill('Bob')
+  await page.locator('#imp').setInputFiles(file)
+  await ask.getByRole('button', { name: 'Ajouter comme nouveau document' }).click()
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(2)
+  await expect(page.locator('li[data-doc="Bob"]')).toBeVisible()
+})
+
+test('accueil : avec un CV déjà rempli, « Commencer avec ce modèle » crée un nouveau CV au lieu de modifier le premier', async ({ page }) => {
+  await openEditor(page)
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Commencer avec ce modèle (Moderne · Bandeau)' }).click()
+  await expect(page).toHaveURL(/#\/editeur/)
+  await page.goto('/#/documents')
+  await expect(page.locator('li[data-doc]')).toHaveCount(2)
+  await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
+})
+
+test('CV vierge : il suit la langue de l’interface', async ({ page }) => {
+  await page.goto('/#/documents')
+  await page.getByLabel('Langue de l’interface').selectOption('en')
+  await page.goto('/#/editeur')
+  await page.getByRole('button', { name: 'Full', exact: true }).click()
+  await expect(page.getByLabel('CV language')).toHaveValue('en')
+})
+
+test('deux onglets : chacun garde son CV, aucun n’efface celui de l’autre', async ({ page, context }) => {
+  await openEditor(page)
+  const other = await context.newPage() // ouvert avant toute saisie : son état initial est vide
+  await other.goto('/#/editeur')
+  await other.getByRole('button', { name: 'Complet' }).click()
+  await other.waitForTimeout(700) // un humain ne tape pas dans deux onglets à moins de 500 ms d'écart (voir la limite dans store.ts)
+  await page.getByLabel('Prénom').fill('Zoé')
+  await page.waitForTimeout(700)
+  await other.getByLabel('Prénom').fill('Bob')
+  await expect(page.getByLabel('Prénom')).toHaveValue('Zoé') // l'onglet ne bascule pas sur le CV de l'autre
+  await other.waitForTimeout(700)
+  await page.goto('/#/documents')
+  await expect(page.locator('li[data-doc]')).toHaveCount(2)
+  await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
+  await expect(page.locator('li[data-doc="Bob"]')).toBeVisible()
+})
+
+test('rechargement : un CV rempli est conservé sans rien faire ; un CV vierge n’est pas écrit', async ({ page }) => {
+  await openEditor(page)
+  await page.waitForTimeout(600)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cvlove:v2')!).state.documents)).toEqual([])
   await page.getByLabel('Prénom').fill('Zoé')
   await page.reload()
   await expect(page.getByLabel('Prénom')).toHaveValue('Zoé')
@@ -259,9 +321,9 @@ test('mode guidé : parcours complet, passer une étape, retour, bascule en Comp
   await page.getByLabel('Nom', { exact: true }).fill('Martin')
   await page.getByRole('button', { name: 'Guidé' }).click()
   await current('Profil')
-  await bar.getByRole('button', { name: 'Télécharger', exact: true }).click()
-  await current('Télécharger')
-  const final = page.getByRole('region', { name: 'Télécharger' })
+  await bar.getByRole('button', { name: 'Design et téléchargement', exact: true }).click()
+  await current('Design et téléchargement')
+  const final = page.getByRole('region', { name: 'Design et téléchargement' })
   await expect(final).toContainText('Zoé Martin')
   await expect(final.getByRole('link', { name: 'Voir mes documents' })).toHaveAttribute('href', '#/documents')
   const [d] = await Promise.all([page.waitForEvent('download'), final.getByRole('button', { name: 'Télécharger le PDF' }).click()])
@@ -352,11 +414,23 @@ test('nouveau CV vide, nommé d’après la personne, exemple à la demande', as
   await openEditor(page)
   await expect(page.getByLabel('Prénom')).toHaveValue('')
   await page.getByRole('link', { name: 'Mes documents' }).click()
-  await expect(page.locator('li[data-doc="CV sans titre"]')).toBeVisible()
-  await page.getByRole('button', { name: 'Ouvrir : CV sans titre' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(0) // brouillon vierge : pas listé
+  await page.getByRole('link', { name: 'Modifier' }).click()
   await page.getByLabel('Prénom').fill('Zoé')
   await page.getByRole('link', { name: 'Mes documents' }).click()
   await expect(page.locator('li[data-doc="Zoé"]')).toBeVisible()
+  page.once('dialog', (x) => x.accept())
+  await page.getByRole('button', { name: 'Supprimer : Zoé' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(0) // supprimable, remplacé par un brouillon vierge invisible
+  await page.getByRole('button', { name: 'Nouveau CV' }).click() // brouillon lui aussi : listé à la première saisie
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(0)
+  await page.getByRole('link', { name: 'Modifier' }).click()
+  await page.getByRole('button', { name: 'Complet' }).click() // un nouveau CV s'ouvre en mode guidé
+  await page.getByLabel('Prénom').fill('Léa')
+  await page.getByRole('link', { name: 'Mes documents' }).click()
+  await expect(page.locator('li[data-doc]')).toHaveCount(1)
+  await expect(page.locator('li[data-doc="Léa"]')).toBeVisible()
 })
 
 test('fichier trop gros : message clair, rien n’est importé', async ({ page }) => {

@@ -8,6 +8,8 @@ export interface Tips {
   saved: string
   /** `{n}` = nombre de pages. */
   pages: string
+  /** Bouton de saut vers une page de l'aperçu. */
+  page: string
   /** Un conseil par étape, dans l'ordre de STEPS (ui/Guided.tsx) ; vide = pas de conseil. */
   steps: string[]
 }
@@ -16,7 +18,7 @@ const t = (identity: string, profile: string, experience: string, education: str
   ['', identity, profile, experience, education, skills, others, '', '']
 
 const fr: Tips = {
-  chosen: 'Modèle choisi : {name}', saved: 'PDF enregistré : {file}', pages: '{n} pages',
+  chosen: 'Modèle choisi : {name}', saved: 'PDF enregistré : {file}', pages: '{n} pages', page: 'Page {n}',
   steps: t(
     'Un prénom, un nom, un e-mail et un téléphone suffisent pour commencer. Vous pourrez compléter plus tard.',
     'Exemple à adapter : « Étudiante motivée, je cherche un premier emploi dans la vente. Je suis sérieuse, ponctuelle et j’aime le contact avec les gens. »',
@@ -27,7 +29,7 @@ const fr: Tips = {
   ),
 }
 const en: Tips = {
-  chosen: 'Chosen template: {name}', saved: 'PDF saved: {file}', pages: '{n} pages',
+  chosen: 'Chosen template: {name}', saved: 'PDF saved: {file}', pages: '{n} pages', page: 'Page {n}',
   steps: t(
     'A first name, a last name, an email and a phone number are enough to start. You can add more later.',
     'Example to adapt: “Motivated student looking for a first job in retail. I am reliable, punctual and enjoy working with people.”',
@@ -38,7 +40,7 @@ const en: Tips = {
   ),
 }
 const es: Tips = {
-  chosen: 'Plantilla elegida: {name}', saved: 'PDF guardado: {file}', pages: '{n} páginas',
+  chosen: 'Plantilla elegida: {name}', saved: 'PDF guardado: {file}', pages: '{n} páginas', page: 'Página {n}',
   steps: t(
     'Un nombre, un apellido, un correo y un teléfono bastan para empezar. Podrá completar el resto más tarde.',
     'Ejemplo para adaptar: «Estudiante motivada, busco mi primer empleo en ventas. Soy responsable, puntual y me gusta tratar con la gente.»',
@@ -49,7 +51,7 @@ const es: Tips = {
   ),
 }
 const de: Tips = {
-  chosen: 'Gewählte Vorlage: {name}', saved: 'PDF gespeichert: {file}', pages: '{n} Seiten',
+  chosen: 'Gewählte Vorlage: {name}', saved: 'PDF gespeichert: {file}', pages: '{n} Seiten', page: 'Seite {n}',
   steps: t(
     'Vorname, Nachname, E-Mail und Telefonnummer reichen für den Anfang. Den Rest können Sie später ergänzen.',
     'Beispiel zum Anpassen: „Motivierte Studentin auf der Suche nach dem ersten Job im Verkauf. Ich bin zuverlässig, pünktlich und mag den Kontakt mit Menschen.“',
@@ -60,7 +62,7 @@ const de: Tips = {
   ),
 }
 const it: Tips = {
-  chosen: 'Modello scelto: {name}', saved: 'PDF salvato: {file}', pages: '{n} pagine',
+  chosen: 'Modello scelto: {name}', saved: 'PDF salvato: {file}', pages: '{n} pagine', page: 'Pagina {n}',
   steps: t(
     'Nome, cognome, e-mail e telefono bastano per iniziare. Potrà completare il resto più tardi.',
     'Esempio da adattare: «Studentessa motivata, cerco il mio primo lavoro nelle vendite. Sono seria, puntuale e mi piace stare con le persone.»',
@@ -71,7 +73,7 @@ const it: Tips = {
   ),
 }
 const pt: Tips = {
-  chosen: 'Modelo escolhido: {name}', saved: 'PDF guardado: {file}', pages: '{n} páginas',
+  chosen: 'Modelo escolhido: {name}', saved: 'PDF guardado: {file}', pages: '{n} páginas', page: 'Página {n}',
   steps: t(
     'Um nome, um apelido, um e-mail e um telefone bastam para começar. Pode completar o resto mais tarde.',
     'Exemplo para adaptar: «Estudante motivada, procuro o meu primeiro emprego em vendas. Sou séria, pontual e gosto do contacto com as pessoas.»',
@@ -82,7 +84,7 @@ const pt: Tips = {
   ),
 }
 const ar: Tips = {
-  chosen: 'القالب المختار: {name}', saved: 'تم حفظ ملف PDF: {file}', pages: '{n} صفحات',
+  chosen: 'القالب المختار: {name}', saved: 'تم حفظ ملف PDF: {file}', pages: '{n} صفحات', page: 'الصفحة {n}',
   steps: t(
     'يكفي الاسم الأول واسم العائلة والبريد الإلكتروني والهاتف للبداية. يمكنك إكمال الباقي لاحقًا.',
     'مثال يمكنك تعديله: «طالبة مجتهدة أبحث عن أول وظيفة في المبيعات. أنا جادة وملتزمة بالمواعيد وأحب التعامل مع الناس.»',

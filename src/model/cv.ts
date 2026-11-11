@@ -50,6 +50,31 @@ export const removeSection = (cv: CV, id: string): CV => ({ ...cv, sections: cv.
 export const moveSection = (cv: CV, id: string, dir: -1 | 1): CV => ({
   ...cv, sections: move(cv.sections, cv.sections.findIndex((s) => s.id === id), dir),
 })
+/** Place la section `id` au rang `index` (0 = première) en une seule mise à jour ; rang borné, `cv` rendu tel quel si rien ne bouge. */
+export const moveSectionTo = (cv: CV, id: string, index: number): CV => {
+  const from = cv.sections.findIndex((s) => s.id === id)
+  const to = Math.max(0, Math.min(cv.sections.length - 1, Math.trunc(index)))
+  if (from < 0 || from === to) return cv
+  const sections = cv.sections.slice()
+  sections.splice(to, 0, sections.splice(from, 1)[0])
+  return { ...cv, sections }
+}
+/** Replie (ou déplie) les sections `ids` (toutes par défaut). `collapsed` ne sert qu'à l'éditeur : ni le PDF ni le contenu ne changent. */
+export const setCollapsed = (cv: CV, collapsed: boolean, ids?: string[]): CV => ({
+  ...cv, sections: cv.sections.map((s) => (!ids || ids.includes(s.id) ? { ...s, collapsed: collapsed || undefined } : s)),
+})
+/** Vrai si `a` et `b` ne diffèrent que par `collapsed` : le PDF est alors identique, l'aperçu n'a pas à être refait (comparaison par référence, sans sérialiser). */
+export const sameRendered = (a: CV, b: CV): boolean => {
+  if (a === b) return true
+  const ks = Object.keys(a) as (keyof CV)[]
+  if (ks.length !== Object.keys(b).length || ks.some((k) => k !== 'sections' && a[k] !== b[k])) return false
+  return a.sections.length === b.sections.length && a.sections.every((s, i) => {
+    const t = b.sections[i]
+    const { collapsed: _a, ...ra } = s, { collapsed: _b, ...rb } = t
+    const kk = Object.keys(ra) as (keyof typeof ra)[]
+    return kk.length === Object.keys(rb).length && kk.every((k) => ra[k] === rb[k as keyof typeof rb])
+  })
+}
 export const patchSection = (cv: CV, id: string, patch: Partial<Section>): CV => ({
   ...cv, sections: cv.sections.map((s) => (s.id === id ? { ...s, ...patch } : s)),
 })

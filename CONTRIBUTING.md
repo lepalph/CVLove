@@ -60,6 +60,7 @@ The contract is documented at the top of `src/templates/types.ts`. Summary:
 3. Edit `meta`: id, `name` in the 7 languages, `category`, `columns`, `photo`, `order`, and exactly 3 styles. Each style has a proper `name`, a `variant` string and a `preset` (accent, `fontPair`, `photoShape`, `skillDisplay`). `meta` must stay a pure literal, declared as `export const meta: LayoutMeta = {` with the closing `}` alone at the start of a line (`vite-layout-meta.ts` extracts it).
    - `category` is one of `classique`, `moderne`, `creatif`, `simple` (the list is closed, in `types.ts`). It feeds the category filter of the gallery. Pick the closest one.
    - `order` is the rank in the gallery, sorted ascending. Use the next free number.
+   - Two-column layouts list in `apart` the section kinds of the side block (side column or grid). Usual split: skills, languages, certifications and interests apart; experience, volunteering, education, projects and publications in the main column. `pnpm check:pdf` checks that the editor order is kept inside each block.
 4. Build the component with `makeTheme(cv, design, labels)`: all font sizes go through `t.s()`, margins through `t.m()`, the page through `t.pageProps` and `t.pageStyle()`. Honor RTL with `t.row`, `t.start` and `t.end`.
 5. Use the helpers in `src/templates/shared.tsx` (all exported):
    - `Text`: use it instead of the react-pdf one (paragraph direction, bidi).
@@ -70,6 +71,7 @@ The contract is documented at the top of `src/templates/types.ts`. Summary:
    - `linked`: makes an e-mail, phone or URL clickable without changing its look.
    - `colon`: the separator between a label and its value (a non-breaking space before the colon in French only).
    - `entryMeta`: period and "subtitle · place" of an item.
+   - `SideEntry`: a short item in a side column (title, then "subtitle · date"), used for certifications.
    - `SkillLevel`: a level from 1 to 5 as bars, dots or text.
    - `fixBidi`: right-to-left fixes and non-breaking space before `%`.
    - `ink`, `onAccent`, `tint`, `shade`, `contrast`: color helpers (see the contrast rule below).

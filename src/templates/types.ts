@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react'
 import type { CVLabels } from '../i18n/labels'
 import type { LetterLabels } from '../i18n/letter'
-import type { CV, Design, Lang, Letter } from '../model/types'
+import type { CV, Design, Lang, Letter, SectionKind } from '../model/types'
 
 /**
  * TEMPLATE CONTRACT (v2)
@@ -70,6 +70,8 @@ export interface LayoutMeta {
   photo: boolean
   /** Rank in the gallery. */
   order: number
+  /** Kinds placed in a separate block (side column, grid): the editor order only applies within each block. */
+  apart?: readonly SectionKind[]
   styles: [StyleDef, StyleDef, StyleDef]
 }
 
@@ -89,6 +91,7 @@ export interface TemplateDef {
   category: Category
   columns: 1 | 2
   photo: boolean
+  apart?: readonly SectionKind[]
   variant: string
   preset: StyleDef['preset']
   /** Deferred loading of the component: react-pdf stays out of the first load. */

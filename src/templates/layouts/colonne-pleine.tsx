@@ -2,7 +2,7 @@ import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Section } from '../../model/types'
-import { Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
+import { Entry, SideEntry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Colonne pleine', en: 'Full column', es: 'Columna completa', de: 'Volle Spalte', it: 'Colonna piena', pt: 'Coluna cheia', ar: 'عمود كامل' },
   category: 'creatif',
   columns: 2,
+  apart: ['skills', 'languages', 'certifications', 'interests'],
   photo: true,
   styles: [
     { name: 'Encre', variant: 'ink', preset: { accent: '#1d4ed8', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'bars' } },
@@ -22,7 +23,6 @@ export const meta: LayoutMeta = {
 
 const MUTED = '#5c564d'
 const SIDE = 196
-const MAIN_KINDS = ['profile', 'experience', 'education', 'projects', 'custom']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -31,8 +31,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const plate = variant === 'plate'
   const sideAt = right ? t.end : t.start
   const sections = visibleSections(cv)
-  const mainSections = sections.filter((s) => MAIN_KINDS.includes(s.kind))
-  const sideSections = [...sections.filter((s) => !MAIN_KINDS.includes(s.kind) && s.kind !== 'interests'), ...sections.filter((s) => s.kind === 'interests')]
+  const mainSections = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const sideSections = sections.filter((s) => meta.apart!.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
   const contacts = contactList(cv, labels)
 
   const bg = ink(t.accent, '#ffffff', 7) // texte blanc >= 7:1 sur l'aplat, quel que soit l'accent
@@ -60,6 +60,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const sideBody = (s: Section) =>
     s.kind === 'interests'
       ? s.items.filter((i) => i.title.trim()).map((i) => <Text key={i.id} style={{ marginTop: 2, color: fg }}>{i.title}</Text>)
+      : s.kind === 'certifications' ? s.items.map((it) => <SideEntry key={it.id} it={it} cv={cv} labels={labels} t={t} color={fg} soft={soft} />)
       : s.items.map((it) => (
           <View key={it.id} wrap={false} style={{ marginTop: t.m(4) }}>
             <Text style={{ fontWeight: 700, color: fg }}>{it.title}</Text>

@@ -12,6 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Grille', en: 'Grid', es: 'Cuadrícula', de: 'Raster', it: 'Griglia', pt: 'Grelha', ar: 'شبكة' },
   category: 'moderne',
   columns: 2,
+  apart: ['education', 'skills', 'languages', 'certifications', 'interests'],
   photo: false,
   styles: [
     { name: 'Filet', variant: 'rule', preset: { accent: '#1d4ed8', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'dots' } },
@@ -21,7 +22,6 @@ export const meta: LayoutMeta = {
 }
 
 const MUTED = '#5c564d'
-const GRID_KINDS = ['education', 'skills', 'languages', 'interests']
 
 export function Component({ cv, design, labels, variant }: LayoutProps) {
   const t = makeTheme(cv, design, labels)
@@ -30,8 +30,8 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const plain = variant === 'plain'
   const contacts = contactList(cv, labels)
   const sections = visibleSections(cv)
-  const full = sections.filter((s) => !GRID_KINDS.includes(s.kind))
-  const grid = GRID_KINDS.map((k) => sections.find((s) => s.kind === k)).filter((s): s is Section => !!s)
+  const full = sections.filter((s) => !meta.apart!.includes(s.kind))
+  const grid = sections.filter((s) => meta.apart!.includes(s.kind)) // dans l'ordre choisi dans l'éditeur
 
   const acc = ink(t.accent)
   const pillBg = tint(acc, 0.9)

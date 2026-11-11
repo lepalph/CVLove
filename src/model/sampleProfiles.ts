@@ -20,7 +20,7 @@ const build = (x: Tx, d: { exp: [string, string, boolean?][]; edu: [string, stri
     ['experience', x.exp.map(([title, subtitle, place, text], i) => ({ title, subtitle, place, text, start: d.exp[i][0], end: d.exp[i][1], current: !!d.exp[i][2] }))],
     ['education', x.edu.map(([title, subtitle], i) => ({ title, subtitle, start: d.edu[i][0], end: d.edu[i][1] }))],
     ['skills', x.skills.map(([title, text], i) => ({ title, text, level: d.skills[i] }))],
-    ['languages', x.langs.map(([title, text], i) => ({ title, text, level: d.langs[i] }))],
+    ['languages', x.langs.map(([title], i) => ({ title, text: '', cefr: ({ 5: 'native', 4: 'B2', 2: 'A2' } as const)[d.langs[i] as 5 | 4 | 2] }))],
     ...(x.custom ? [['custom', x.custom.rows.map(([title, subtitle, place, text], i) => ({ title, subtitle, place, text, start: d.custom![i][0], end: d.custom![i][1] })), x.custom.title] as Content['sections'][number]] : []),
     ['interests', x.ints.map((title) => ({ title }))],
   ],

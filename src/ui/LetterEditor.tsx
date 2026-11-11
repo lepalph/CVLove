@@ -3,14 +3,15 @@ import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { letterUi, type LetterUI } from '../i18n/letter'
 import { ui } from '../i18n/ui'
-import { isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
+import { isBlankLetter, isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
 import { LANGS, type LetterDoc } from '../model/types'
 import { sampleLetter } from '../model/sample'
-import { renderLetterLazy } from '../pdf/lazy'
+import { previewLetterLazy, renderLetterLazy } from '../pdf/lazy'
 import { useLetterDoc, useStore } from '../store'
 import { getLetterLayout } from '../templates/letterTemplates'
-import { Field, LangSelect, SkipLink } from './bits'
+import { Field, LangSelect, SaveBanner, SkipLink, useDownloadAlert } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
+import { PreviewSettings } from './PreviewSettings'
 import { DesignSettings } from './DesignPanel'
 import { LetterExampleTools } from './ExampleTools'
 import { sampleProfileOf } from './lib'
@@ -35,9 +36,13 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
   const [downloading, setDownloading] = useState(false)
   const [said, setSaid] = useState('')
   const layoutName = getLetterLayout(design.templateId).name[uiLang]
+  const dl = useDownloadAlert(isBlankLetter(letter) ? 0 : letter) // vierge : l’alerte « vide » reste quand la langue s’aligne
 
   const download = async () => {
     if (downloading) return
+    if (isEmptyLetter(letter)) return dl.fail('empty') // l'aperçu montre l'exemple : sans ce refus, le PDF sortirait blanc
+    dl.clear()
+    setSaid('') // vidée avant d'être remplie : un 2e téléchargement du même fichier est annoncé de nouveau
     setDownloading(true)
     try {
       const bytes = await renderLetterLazy(letter, design)
@@ -46,6 +51,9 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
       Object.assign(document.createElement('a'), { href: url, download: file }).click()
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
       setSaid(x.downloaded.replace('{file}', file))
+    } catch (e) {
+      console.error(e)
+      dl.fail('pdf')
     } finally {
       setDownloading(false)
     }
@@ -55,17 +63,19 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SkipLink />
-      <EdHeader mode={mode} onMode={setLetterMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} />
+      <EdHeader doc={doc!} mode={mode} onMode={setLetterMode} tab={tab} onTab={setTab} onDownload={download} accent={design.accent} />
+      <SaveBanner />
+      {dl.node}
       <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>
-          <MobileTools mode={mode} onMode={setLetterMode} />
+          <MobileTools doc={doc!} mode={mode} onMode={setLetterMode} />
           <LetterExampleTools />
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design)} deps={[letter, design]} empty={empty} sample said={said}
-          label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
+        <PreviewPane shown={tab === 'preview'} make={(signal) => previewLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design, signal)} deps={[letter, design]} empty={empty} sample said={said} quiet={dl.pdfFailed}
+          label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} settings={<PreviewSettings letter />} />
       </main>
-      <EdFooter />
+      <EdFooter doc={doc!} />
     </div>
   )
 }
@@ -77,11 +87,12 @@ const useLetter = () => {
   return { letter, update, L, t: ui[useStore((s) => s.uiLang)] }
 }
 
-const Text = ({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) => (
-  <Field label={label}><input className="inp" type={type} value={value} onChange={(e) => onChange(e.target.value)} /></Field>
+/** `auto` : valeur d'`autocomplete` (1.3.5), seulement pour les champs qui portent sur la personne qui écrit. */
+const Text = ({ label, value, onChange, type = 'text', auto }: { label: string; value: string; onChange: (v: string) => void; type?: string; auto?: string }) => (
+  <Field label={label}><input className="inp" dir="auto" type={type} value={value} autoComplete={auto} onChange={(e) => onChange(e.target.value)} /></Field>
 )
-const Area = ({ label, value, onChange, rows, hint, placeholder }: { label: string; value: string; onChange: (v: string) => void; rows: number; hint?: string; placeholder?: string }) => (
-  <Field label={label} hint={hint}><textarea className="inp" rows={rows} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} /></Field>
+const Area = ({ label, value, onChange, rows, hint, placeholder, auto }: { label: string; value: string; onChange: (v: string) => void; rows: number; hint?: string; placeholder?: string; auto?: string }) => (
+  <Field label={label} hint={hint}><textarea className="inp" dir="auto" rows={rows} placeholder={placeholder} value={value} autoComplete={auto} onChange={(e) => onChange(e.target.value)} /></Field>
 )
 
 function LangCard() {
@@ -102,11 +113,11 @@ function SenderCard({ title }: { title?: string }) {
   return (
     <Card title={title}>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="sm:col-span-2"><Text label={L.name} value={s.name} onChange={(v) => set({ name: v })} /></div>
-        <div className="sm:col-span-2"><Text label={L.jobTitle} value={s.title} onChange={(v) => set({ title: v })} /></div>
-        <Text label={t.email} value={s.email} type="email" onChange={(v) => set({ email: v })} />
-        <Text label={t.phone} value={s.phone} type="tel" onChange={(v) => set({ phone: v })} />
-        <div className="sm:col-span-2"><Area label={L.address} rows={2} value={s.address} onChange={(v) => set({ address: v })} /></div>
+        <div className="sm:col-span-2"><Text label={L.name} value={s.name} auto="name" onChange={(v) => set({ name: v })} /></div>
+        <div className="sm:col-span-2"><Text label={L.jobTitle} value={s.title} auto="organization-title" onChange={(v) => set({ title: v })} /></div>
+        <Text label={t.email} value={s.email} type="email" auto="email" onChange={(v) => set({ email: v })} />
+        <Text label={t.phone} value={s.phone} type="tel" auto="tel" onChange={(v) => set({ phone: v })} />
+        <div className="sm:col-span-2"><Area label={L.address} rows={2} value={s.address} auto="street-address" onChange={(v) => set({ address: v })} /></div>
       </div>
     </Card>
   )
