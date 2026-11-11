@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { setPreviewPages } from './pageCount'
 import type { PDFDocumentLoadingTask, RenderTask } from 'pdfjs-dist'
+import type { TextLine } from '../ui/previewMap'
 
 let pdfjs: Promise<typeof import('pdfjs-dist')> | undefined
 /** pdf.js chargé à la demande ; le worker est de la même version (import ?url du même paquet). */
@@ -23,6 +24,8 @@ interface Props {
   className?: string
   /** `pages` : nombre total de pages du PDF, donné avec 'ready'. */
   onState?: (s: 'busy' | 'ready' | 'error', pages?: number) => void
+  /** Lignes de texte de chaque page affichée (couche de texte de pdf.js), données juste avant 'ready' : aperçu relié au formulaire. */
+  onText?: (pages: TextLine[][]) => void
 }
 
 /**
@@ -30,7 +33,7 @@ interface Props {
  * puis échangé d'un coup, l'ancien reste visible pendant ce temps (pas de clignotement).
  * Le rendu précédent est annulé (RenderTask.cancel) dès qu'un nouveau PDF arrive.
  */
-export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, className, onState }: Props) {
+export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, className, onState, onText }: Props) {
   const host = useRef<HTMLDivElement>(null)
   useEffect(() => () => { if (maxPages > 1) setPreviewPages(0) }, [maxPages])
 
@@ -49,6 +52,7 @@ export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, clas
         const width = host.current?.clientWidth || 600
         const dpr = Math.min(window.devicePixelRatio || 1, 2)
         const canvases: HTMLCanvasElement[] = []
+        const text: TextLine[][] = []
         for (let n = 1; n <= Math.min(doc.numPages, maxPages); n++) {
           const page = await doc.getPage(n)
           if (dead) return
@@ -62,6 +66,9 @@ export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, clas
           tasks.push(task)
           await task.promise
           canvases.push(canvas)
+          // pages de react-pdf : origine 0, sans rotation ; y = ligne de base, la boîte va de 1 hauteur au-dessus à 1/4 en dessous
+          if (onText) text.push((await page.getTextContent()).items.flatMap((i) => 'str' in i && i.str.trim()
+            ? [{ str: i.str, x: i.transform[4] / base.width, y: 1 - (i.transform[5] + i.height) / base.height, w: i.width / base.width, h: (i.height * 1.25) / base.height }] : []))
         }
         if (dead) return
         // Le remplacement des pages ne doit pas déplacer le défilement (frappe pendant qu'on lit une page plus bas).
@@ -72,6 +79,7 @@ export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, clas
         kept.forEach(([el, top]) => el.scrollTop !== top && (el.scrollTop = top)) // seulement si elle a bougé : écrire la même valeur coupe un défilement animé
         if (scrollY !== y) scrollTo({ top: y, behavior: 'instant' })
         if (maxPages > 1) setPreviewPages(doc.numPages)
+        onText?.(text)
         onState?.('ready', doc.numPages)
       } catch (e) {
         if (!dead && (e as Error).name !== 'RenderingCancelledException') {

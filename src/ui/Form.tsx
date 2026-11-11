@@ -132,10 +132,10 @@ export function PersonalCard() {
   return (
       <Card title={t.personal}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={t.firstName}><input className="inp" dir="auto" placeholder={ph.personal.firstName} value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
-          <Field label={t.lastName}><input className="inp" dir="auto" placeholder={ph.personal.lastName} value={cv.personal.lastName} onChange={(e) => setPersonal({ lastName: e.target.value })} autoComplete="family-name" /></Field>
+          <Field label={t.firstName}><input className="inp" dir="auto" data-field="firstName" placeholder={ph.personal.firstName} value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
+          <Field label={t.lastName}><input className="inp" dir="auto" data-field="lastName" placeholder={ph.personal.lastName} value={cv.personal.lastName} onChange={(e) => setPersonal({ lastName: e.target.value })} autoComplete="family-name" /></Field>
         </div>
-        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" dir="auto" placeholder={ph.personal.title} value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} autoComplete="organization-title" /></Field></div>
+        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" dir="auto" data-field="jobTitle" placeholder={ph.personal.title} value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} autoComplete="organization-title" /></Field></div>
 
         <div className="mt-3 flex items-center gap-3">
           {cv.personal.photo && <img src={cv.personal.photo} alt="" className="size-14 rounded-full object-cover" />}
@@ -154,7 +154,7 @@ export function PersonalCard() {
               )}
               <div className="min-w-0 flex-1">
                 <Field label={fieldLabel(f.kind)}>
-                  <input className="inp" dir="auto" placeholder={ph.personal.fields.find((x) => x.kind === f.kind)?.value} type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
+                  <input className="inp" dir="auto" data-field="value" placeholder={ph.personal.fields.find((x) => x.kind === f.kind)?.value} type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
                     value={f.value} onChange={(e) => update((c) => patchField(c, f.id, { value: e.target.value }))} autoComplete={AUTOCOMPLETE[f.kind]} />
                 </Field>
               </div>
@@ -308,7 +308,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
       <div id={`sec-${s.id}`} hidden={shut}>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
-          <input className="inp" dir="auto" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
+          <input className="inp" dir="auto" data-field="sectionTitle" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
         </Field>
       </div>
       <ul className="mt-3 flex flex-col gap-3">
@@ -319,10 +319,10 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
           return (
             <li key={it.id} data-rid={it.id} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
               <div className="grid gap-3 sm:grid-cols-2">
-                {ti && <Field label={ti}><input className="inp" dir="auto" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
+                {ti && <Field label={ti}><input className="inp" dir="auto" data-field="title" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
                 {s.kind === 'skills' && (
                   <Field label={tv.level}>
-                    <select className="inp" value={it.level ?? 0} onChange={(e) => set({ level: +e.target.value })}>
+                    <select className="inp" data-field="level" value={it.level ?? 0} onChange={(e) => set({ level: +e.target.value })}>
                       <option value={0}>{tv.noLevel}</option>
                       {labels.levels.map((l, n) => <option key={n} value={n + 1}>{n + 1} · {l}</option>)}
                     </select>
@@ -330,17 +330,17 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
                 )}
                 {s.kind === 'languages' && (
                   <Field label={cefrFieldLabel[uiLang]}>
-                    <select className="inp" value={it.cefr ?? ''} onChange={(e) => set({ cefr: (e.target.value || undefined) as Item['cefr'] })}>
+                    <select className="inp" data-field="cefr" value={it.cefr ?? ''} onChange={(e) => set({ cefr: (e.target.value || undefined) as Item['cefr'] })}>
                       <option value="">{tv.noLevel}</option>
                       {CEFR.map((c) => <option key={c} value={c}>{cefrText(c, cvLang)}</option>)}
                     </select>
                   </Field>
                 )}
-                {su && <Field label={su}><input className="inp" dir="auto" placeholder={eg.subtitle} value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
-                {dated && <Field label={t.place}><input className="inp" dir="auto" placeholder={eg.place} value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
+                {su && <Field label={su}><input className="inp" dir="auto" data-field="subtitle" placeholder={eg.subtitle} value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
+                {dated && <Field label={t.place}><input className="inp" dir="auto" data-field="place" placeholder={eg.place} value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
                 {dated && (
                   <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
-                    <DatePick legend={t.start} lang={uiLang} value={it.start} onChange={(start) => set({ start })} />
+                    <DatePick field="start" legend={t.start} lang={uiLang} value={it.start} onChange={(start) => set({ start })} />
                     <DatePick legend={t.end} lang={uiLang} value={it.end} disabled={it.current} notBefore={it.start} onChange={(end) => set({ end })} />
                     <label className="sm:col-span-2 flex min-h-11 items-center gap-2 text-sm">
                       <input type="checkbox" className="size-5 accent-ink" checked={it.current} onChange={(e) => set({ current: e.target.checked })} />
@@ -352,7 +352,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
               {tx && (
                 <div className="mt-3">
                   <Field label={tx} hint={dated ? t.bulletsHint : undefined}>
-                    <textarea className="inp" dir="auto" rows={dated || s.kind === 'profile' ? 4 : 2} placeholder={eg.text} value={it.text} onChange={(e) => set({ text: e.target.value })} />
+                    <textarea className="inp" dir="auto" data-field="text" rows={dated || s.kind === 'profile' ? 4 : 2} placeholder={eg.text} value={it.text} onChange={(e) => set({ text: e.target.value })} />
                   </Field>
                 </div>
               )}
@@ -392,7 +392,7 @@ const quote = (lang: Lang, x: string) => { const [a, b] = QUOTES[lang] ?? ['«',
  * la valeur gardée n'est pas touchée. Pas d'inputmode numérique : il masquerait les lettres des noms de mois.
  * `notBefore` : date de début, la fin ne peut pas la précéder (on compare sur la précision commune : année, ou année + mois).
  */
-function DatePick({ legend, lang, value, onChange, disabled, notBefore }: { legend: string; lang: Lang; value: string; onChange: (v: string) => void; disabled?: boolean; notBefore?: string }) {
+function DatePick({ field, legend, lang, value, onChange, disabled, notBefore }: { field?: string; legend: string; lang: Lang; value: string; onChange: (v: string) => void; disabled?: boolean; notBefore?: string }) {
   const d = datesText[lang]
   const id = useId()
   const [draft, setDraft] = useState<string | null>(null) // texte en cours de saisie ; null = on affiche la valeur gardée
@@ -415,7 +415,7 @@ function DatePick({ legend, lang, value, onChange, disabled, notBefore }: { lege
     <div>
       <label htmlFor={id} className="mb-1 block text-sm font-medium">{legend}</label>
       <input
-        id={id} className={`inp ${error ? 'border-danger' : ''}`} dir="ltr" autoComplete="off" disabled={disabled}
+        id={id} data-field={field} className={`inp ${error ? 'border-danger' : ''}`} dir="ltr" autoComplete="off" disabled={disabled}
         placeholder={d.placeholder} value={draft ?? formatMonthInput(value)}
         aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-err` : undefined}
         onChange={(e) => { setDraft(e.target.value); setError('') }}

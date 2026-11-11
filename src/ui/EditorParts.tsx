@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { letterUi } from '../i18n/letter'
@@ -12,6 +12,8 @@ import { LANGS, type Doc, type EditorMode } from '../model/types'
 import { pagesText as pagesTexts } from '../i18n/pages'
 import { MAX_PAGES, PdfCanvas } from '../pdf/PdfCanvas'
 import { saved } from '../i18n/saved'
+import { previewLink } from '../i18n/previewLink'
+import { lineAt, type TextLine } from './previewMap'
 import { isBlankDraft, useSaveStatus, useStore } from '../store'
 import { LangSelect, Logo, Seg, useWide } from './bits'
 import { importAndOpen } from './Documents'
@@ -201,12 +203,17 @@ function Chevron({ next }: { next?: boolean }) {
   )
 }
 
-export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet }: {
+export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet, pick }: {
   make: (signal: AbortSignal) => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
   /** Document vide : `make` rend l'exemple, signalé par une étiquette au lieu du message centré. */
   sample?: boolean
   /** Le téléchargement vient d'annoncer le même échec : l'aperçu ne le répète pas aux lecteurs d'écran. */
   quiet?: boolean
+  /**
+   * Aperçu relié au formulaire : l'action pour la ligne `i` de la page `page`, ou null si elle ne mène à aucun champ.
+   * Raccourci souris et doigt seulement : la feuille ne prend pas le focus, le clavier passe par le formulaire.
+   */
+  pick?: (pages: TextLine[][], page: number, i: number) => (() => void) | null
 }) {
   const uiLang = useStore((s) => s.uiLang)
   const t = ui[uiLang]
@@ -236,6 +243,25 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
     cs.forEach((c) => io.observe(c))
     return () => io.disconnect()
   }, [state, pages])
+  const text = useRef<TextLine[][]>([])
+  const [hover, setHover] = useState<{ key: string; left: number; top: number; width: number; height: number }>()
+  /** Ligne reliée sous le pointeur : son action et sa boîte en px dans la feuille (les canvas y sont positionnés). */
+  const hit = (e: { target: EventTarget; clientX: number; clientY: number }) => {
+    const c = (e.target as Element).closest?.('canvas')
+    if (!pick || !c?.parentElement) return
+    const page = [...c.parentElement.children].indexOf(c)
+    const r = c.getBoundingClientRect()
+    const lines = text.current[page] ?? []
+    const i = lineAt(lines, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height)
+    const go = i < 0 ? null : pick(text.current, page, i)
+    const l = lines[i]
+    return go ? { go, key: `${page}:${i}`, left: c.offsetLeft + l.x * c.offsetWidth - 3, top: c.offsetTop + l.y * c.offsetHeight - 2, width: l.w * c.offsetWidth + 6, height: l.h * c.offsetHeight + 4 } : undefined
+  }
+  const onMove = (e: RPointerEvent) => {
+    if (e.pointerType !== 'mouse') return
+    const h = hit(e)
+    if (h?.key !== hover?.key) setHover(h && { key: h.key, left: h.left, top: h.top, width: h.width, height: h.height })
+  }
   const goPage = (i: number) => sheet.current?.querySelectorAll('canvas')[i]?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   return (
     <>
@@ -258,8 +284,12 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
           <div className={`relative mx-auto ${zoom ? 'w-[200%]' : 'w-full max-w-[46rem]'}`}>
             {empty && sample && <p aria-hidden="true" className="mb-3 text-center text-sm text-muted text-balance">{x.samplePreview}</p>}
             {/* Les pages sont séparées par du fond (gap) ; la feuille blanche d'attente n'est là que tant qu'aucune page n'a été rendue. */}
-            <div ref={sheet} role="img" aria-label={empty && sample ? `${label} ${x.samplePreview}` : label} className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'}`}>
-              {(wide || shown) && <PdfCanvas className="grid gap-4 [&_canvas]:shadow-sheet [&_canvas]:scroll-mt-16" make={make} deps={[...deps, zoom]} debounce={300} onState={onState} />}
+            <div ref={sheet} role="img" aria-label={empty && sample ? `${label} ${x.samplePreview}` : label} title={hover ? previewLink[uiLang] : undefined}
+              className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'} ${hover ? 'cursor-pointer' : ''}`}
+              onPointerMove={pick && onMove} onPointerLeave={() => setHover(undefined)} onClick={pick && ((e) => { setHover(undefined); hit(e)?.go() })}>
+              {(wide || shown) && <PdfCanvas className="grid gap-4 [&_canvas]:shadow-sheet [&_canvas]:scroll-mt-16" make={make} deps={[...deps, zoom]} debounce={300} onState={onState}
+                onText={(t) => { text.current = t; setHover(undefined) }} />}
+              {hover && <div aria-hidden="true" className="pointer-events-none absolute rounded-[3px] border border-neutral-900/40" /* la feuille reste blanche en thème sombre */ style={{ left: hover.left, top: hover.top, width: hover.width, height: hover.height }} />}
               {empty && !sample && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
             </div>
           </div>

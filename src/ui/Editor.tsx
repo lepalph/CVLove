@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { extra } from '../i18n/extra'
 import { tips } from '../i18n/tips'
-import { fullName, pdfFileName, sameRendered } from '../model/cv'
+import { fullName, patchSection, pdfFileName, sameRendered } from '../model/cv'
 import { previewLazy, renderLazy } from '../pdf/lazy'
 import { useCvDoc, useStore } from '../store'
 import { getTemplate } from '../templates'
@@ -14,6 +14,7 @@ import { Toc } from './Toc'
 import { Guided, useGuidedProgress } from './Guided'
 import { isEmptyCV, modelName } from './lib'
 import { UndoBar } from './UndoBar'
+import { fieldEl, locate, type Target, type TextLine } from './previewMap'
 import { sampleCV } from '../model/sample'
 
 export function Editor() {
@@ -74,6 +75,23 @@ export function Editor() {
     }
   }
 
+  // Aperçu relié au formulaire : passe sur Modifier (mobile), déplie la section, puis focus et défilement jusqu'au champ.
+  const update = useStore((s) => s.update)
+  const jump = (t: Target) => {
+    setTab('edit')
+    if (t.section && cv.sections.find((s) => s.id === t.section)?.collapsed) update((c) => patchSection(c, t.section as string, { collapsed: undefined }))
+    requestAnimationFrame(() => {
+      const el = fieldEl(t)
+      el?.focus({ preventScroll: true })
+      el?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+    })
+  }
+  // CV vide : l'aperçu montre l'exemple, rien à relier. Champ absent du formulaire (mode guidé, autre étape) : ligne inerte.
+  const pick = isEmptyCV(cv) ? undefined : (pages: TextLine[][], page: number, i: number) => {
+    const t = locate(cv, pages, page, i)
+    return t && fieldEl(t) ? () => jump(t) : null
+  }
+
   const who = [fullName(cv), cv.personal.title].filter(Boolean).join(', ')
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -89,7 +107,7 @@ export function Editor() {
           {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
         </div>
         <PreviewPane shown={tab === 'preview'} make={(signal) => previewLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design, signal)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
-          label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />
+          label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} pick={pick} />
       </main>
       <UndoBar hidden={tab === 'preview'} />
       <EdFooter doc={doc} />
