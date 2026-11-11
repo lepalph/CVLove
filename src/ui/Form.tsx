@@ -285,7 +285,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
   const shut = folded || !!dragging
   const toggle = () => update((c) => patchSection(c, s.id, { collapsed: folded ? undefined : true }))
   return (
-    <li data-rid={s.id} className={`scroll-mt-28 border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-30 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
+    <li data-rid={s.id} className={`scroll-mt-28 border-t border-line pt-5 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-30 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
       <div className="flex items-center gap-1">
         {/* Titre et résumé : un clic replie ou déplie (raccourci souris) ; le clavier passe par le chevron. */}
         <div className={`min-w-0 flex-1 py-1 ${lean ? '' : 'cursor-pointer'}`} onClick={lean ? undefined : toggle}>
@@ -313,7 +313,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
           const eg = phItem(ph, s.kind, k)
           const onItem = (verb: string) => verb + t.onItem.replace('{x}', [it.title, it.subtitle].filter(Boolean).join(', ') || String(k + 1))
           return (
-            <li key={it.id} data-rid={it.id} className="border-s-2 border-line ps-4">
+            <li key={it.id} data-rid={it.id} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
               <div className="grid gap-3 sm:grid-cols-2">
                 {ti && <Field label={ti}><input className="inp" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
                 {(s.kind === 'skills' || s.kind === 'languages') && (

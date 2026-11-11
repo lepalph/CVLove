@@ -424,6 +424,7 @@ for (const vp of VPS) {
       // filtres : la catégorie réduit la grille, Tous la rétablit
       const items = gallery.locator('ul > li')
       const all = await items.count()
+      await gallery.getByRole('button', { name: 'Filtres' }).click() // filtres repliés dans l'éditeur
       const cat = gallery.getByRole('group', { name: v2.fr.category })
       await cat.getByRole('button', { name: v2.fr.cats.creatif }).click()
       expect(await items.count()).toBeLessThan(all)
@@ -791,6 +792,7 @@ for (const vp of VPS) {
       await poll(page, (d) => d.design.templateId).not.toBe(before)
       await expect(page.getByRole('status').filter({ hasText: 'Modèle Minimal · Gouttière appliqué' })).toBeAttached()
       // photo + colonnes : jusqu'à n'avoir plus aucun modèle, le message le dit
+      await gallery.getByRole('button', { name: 'Filtres' }).click() // filtres repliés dans l'éditeur
       await gallery.getByRole('group', { name: v2.fr.photoFilter }).getByRole('button', { name: v2.fr.withPhoto }).click()
       const n = await gallery.locator('ul > li').count()
       await gallery.getByRole('group', { name: v2.fr.columns }).getByRole('button', { name: v2.fr.oneCol }).click()

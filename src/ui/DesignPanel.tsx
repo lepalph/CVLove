@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { modelName } from './lib'
 import { extra } from '../i18n/extra'
+import { filtersText } from '../i18n/filters'
 import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
@@ -27,15 +28,29 @@ export function useModelFilter(wide?: boolean) {
     () => templates.filter((m) => (cat === 'all' || m.category === cat) && (cols === 'all' || String(m.columns) === cols) && (photo === 'all' || m.photo === (photo === 'yes'))),
     [cat, cols, photo],
   )
-  const filters = (
-    <div className="flex flex-col gap-3">
+  const [open, setOpen] = useState(false)
+  const id = useId()
+  const ft = filtersText[useStore((s) => s.uiLang)]
+  const controls = (
+    <div id={id} className="flex flex-col gap-3">
       <Seg label={t.category} value={cat} onChange={setCat}
         options={[['all', t.all], ...CATEGORIES.map((c) => [c, t.cats[c]] as const)]} />
       <div className={`grid gap-3 ${wide ? 'sm:grid-cols-2' : ''}`}>
         <Seg label={t.columns} value={cols} onChange={setCols} options={[['all', t.all], ['1', t.oneCol], ['2', t.twoCols]]} />
         <Seg label={t.photoFilter} value={photo} onChange={setPhoto} options={[['all', t.all], ['yes', t.withPhoto], ['no', t.withoutPhoto]]} />
       </div>
-      {shown.length === 0 && <p className="text-sm text-muted">{t.noModel}</p>}
+    </div>
+  )
+  const none = shown.length === 0 && <p className="text-sm text-muted">{t.noModel}</p>
+  // Accueil : tout reste ouvert. Éditeur : filtres repliés derrière un bouton, avec le décompte des modèles.
+  const filters = wide ? <>{controls}{none}</> : (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <button type="button" className="btn btn-ghost -ms-3" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>{ft.filters}</button>
+        <p role="status" className="m-0 text-sm text-muted">{ft.count.replace('{n}', String(shown.length)).replace('{total}', String(templates.length))}</p>
+      </div>
+      <div hidden={!open}>{controls}</div>
+      {none}
     </div>
   )
   return { shown, filters }

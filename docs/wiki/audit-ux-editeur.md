@@ -50,3 +50,10 @@ Heuristiques après : 31/40 (78 %, bon). Cohérence passe de 2 à 4, esthétique
 - Captures d'après : `scratchpad/shots2/` de la session, envoyées à l'utilisateur.
 - Tests : `tests/e2e/sections.spec.ts` (repli, glisser, arabe), `tests/e2e/undo.spec.ts` (Supprimer la section, pris en bas de la section), `tests/e2e/dates.spec.ts` (« changer le début après la fin »), `tests/e2e/p0s.spec.ts` (témoin).
 - Liens : [sections](sections-glisser-replier.md), [corrections S](corrections-s.md), [date](date-une-saisie.md), [synthèse du panel](panel-synthese.md).
+
+## 2026-11-11 (base `3ce1500`) : P1 restants
+- **Filtres du catalogue.** Dans l'éditeur (complet et guidé), les trois rangées sont repliées derrière un bouton « Filtres » (`aria-expanded`, `aria-controls`), avec le décompte « 36 sur 36 modèles » (`role="status"`). Dépliés, ce sont les mêmes groupes de boutons pressés qu'avant. L'accueil garde ses filtres ouverts. Les vignettes commencent à moins de 120 px du titre « Modèles » à 1440 px (`tests/e2e/filtres-design.spec.ts`). Libellés : `src/i18n/filters.ts`, 7 langues.
+- **Un seul séparateur.** Un trait horizontal fin (`border-line`) partout : en haut de chaque section (espace de 20 px) et entre deux entrées (espace de 12 px). Le trait vertical à gauche des entrées est supprimé (`src/ui/Form.tsx`, classes des `li` seulement).
+- **Dark mode et 768 px.** Captures de l'accueil, du mode complet et du mode guidé : aucun débordement horizontal (mesuré), contrastes lisibles, pas de chevauchement dû à ces changements. Voir `captures/ux-2026-11-11/` (avant : `design-avant-*`, après : `design-apres-*`).
+- **Constaté, pas corrigé (hors périmètre, `Toc.tsx` interdit).** À 1440 px, le sommaire collant coupe la rangée « Remplir avec un exemple » quand le volet est défilé : c'est déjà le cas avant ce lot (capture « avant »).
+- **Tests adaptés.** `boutons.spec.ts` ([B..] filtres de l'éditeur) déplie d'abord « Filtres » ; `sections.spec.ts` cible les chevrons de sections (`aria-controls^=sec-`) ; `panel-p1.spec.ts` : seuil de défilement 300 -> 200 px (le formulaire est plus court, Design replié).

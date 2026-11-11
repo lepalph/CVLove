@@ -65,7 +65,7 @@ test('sommaire collant : un clic mène à la section ; caché sur mobile', async
   const h = page.getByRole('heading', { level: 3, name })
   await expect(h).toBeFocused()
   const pane = page.locator('div.overflow-y-auto').first()
-  await expect.poll(() => pane.evaluate((e) => e.scrollTop)).toBeGreaterThan(300) // défilement doux : attendre qu'il soit fini
+  await expect.poll(() => pane.evaluate((e) => e.scrollTop)).toBeGreaterThan(200) // défilement doux : attendre qu'il soit fini
   await page.waitForTimeout(400)
   const tb = (await toc.boundingBox())!, hb = (await h.boundingBox())!
   expect(hb.y).toBeGreaterThanOrEqual(tb.y + tb.height - 1) // pas sous le sommaire

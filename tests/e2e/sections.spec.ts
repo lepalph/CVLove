@@ -115,9 +115,9 @@ test('arabe (RTL) : poignée, repli et glisser fonctionnent', async ({ page }) =
   await h.first().evaluate((el) => el.scrollIntoView({ block: 'center' })) // pas sous le sommaire collant
   await dragTo(page, 0, 1, 'mouse', /^اسحب للنقل/)
   expect(await titles(page)).toEqual([before[1], before[0], ...before.slice(2)])
-  const c = page.locator('button[aria-expanded=true]').first()
+  const c = page.locator('button[aria-expanded=true][aria-controls^=sec-]').first()
   await c.click()
-  await expect(page.locator('button[aria-expanded=false]')).toHaveCount(1)
+  await expect(page.locator('button[aria-expanded=false][aria-controls^=sec-]')).toHaveCount(1)
 })
 
 test('mobile 390 px : pas de débordement horizontal', async ({ page }) => {
