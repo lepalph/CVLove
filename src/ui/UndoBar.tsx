@@ -27,8 +27,10 @@ export function UndoBar({ hidden }: { hidden?: boolean }) {
   const snap = useUndo((s) => s.snap)
   const t = undoText[useStore((s) => s.uiLang)]
   const n = snap?.n
-  const [held, setHeld] = useState(false) // pointeur ou focus sur le bandeau : le délai attend (WCAG 2.2.1), puis repart à zéro
-  useEffect(() => setHeld(false), [n])
+  const [hover, setHover] = useState(false)
+  const [focus, setFocus] = useState(false)
+  const held = hover || focus // pointeur ou focus sur le bandeau : le délai attend (WCAG 2.2.1), puis repart à zéro
+  useEffect(() => { setHover(false); setFocus(false) }, [n])
   useEffect(() => {
     if (n === undefined || held) return
     const id = setTimeout(() => useUndo.setState({ snap: null }), DELAY)
@@ -46,7 +48,7 @@ export function UndoBar({ hidden }: { hidden?: boolean }) {
   return (
     <div role="status" className={`pointer-events-none fixed inset-x-[var(--m)] bottom-12 z-30 flex lg:inset-x-8 lg:max-w-[28rem] ${hidden ? 'max-lg:hidden' : ''}`}>
       {snap && (
-        <div key={snap.n} onPointerEnter={() => setHeld(true)} onPointerLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)} className="undo-in pointer-events-auto flex w-full items-center gap-2 rounded-card border border-edge bg-panel py-1 ps-4 pe-1 text-sm shadow-sheet">
+        <div key={snap.n} onPointerEnter={() => setHover(true)} onPointerLeave={() => setHover(false)} onFocus={() => setFocus(true)} onBlur={() => setFocus(false)} className="undo-in pointer-events-auto flex w-full items-center gap-2 rounded-card border border-edge bg-panel py-1 ps-4 pe-1 text-sm shadow-sheet">
           <p className="m-0 min-w-0 flex-1 truncate">{t.deleted.replace('{x}', snap.label)}</p>
           <button type="button" className="btn" onClick={undo}>{t.undo}</button>
         </div>
