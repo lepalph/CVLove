@@ -96,6 +96,17 @@ export function lineAt(lines: TextLine[], x: number, y: number) {
   return best
 }
 
+/**
+ * Sens inverse : lignes `[page, i]` de l'aperçu qui mènent à ce champ (même index que `locate`). Le nom est un seul bloc (Prénom = Nom).
+ * Une ligne mêle souvent plusieurs champs (« Entreprise · Lieu | dates ») : sans correspondance exacte, on prend celles de la même entrée.
+ */
+export function linesOf(cv: CV, pages: TextLine[][], rid: string | undefined, field: string): [number, number][] {
+  const all = pages.flatMap((p, pg) => p.map((_, i) => [pg, i, locate(cv, pages, pg, i)] as const)).filter((x) => x[2])
+  const key = (f: string) => (f === 'lastName' ? 'firstName' : f)
+  const exact = all.filter(([, , t]) => t!.rid === rid && key(t!.field) === key(field))
+  return (exact.length || !rid ? exact : all.filter(([, , t]) => t!.rid === rid)).map(([pg, i]) => [pg, i])
+}
+
 /** Élément du formulaire pour une cible ; à défaut du champ exact, le premier champ de la ligne. Absent (mode guidé, autre étape) : null. */
 export function fieldEl(t: Target) {
   const row = t.rid ? document.querySelector(`[data-rid="${CSS.escape(t.rid)}"]`) : document

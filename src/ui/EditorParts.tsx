@@ -203,7 +203,7 @@ function Chevron({ next }: { next?: boolean }) {
   )
 }
 
-export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet, pick, settings }: {
+export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet, pick, lit, settings }: {
   make: (signal: AbortSignal) => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
   /** Document vide : `make` rend l'exemple, signalé par une étiquette au lieu du message centré. */
   sample?: boolean
@@ -214,6 +214,8 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
    * Raccourci souris et doigt seulement : la feuille ne prend pas le focus, le clavier passe par le formulaire.
    */
   pick?: (pages: TextLine[][], page: number, i: number) => (() => void) | null
+  /** Sens inverse : lignes `[page, i]` à allumer pour le champ du formulaire qui a le focus (purement visuel, rien n'est annoncé). */
+  lit?: (pages: TextLine[][], rid: string | undefined, field: string) => [number, number][]
   /** Tiroir de réglages (mobile), posé en bas de la colonne. */
   settings?: ReactNode
 }) {
@@ -247,7 +249,12 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
   }, [state, pages])
   const text = useRef<TextLine[][]>([])
   const [hover, setHover] = useState<{ key: string; left: number; top: number; width: number; height: number }>()
-  /** Ligne reliée sous le pointeur : son action et sa boîte en px dans la feuille (les canvas y sont positionnés). */
+  /** Boîte en px, dans la feuille (les canvas y sont positionnés), de la ligne `i` de la page `page`. */
+  const box = (c: HTMLCanvasElement, page: number, i: number) => {
+    const l = text.current[page][i]
+    return { left: c.offsetLeft + l.x * c.offsetWidth - 3, top: c.offsetTop + l.y * c.offsetHeight - 2, width: l.w * c.offsetWidth + 6, height: l.h * c.offsetHeight + 4 }
+  }
+  /** Ligne reliée sous le pointeur : son action et sa boîte. */
   const hit = (e: { target: EventTarget; clientX: number; clientY: number }) => {
     const c = (e.target as Element).closest?.('canvas')
     if (!pick || !c?.parentElement) return
@@ -256,9 +263,25 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
     const lines = text.current[page] ?? []
     const i = lineAt(lines, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height)
     const go = i < 0 ? null : pick(text.current, page, i)
-    const l = lines[i]
-    return go ? { go, key: `${page}:${i}`, left: c.offsetLeft + l.x * c.offsetWidth - 3, top: c.offsetTop + l.y * c.offsetHeight - 2, width: l.w * c.offsetWidth + 6, height: l.h * c.offsetHeight + 4 } : undefined
+    return go ? { go, key: `${page}:${i}`, ...box(c, page, i) } : undefined
   }
+  // Champ actif -> lignes allumées (même cadre que le survol). Pas de défilement de l'aperçu : la ligne peut être hors de vue.
+  const [active, setActive] = useState<ReturnType<typeof box>[]>([])
+  const light = () => {
+    const el = document.activeElement?.closest<HTMLElement>('[data-field]')
+    const cs = sheet.current?.querySelectorAll('canvas')
+    if (!lit || !el || !cs) return setActive([])
+    const found = lit(text.current, el.closest<HTMLElement>('[data-rid]')?.dataset.rid, el.dataset.field!)
+    setActive(found.flatMap(([p, i]) => (cs[p] ? [box(cs[p], p, i)] : [])))
+  }
+  const lightRef = useRef(light)
+  lightRef.current = light
+  useEffect(() => {
+    const on = () => lightRef.current()
+    document.addEventListener('focusin', on)
+    document.addEventListener('focusout', on)
+    return () => { document.removeEventListener('focusin', on); document.removeEventListener('focusout', on) }
+  }, [])
   const onMove = (e: RPointerEvent) => {
     if (e.pointerType !== 'mouse') return
     const h = hit(e)
@@ -290,8 +313,9 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
               className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'} ${hover ? 'cursor-pointer' : ''}`}
               onPointerMove={pick && onMove} onPointerLeave={() => setHover(undefined)} onClick={pick && ((e) => { setHover(undefined); hit(e)?.go() })}>
               {(wide || shown) && <PdfCanvas className="grid gap-4 [&_canvas]:shadow-sheet [&_canvas]:scroll-mt-16" make={make} deps={[...deps, zoom]} debounce={300} onState={onState}
-                onText={(t) => { text.current = t; setHover(undefined) }} />}
+                onText={(t) => { text.current = t; setHover(undefined); queueMicrotask(() => lightRef.current()) }} />}
               {hover && <div aria-hidden="true" className="pointer-events-none absolute rounded-[3px] border border-neutral-900/40" /* la feuille reste blanche en thème sombre */ style={{ left: hover.left, top: hover.top, width: hover.width, height: hover.height }} />}
+              {active.map((b, k) => <div key={k} data-lit aria-hidden="true" className="pointer-events-none absolute rounded-[3px] border border-neutral-900/40" style={b} />)}
               {empty && !sample && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sampleCV } from '../model/sample'
-import { lineAt, locate, type TextLine } from './previewMap'
+import { lineAt, linesOf, locate, type TextLine } from './previewMap'
 
 const L = (str: string, y = 0): TextLine => ({ str, x: 0.1, y, w: 0.3, h: 0.01 })
 const page = (strs: string[]) => [strs.map((s, i) => L(s, i * 0.02))]
@@ -60,5 +60,20 @@ describe('aperçu relié : ligne du PDF → champ', () => {
     expect(lineAt(ls, 0.2, 0.105)).toBe(0)
     expect(lineAt(ls, 0.2, 0.205)).toBe(2)
     expect(lineAt(ls, 0.9, 0.105)).toBe(-1)
+  })
+})
+
+describe('aperçu relié : champ → lignes à allumer', () => {
+  const cv = sampleCV('fr', 'dev')
+  const exp = cv.sections.find((s) => s.kind === 'experience')!
+  const pages = [['Camille Marchand', 'Développeuse front-end', 'Studio Pivoine · Villeurbanne | sept. 2018 – févr. 2021', 'Formation'].map((s, i) => L(s, i * 0.02))]
+  it('nom : Prénom et Nom allument la même ligne', () => {
+    expect(linesOf(cv, pages, undefined, 'firstName')).toEqual([[0, 0]])
+    expect(linesOf(cv, pages, undefined, 'lastName')).toEqual([[0, 0]])
+  })
+  it('entrée : champ exact, sinon la ligne de la même entrée ; rien si absent', () => {
+    expect(linesOf(cv, pages, exp.items[1].id, 'title')).toEqual([[0, 1]])
+    expect(linesOf(cv, pages, exp.items[1].id, 'place')).toEqual([[0, 1], [0, 2]]) // repli : toute l'entrée
+    expect(linesOf(cv, pages, 'inconnu', 'title')).toEqual([])
   })
 })

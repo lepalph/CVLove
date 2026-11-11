@@ -15,7 +15,7 @@ import { Toc } from './Toc'
 import { Guided, useGuidedProgress } from './Guided'
 import { isEmptyCV, modelName } from './lib'
 import { UndoBar } from './UndoBar'
-import { fieldEl, locate, type Target, type TextLine } from './previewMap'
+import { fieldEl, linesOf, locate, type Target, type TextLine } from './previewMap'
 import { sampleCV } from '../model/sample'
 
 export function Editor() {
@@ -108,7 +108,7 @@ export function Editor() {
           {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
         </div>
         <PreviewPane shown={tab === 'preview'} make={(signal) => previewLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design, signal)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
-          label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} pick={pick} settings={<PreviewSettings />} />
+          label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} pick={pick} lit={isEmptyCV(cv) ? undefined : (pages, rid, field) => linesOf(cv, pages, rid, field)} settings={<PreviewSettings />} />
       </main>
       <UndoBar hidden={tab === 'preview'} />
       <EdFooter doc={doc} />

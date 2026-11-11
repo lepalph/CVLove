@@ -115,3 +115,16 @@ test('mobile : depuis l’onglet Aperçu, un toucher bascule sur Modifier et met
   await expect.poll(() => focusedValue(page)).toBe('Développeuse front-end')
   await ctx.close()
 })
+
+test('sens inverse : le champ actif allume sa ligne dans l’aperçu, le blur l’éteint', async ({ page }) => {
+  await open(page)
+  const lit = page.locator('main div[role=img]').last().locator('[data-lit]')
+  await expect(page.getByText('Mise à jour de l’aperçu…')).toHaveCount(0)
+  await expect(lit).toHaveCount(0)
+  const field = page.locator('li[data-rid] input[value="Studio Pivoine"]')
+  await field.focus()
+  await expect(lit.first()).toBeVisible()
+  await expect(lit.first()).toHaveAttribute('aria-hidden', 'true')
+  await field.blur()
+  await expect(lit).toHaveCount(0)
+})

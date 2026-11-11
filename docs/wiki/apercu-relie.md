@@ -33,7 +33,7 @@ Le clic est un raccourci pour la souris et le doigt. La feuille garde `role="img
 - CV vide : l'aperçu montre l'exemple, rien n'est relié.
 - Le cadre de survol est en gris foncé fixe (`neutral-900/40`), pas en `ink` : la feuille reste blanche en thème sombre.
 - La description s'ouvre au début du champ, pas à la ligne cliquée (placer le curseur dans le `textarea` : plus tard si besoin).
-- Le sens inverse (champ actif → ligne allumée dans l'aperçu, Engelbart 2) n'est pas fait : même index, effort S, à faire ensuite.
+- 2026-11-11, sens inverse fait (champ actif → ligne allumée dans l'aperçu, Engelbart 2) : un écouteur `focusin`/`focusout` sur le document dans `PreviewPane` (rien dans `Form.tsx`) lit `data-rid` et `data-field` du champ actif, et `linesOf` (`previewMap.ts`) rejoue `locate` sur chaque ligne pour garder celles qui mènent à ce champ. Même cadre que le survol (`neutral-900/40`), posé en `aria-hidden` : rien n'est annoncé, la feuille reste `role="img"`. L'aperçu ne défile pas (la ligne peut être hors de vue). Prénom et Nom allument la même ligne ; sans correspondance exacte (Lieu, dans une ligne « Entreprise · Lieu | dates »), toute l'entrée s'allume. Mobile, onglet Aperçu caché et mode guidé : rien ne casse, l'allumage peut ne pas se voir. Test : `apercu-relie.spec.ts` (5e test) et `previewMap.test.ts`.
 
 ## Limites
 
