@@ -15,7 +15,7 @@ import { DEFAULT_DESIGN, visibleSections } from '../src/model/cv'
 import { letterLabels } from '../src/i18n/letter'
 import { formatDay, formatMonth } from '../src/model/dates'
 import { letterFromCV } from '../src/model/letter'
-import { SAMPLE_PROFILES, sampleCV } from '../src/model/sample'
+import { SAMPLE_PROFILES, sampleCV, withNewSections } from '../src/model/sample'
 import { FONT_PAIRS, LANGS, type CV, type Design, type Lang, type Letter } from '../src/model/types'
 import { startLoader } from './vite-load'
 
@@ -79,9 +79,9 @@ const photo = () => {
   return `data:image/png;base64,${c.toBuffer('image/png').toString('base64')}`
 }
 
-/** CV d'exemple + 12 expériences (une par mois : toutes les abréviations de mois passent par la police). */
+/** CV d'exemple + 12 expériences (une par mois : toutes les abréviations de mois passent par la police) + bénévolat, certifications, publications. */
 function longCV(lang: Lang): CV {
-  const cv = sampleCV(lang, 'dev')
+  const cv = withNewSections(sampleCV(lang, 'dev'))
   const exp = cv.sections.find((s) => s.kind === 'experience')!
   exp.items = Array.from({ length: 12 }, (_, i) => ({ ...exp.items[i % 2], id: `x${i}`, text: exp.items[i % 2].text.repeat(3), start: `20${10 + i}-${String(i + 1).padStart(2, '0')}`, end: i ? `20${11 + i}-${String(12 - i).padStart(2, '0')}` : '', current: i === 0 }))
   cv.personal.photo = photo()

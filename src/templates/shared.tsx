@@ -109,6 +109,18 @@ export function entryMeta(it: Item, cv: CV, labels: CVLabels) {
   }
 }
 
+/** Élément court d'une colonne latérale (certification) : titre en gras, puis « organisme · date ». `soft` : couleur de la 2e ligne. */
+export function SideEntry({ it, cv, labels, t, color, soft = color }: { it: Item; cv: CV; labels: CVLabels; t: Theme; color?: string; soft?: string }) {
+  const { period, sub } = entryMeta(it, cv, labels)
+  const line = [sub, period].filter(Boolean).join(' · ')
+  return (
+    <View wrap={false} style={{ marginTop: t.m(4) }}>
+      <Text style={{ fontWeight: 700, color }}>{it.title}</Text>
+      {!!line && <Text style={{ color: soft }}>{line}</Text>}
+    </View>
+  )
+}
+
 /**
  * Niveau 1-5 d’une compétence ou d’une langue, selon design.skillDisplay : barres, points ou mot.
  * `color` / `track` : trait plein / trait vide, à fournir sur un fond coloré. Rien si l'item n'a pas de niveau.

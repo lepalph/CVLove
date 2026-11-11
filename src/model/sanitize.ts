@@ -1,7 +1,7 @@
 import { DEFAULT_DESIGN, emptyCV, uid } from './cv'
 import { blankLetter } from './letter'
 import {
-  CEFR, FIELD_KINDS, FONT_PAIRS, LANGS, MARGINS, PAGE_SIZES, PHOTO_SHAPES, SECTION_KINDS, SKILL_DISPLAYS, cefrFromLevel,
+  CEFR, FIELD_KINDS, FONT_PAIRS, LANGS, MARGINS, PAGE_SIZES, PHOTO_SHAPES, SECTION_KINDS, ONE_DATE_KINDS, SKILL_DISPLAYS, cefrFromLevel,
   type CV, type Design, type Doc, type EditorMode, type Field, type Item, type Lang, type Letter, type Section,
 } from './types'
 
@@ -116,8 +116,11 @@ const cleanLanguage = (i: Item, raw: unknown): Item => {
 const cleanSection = (s: Obj): Section => ({
   id: str(s.id) || uid(), kind: s.kind as Section['kind'], title: str(s.title), visible: bool(s.visible, true),
   ...(s.collapsed === true ? { collapsed: true } : {}),
-  items: arr(s.items, MAX.items).filter(isObj).map((i) => (s.kind === 'languages' ? cleanLanguage(cleanItem(i), i) : cleanItem(i))),
+  items: arr(s.items, MAX.items).filter(isObj).map((i) => (s.kind === 'languages' ? cleanLanguage(cleanItem(i), i) : ONE_DATE_KINDS.includes(s.kind as Section['kind']) ? oneDate(cleanItem(i)) : cleanItem(i))),
 })
+
+/** Certifications et publications : le formulaire n'a ni fin, ni « en cours », ni lieu, ni description ; on ne garde rien qui s'imprimerait sans pouvoir se modifier. */
+const oneDate = (i: Item): Item => ({ ...i, place: '', end: '', current: false, text: '' })
 
 /** Un CV toujours valide : langue, champs, sections et items reconstruits un à un (les clés inconnues, dont `__proto__`, sont écartées). */
 export function sanitizeCV(d: unknown): CV {

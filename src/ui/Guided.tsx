@@ -5,7 +5,7 @@ import { guideLight } from '../i18n/guideLight'
 import { tips } from '../i18n/tips'
 import { ui } from '../i18n/ui'
 import { fullName, visibleSections } from '../model/cv'
-import type { SectionKind } from '../model/types'
+import { NEW_KINDS, SECTION_KINDS, type SectionKind } from '../model/types'
 import { useCvDoc, useStore } from '../store'
 import { getTemplate, templates } from '../templates'
 import { LANG_NAMES } from './bits'
@@ -20,8 +20,10 @@ const STEPS = ['model', 'identity', 'profile', 'experience', 'education', 'skill
 
 /** Sections qui remplissent une étape (les autres étapes comptent comme remplies dès qu'on les a passées par Suivant). */
 const FILLS: Partial<Record<(typeof STEPS)[number], SectionKind[]>> = {
-  profile: ['profile'], experience: ['experience'], education: ['education'], skills: ['skills', 'languages'], others: ['projects', 'interests', 'custom'],
+  profile: ['profile'], experience: ['experience'], education: ['education'], skills: ['skills', 'languages'], others: ['projects', 'interests', 'custom', ...NEW_KINDS],
 }
+/** Étape Autres sections : les nouveaux types n'y sont pas proposés (ajout depuis le mode complet), mais s'ils existent ils s'y modifient. */
+const OTHERS_ADD = SECTION_KINDS.filter((k) => !(NEW_KINDS as readonly string[]).includes(k))
 
 const fill = (text: string, n: number, total: number) => text.replace('{n}', String(n)).replace('{total}', String(total))
 
@@ -145,7 +147,7 @@ function StepBody({ step, onDownload, downloading, saved }: { step: (typeof STEP
     case 'experience': return <SectionsCard only={['experience']} add={['experience']} title={false} />
     case 'education': return <SectionsCard only={['education']} add={['education']} title={false} />
     case 'skills': return <SectionsCard only={['skills', 'languages']} add={['skills', 'languages']} title={false} />
-    case 'others': return <SectionsCard only={['projects', 'interests', 'custom']} title={false} />
+    case 'others': return <SectionsCard only={FILLS.others} add={OTHERS_ADD} title={false} />
     case 'design': return <><DesignSettings /><Finish onDownload={onDownload} downloading={downloading} saved={saved} /></>
   }
 }

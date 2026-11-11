@@ -78,7 +78,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
         </View>
         {visibleSections(cv).map((s) => {
           // Bloc court : insécable. Bloc d'entrées long : peut passer à la page suivante, titre porté par la 1re entrée (jamais seul en bas de page).
-          const split = ['experience', 'education', 'projects', 'custom'].includes(s.kind) && s.items.reduce((n, i) => n + i.text.length, 0) > 500
+          const split = ['experience', 'education', 'projects', 'volunteering', 'custom'].includes(s.kind) && s.items.reduce((n, i) => n + i.text.length, 0) > 500
           const title = (
             <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(12), color: accInk }}>
               {sectionTitle(s, labels)}

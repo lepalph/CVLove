@@ -2,9 +2,13 @@ export const LANGS = ['fr', 'en', 'es', 'de', 'it', 'pt', 'ar'] as const
 export type Lang = (typeof LANGS)[number]
 
 export const SECTION_KINDS = [
-  'profile', 'experience', 'education', 'skills', 'languages', 'projects', 'interests', 'custom',
+  'profile', 'experience', 'education', 'skills', 'languages', 'projects', 'volunteering', 'certifications', 'publications', 'interests', 'custom',
 ] as const
 export type SectionKind = (typeof SECTION_KINDS)[number]
+/** Types ajoutés le 2026-11-11 (docs/wiki/nouvelles-sections.md) : ajoutables depuis « Ajouter une section », jamais proposés par le mode guidé. */
+export const NEW_KINDS = ['volunteering', 'certifications', 'publications'] as const
+/** Une seule date (gardée dans `start`), sans lieu ni description : titre, organisme ou revue, date. */
+export const ONE_DATE_KINDS: readonly SectionKind[] = ['certifications', 'publications']
 
 export const FIELD_KINDS = ['birthDate', 'location', 'email', 'phone', 'website', 'custom'] as const
 export type FieldKind = (typeof FIELD_KINDS)[number]
@@ -26,7 +30,8 @@ export const cefrFromLevel = (n: number): Cefr => (['A1', 'A2', 'B1', 'C1', 'C2'
 /**
  * Item générique, interprété selon le type de section :
  * - profile : text
- * - experience / education / projects / custom : title, subtitle, place, dates, text
+ * - experience / education / projects / volunteering / custom : title, subtitle, place, dates, text
+ * - certifications / publications : title, subtitle (organisme, revue), start (date unique)
  * - skills : title = groupe, text = liste ; languages : title = langue, text = niveau libre (« C1 »)
  * - interests : title
  * `level` (1 à 5, absent ou 0 = aucun) : niveau chiffré des compétences ; `cefr` : niveau des langues, affiché selon `design.skillDisplay`.

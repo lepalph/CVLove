@@ -1,7 +1,8 @@
 import { emptyCV, newField, uid } from './cv'
 import { letterFromCV } from './letter'
 import { firstContent, retailContent } from './sampleProfiles'
-import type { CV, Item, Lang, Letter, SectionKind } from './types'
+import { newSections } from '../i18n/newSections'
+import { NEW_KINDS, type CV, type Item, type Lang, type Letter, type SectionKind } from './types'
 
 /** Données d'exemple, fictives. Le contenu est celui de la langue (fr, en, ar) ; les autres langues reprennent l'anglais. */
 type Row = Partial<Omit<Item, 'id'>>
@@ -79,6 +80,12 @@ const ar: Content = {
 }
 
 const contents: Partial<Record<Lang, Content>> = { fr, en, ar }
+
+/** Contrôles (check:pdf, tests) : ajoute bénévolat, certifications et publications, remplis avec les exemples gris de la langue du CV. */
+export const withNewSections = (cv: CV): CV => ({
+  ...cv,
+  sections: [...cv.sections, ...NEW_KINDS.map((kind) => ({ id: uid(), kind, title: '', visible: true, items: [it({ ...newSections[cv.lang].ph[kind], start: '2021-03' })] }))],
+})
 
 export type SampleProfile = 'retail' | 'first' | 'dev'
 export const SAMPLE_PROFILES: readonly SampleProfile[] = ['retail', 'first', 'dev']

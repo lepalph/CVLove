@@ -12,7 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Grille', en: 'Grid', es: 'Cuadrícula', de: 'Raster', it: 'Griglia', pt: 'Grelha', ar: 'شبكة' },
   category: 'moderne',
   columns: 2,
-  apart: ['education', 'skills', 'languages', 'interests'],
+  apart: ['education', 'skills', 'languages', 'certifications', 'interests'],
   photo: false,
   styles: [
     { name: 'Filet', variant: 'rule', preset: { accent: '#1d4ed8', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'dots' } },

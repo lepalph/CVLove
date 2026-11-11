@@ -1,4 +1,5 @@
 import type { Lang, SectionKind } from '../model/types'
+import { newSections } from './newSections'
 
 /** Libellés de l'INTERFACE (indépendants de la langue du CV). */
 export interface UI {
@@ -127,8 +128,9 @@ const fr: UI = {
   bulletsHint: 'Une ligne par point ; commencez par « - » pour une puce.',
   previewBusy: 'Mise à jour de l’aperçu…',
   previewError: 'Impossible de générer le PDF.',
-  kinds: { profile: 'Profil', experience: 'Expérience', education: 'Formation', skills: 'Compétences', languages: 'Langues', projects: 'Projets', interests: 'Centres d’intérêt', custom: 'Section libre' },
+  kinds: { ...newSections.fr.kinds, profile: 'Profil', experience: 'Expérience', education: 'Formation', skills: 'Compétences', languages: 'Langues', projects: 'Projets', interests: 'Centres d’intérêt', custom: 'Section libre' },
   kindFields: {
+    ...newSections.fr.fields,
     profile: ['', '', 'Texte'], experience: ['Poste', 'Entreprise', 'Description'], education: ['Diplôme', 'École', 'Description'],
     skills: ['Catégorie', '', 'Compétences'], languages: ['Langue', '', 'Niveau en toutes lettres'], projects: ['Projet', 'Lien ou rôle', 'Description'],
     interests: ['Centre d’intérêt', '', ''], custom: ['Titre', 'Sous-titre', 'Description'],
@@ -195,8 +197,9 @@ const en: UI = {
   bulletsHint: 'One line per point; start with “- ” for a bullet.',
   previewBusy: 'Updating preview…',
   previewError: 'Could not generate the PDF.',
-  kinds: { profile: 'Profile', experience: 'Experience', education: 'Education', skills: 'Skills', languages: 'Languages', projects: 'Projects', interests: 'Interests', custom: 'Custom section' },
+  kinds: { ...newSections.en.kinds, profile: 'Profile', experience: 'Experience', education: 'Education', skills: 'Skills', languages: 'Languages', projects: 'Projects', interests: 'Interests', custom: 'Custom section' },
   kindFields: {
+    ...newSections.en.fields,
     profile: ['', '', 'Text'], experience: ['Job title', 'Company', 'Description'], education: ['Degree', 'School', 'Description'],
     skills: ['Category', '', 'Skills'], languages: ['Language', '', 'Level in words'], projects: ['Project', 'Link or role', 'Description'],
     interests: ['Interest', '', ''], custom: ['Title', 'Subtitle', 'Description'],
@@ -263,8 +266,9 @@ const es: UI = {
   bulletsHint: 'Una línea por punto; empieza con «- » para una viñeta.',
   previewBusy: 'Actualizando la vista previa…',
   previewError: 'No se pudo generar el PDF.',
-  kinds: { profile: 'Perfil', experience: 'Experiencia', education: 'Formación', skills: 'Competencias', languages: 'Idiomas', projects: 'Proyectos', interests: 'Intereses', custom: 'Sección libre' },
+  kinds: { ...newSections.es.kinds, profile: 'Perfil', experience: 'Experiencia', education: 'Formación', skills: 'Competencias', languages: 'Idiomas', projects: 'Proyectos', interests: 'Intereses', custom: 'Sección libre' },
   kindFields: {
+    ...newSections.es.fields,
     profile: ['', '', 'Texto'], experience: ['Puesto', 'Empresa', 'Descripción'], education: ['Titulación', 'Centro', 'Descripción'],
     skills: ['Categoría', '', 'Competencias'], languages: ['Idioma', '', 'Nivel en palabras'], projects: ['Proyecto', 'Enlace o función', 'Descripción'],
     interests: ['Interés', '', ''], custom: ['Título', 'Subtítulo', 'Descripción'],
@@ -331,8 +335,9 @@ const de: UI = {
   bulletsHint: 'Eine Zeile pro Punkt; mit „- “ beginnen für einen Aufzählungspunkt.',
   previewBusy: 'Vorschau wird aktualisiert…',
   previewError: 'Das PDF konnte nicht erstellt werden.',
-  kinds: { profile: 'Profil', experience: 'Berufserfahrung', education: 'Ausbildung', skills: 'Kenntnisse', languages: 'Sprachen', projects: 'Projekte', interests: 'Interessen', custom: 'Freier Abschnitt' },
+  kinds: { ...newSections.de.kinds, profile: 'Profil', experience: 'Berufserfahrung', education: 'Ausbildung', skills: 'Kenntnisse', languages: 'Sprachen', projects: 'Projekte', interests: 'Interessen', custom: 'Freier Abschnitt' },
   kindFields: {
+    ...newSections.de.fields,
     profile: ['', '', 'Text'], experience: ['Position', 'Unternehmen', 'Beschreibung'], education: ['Abschluss', 'Einrichtung', 'Beschreibung'],
     skills: ['Kategorie', '', 'Kenntnisse'], languages: ['Sprache', '', 'Niveau in Worten'], projects: ['Projekt', 'Link oder Rolle', 'Beschreibung'],
     interests: ['Interesse', '', ''], custom: ['Titel', 'Untertitel', 'Beschreibung'],
@@ -399,8 +404,9 @@ const it: UI = {
   bulletsHint: 'Una riga per punto; inizia con «- » per un elenco puntato.',
   previewBusy: 'Aggiornamento dell’anteprima…',
   previewError: 'Impossibile generare il PDF.',
-  kinds: { profile: 'Profilo', experience: 'Esperienza', education: 'Formazione', skills: 'Competenze', languages: 'Lingue', projects: 'Progetti', interests: 'Interessi', custom: 'Sezione libera' },
+  kinds: { ...newSections.it.kinds, profile: 'Profilo', experience: 'Esperienza', education: 'Formazione', skills: 'Competenze', languages: 'Lingue', projects: 'Progetti', interests: 'Interessi', custom: 'Sezione libera' },
   kindFields: {
+    ...newSections.it.fields,
     profile: ['', '', 'Testo'], experience: ['Ruolo', 'Azienda', 'Descrizione'], education: ['Titolo di studio', 'Istituto', 'Descrizione'],
     skills: ['Categoria', '', 'Competenze'], languages: ['Lingua', '', 'Livello in parole'], projects: ['Progetto', 'Link o ruolo', 'Descrizione'],
     interests: ['Interesse', '', ''], custom: ['Titolo', 'Sottotitolo', 'Descrizione'],
@@ -467,8 +473,9 @@ const pt: UI = {
   bulletsHint: 'Uma linha por ponto; comece com «- » para um marcador.',
   previewBusy: 'A atualizar a pré-visualização…',
   previewError: 'Não foi possível gerar o PDF.',
-  kinds: { profile: 'Perfil', experience: 'Experiência', education: 'Formação', skills: 'Competências', languages: 'Idiomas', projects: 'Projetos', interests: 'Interesses', custom: 'Secção livre' },
+  kinds: { ...newSections.pt.kinds, profile: 'Perfil', experience: 'Experiência', education: 'Formação', skills: 'Competências', languages: 'Idiomas', projects: 'Projetos', interests: 'Interesses', custom: 'Secção livre' },
   kindFields: {
+    ...newSections.pt.fields,
     profile: ['', '', 'Texto'], experience: ['Cargo', 'Empresa', 'Descrição'], education: ['Curso', 'Instituição', 'Descrição'],
     skills: ['Categoria', '', 'Competências'], languages: ['Idioma', '', 'Nível por extenso'], projects: ['Projeto', 'Ligação ou função', 'Descrição'],
     interests: ['Interesse', '', ''], custom: ['Título', 'Subtítulo', 'Descrição'],
@@ -535,8 +542,9 @@ const ar: UI = {
   bulletsHint: 'سطر لكل نقطة؛ ابدأ بـ «- » لإنشاء نقطة.',
   previewBusy: 'جارٍ تحديث المعاينة…',
   previewError: 'تعذّر إنشاء ملف PDF.',
-  kinds: { profile: 'نبذة شخصية', experience: 'الخبرة', education: 'التعليم', skills: 'المهارات', languages: 'اللغات', projects: 'المشاريع', interests: 'الاهتمامات', custom: 'قسم حر' },
+  kinds: { ...newSections.ar.kinds, profile: 'نبذة شخصية', experience: 'الخبرة', education: 'التعليم', skills: 'المهارات', languages: 'اللغات', projects: 'المشاريع', interests: 'الاهتمامات', custom: 'قسم حر' },
   kindFields: {
+    ...newSections.ar.fields,
     profile: ['', '', 'النص'], experience: ['المسمى الوظيفي', 'الشركة', 'الوصف'], education: ['الشهادة', 'المؤسسة', 'الوصف'],
     skills: ['الفئة', '', 'المهارات'], languages: ['اللغة', '', 'المستوى بالكلمات'], projects: ['المشروع', 'رابط أو دور', 'الوصف'],
     interests: ['الاهتمام', '', ''], custom: ['العنوان', 'عنوان فرعي', 'الوصف'],

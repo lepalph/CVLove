@@ -12,7 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Compact', en: 'Compact', es: 'Compacto', de: 'Kompakt', it: 'Compatto', pt: 'Compacto', ar: 'مضغوط' },
   category: 'simple',
   columns: 2,
-  apart: ['skills', 'languages', 'interests', 'projects', 'custom'],
+  apart: ['skills', 'languages', 'interests', 'projects', 'certifications', 'publications', 'custom'],
   photo: false,
   styles: [
     { name: 'Dense', variant: 'plain', preset: { accent: '#374151', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'text' } },

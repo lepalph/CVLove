@@ -15,10 +15,11 @@ import {
 } from '../model/cv'
 import { MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
 import { sampleCV } from '../model/sample'
-import { CEFR, LANGS, SECTION_KINDS, type CVDoc, type Lang, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
+import { CEFR, LANGS, ONE_DATE_KINDS, SECTION_KINDS, type CVDoc, type Lang, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
 import { deleteWith, useCvDoc, useStore } from '../store'
 import { undoText } from '../i18n/undo'
 import { placeholders } from '../i18n/placeholders'
+import { newSections } from '../i18n/newSections'
 import { Field, Icon, LangSelect, useWide } from './bits'
 import { useClearAll } from './ExampleTools'
 import { getTemplate } from '../templates'
@@ -30,7 +31,7 @@ import { LetterLink } from './LetterLink'
 const usePlaceholders = () => {
   const lang = useCvDoc().data.lang
   const ph = useMemo(() => sampleCV(lang), [lang])
-  return useMemo(() => ({ ...ph, personal: { ...ph.personal, title: placeholders[lang].jobTitle }, neutral: placeholders[lang].kinds }), [ph, lang])
+  return useMemo(() => ({ ...ph, personal: { ...ph.personal, title: placeholders[lang].jobTitle }, neutral: { ...newSections[lang].ph, ...placeholders[lang].kinds } }), [ph, lang])
 }
 /** Exemple neutre du premier élément ; les suivants (et les sections sans exemple neutre) reprennent le CV d'exemple. */
 const phItem = (ph: ReturnType<typeof usePlaceholders>, kind: SectionKind, k: number): Partial<Item> => {
@@ -281,7 +282,8 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
   const tv = v2[uiLang]
   const ph = usePlaceholders()
   const [ti, su, tx] = t.kindFields[s.kind]
-  const dated = s.kind === 'experience' || s.kind === 'education' || s.kind === 'projects' || s.kind === 'custom'
+  const dated = s.kind === 'experience' || s.kind === 'education' || s.kind === 'projects' || s.kind === 'volunteering' || s.kind === 'custom'
+  const oneDate = ONE_DATE_KINDS.includes(s.kind) // certifications, publications : une seule date, gardée dans `start`
   const multi = s.kind !== 'profile'
   const onSec = (verb: string) => verb + t.onSection.replace('{x}', sectionTitle(s, labels))
   const sx = sectionsText[uiLang]
@@ -337,6 +339,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
                   </Field>
                 )}
                 {su && <Field label={su}><input className="inp" dir="auto" data-field="subtitle" placeholder={eg.subtitle} value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
+                {oneDate && <DatePick field="start" legend={newSections[uiLang].date} lang={uiLang} value={it.start} onChange={(start) => set({ start })} />}
                 {dated && <Field label={t.place}><input className="inp" dir="auto" data-field="place" placeholder={eg.place} value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
                 {dated && (
                   <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">

@@ -2,7 +2,7 @@ import { Document, Image, Page, View } from '@react-pdf/renderer'
 import { sectionTitle } from '../../i18n/labels'
 import { fullName, visibleSections } from '../../model/cv'
 import type { Item, Lang, Section } from '../../model/types'
-import { Entry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
+import { Entry, SideEntry, SectionFlow, SkillLevel, Text, contactList, entryMeta, fixBidi, ink, tint } from '../shared'
 import { makeTheme } from '../theme'
 import type { LayoutMeta, LayoutProps } from '../types'
 
@@ -12,7 +12,7 @@ export const meta: LayoutMeta = {
   name: { fr: 'Moderne', en: 'Modern', es: 'Moderno', de: 'Modern', it: 'Moderno', pt: 'Moderno', ar: 'عصري' },
   category: 'moderne',
   columns: 2,
-  apart: ['skills', 'languages', 'interests'],
+  apart: ['skills', 'languages', 'certifications', 'interests'],
   photo: true,
   styles: [
     { name: 'Bandeau', variant: 'band', preset: { accent: '#c2410c', fontPair: 'inter', photoShape: 'circle', skillDisplay: 'text' } },
@@ -75,6 +75,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
   const sideBody = (s: Section) =>
     s.kind === 'interests'
       ? s.items.filter((i) => i.title.trim()).map((i) => <Text key={i.id} style={{ marginTop: 2, color: fg }}>{i.title}</Text>)
+      : s.kind === 'certifications' ? s.items.map((it) => <SideEntry key={it.id} it={it} cv={cv} labels={labels} t={t} color={fg} />)
       : s.items.map((it) => (
           <View key={it.id} wrap={false} style={{ marginTop: t.m(4) }}>
             <Text style={{ fontWeight: 700, color: fg }}>{it.title}</Text>
