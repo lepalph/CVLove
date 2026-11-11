@@ -297,6 +297,7 @@ export function EdFooter({ doc }: { doc: Doc }) {
         <summary className="flex min-h-10 cursor-pointer list-none items-center underline underline-offset-4 [&::-webkit-details-marker]:hidden">{x.netHow}</summary>
         <p className="absolute bottom-full start-[var(--m)] z-30 mb-1 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-line bg-panel p-4 text-sm leading-relaxed text-ink shadow-sheet">{x.netHelp}</p>
       </details>
+      <a href="#/mentions" className="shrink-0 underline underline-offset-4">{x.legalLink}</a>
       <SavedMark doc={doc} />
     </footer>
   )

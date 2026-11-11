@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 import { isEmptyCV, modelName } from './lib'
 import { fullName } from '../model/cv'
 import { cvLabels } from '../i18n/labels'
+import { extra } from '../i18n/extra'
 import { GITHUB_URL, home } from '../i18n/home'
 import { formatDate, shell } from '../i18n/shell'
 import { ui } from '../i18n/ui'
@@ -195,6 +196,7 @@ export function Home() {
           <span>{t.license}</span>
           <a href={GITHUB_URL} className="inline-flex min-h-11 items-center underline underline-offset-4">{t.source}</a>
           <span>{t.noCookie}</span>
+          <a href="#/mentions" className="inline-flex min-h-11 items-center underline underline-offset-4">{extra[uiLang].legalLink}</a>
         </div>
       </footer>
     </>
