@@ -10,6 +10,7 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { cvLabels } from '../src/i18n/labels'
+import { cefrNames } from '../src/i18n/cefr'
 import { DEFAULT_DESIGN, visibleSections } from '../src/model/cv'
 import { letterLabels } from '../src/i18n/letter'
 import { formatDay, formatMonth } from '../src/model/dates'
@@ -124,7 +125,8 @@ type Opts = { minPages?: number; png?: string; pngPages?: number; size?: [number
 /** Rend un CV puis le contrôle : titres de sections, « Présent », un mois, le prénom. */
 async function check(cv: CV, design: Design, o: Opts = {}) {
   const labels = cvLabels[cv.lang]
-  const expected = [...visibleSections(cv).map((s) => labels.sections[s.kind]), labels.present, formatMonth('2021-03', cv.lang), cv.personal.firstName]
+  const cefr = design.skillDisplay === 'text' ? visibleSections(cv).flatMap((s) => s.items.flatMap((i) => (i.cefr ? [cefrNames[cv.lang][i.cefr]] : []))) : [] // niveaux de langue imprimés en toutes lettres
+  const expected = [...cefr, ...visibleSections(cv).map((s) => labels.sections[s.kind]), labels.present, formatMonth('2021-03', cv.lang), cv.personal.firstName]
   return verify(await renderPdf(cv, design, fonts), expected, cv.lang, o)
 }
 

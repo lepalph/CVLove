@@ -18,13 +18,18 @@ export interface Field {
   visible: boolean
 }
 
+export const CEFR = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'native'] as const
+export type Cefr = (typeof CEFR)[number]
+/** Ancienne échelle 1 à 5 des langues vers le CECRL (le 5 devient C2 : « langue maternelle » ne se devine pas). */
+export const cefrFromLevel = (n: number): Cefr => (['A1', 'A2', 'B1', 'C1', 'C2'] as const)[n - 1]
+
 /**
  * Item générique, interprété selon le type de section :
  * - profile : text
  * - experience / education / projects / custom : title, subtitle, place, dates, text
  * - skills : title = groupe, text = liste ; languages : title = langue, text = niveau libre (« C1 »)
  * - interests : title
- * `level` (1 à 5, absent ou 0 = aucun) : niveau chiffré des compétences et des langues, affiché selon `design.skillDisplay`.
+ * `level` (1 à 5, absent ou 0 = aucun) : niveau chiffré des compétences ; `cefr` : niveau des langues, affiché selon `design.skillDisplay`.
  * Dates au format AAAA-MM. Tout est du contenu saisi : jamais traduit.
  */
 export interface Item {
@@ -37,6 +42,8 @@ export interface Item {
   current: boolean
   text: string
   level?: number
+  /** Langues seulement : niveau du CECRL (remplace `level`). */
+  cefr?: Cefr
 }
 
 export interface Section {

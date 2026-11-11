@@ -1,7 +1,7 @@
 import { DEFAULT_DESIGN, emptyCV, uid } from './cv'
 import { blankLetter } from './letter'
 import {
-  FIELD_KINDS, FONT_PAIRS, LANGS, MARGINS, PAGE_SIZES, PHOTO_SHAPES, SECTION_KINDS, SKILL_DISPLAYS,
+  CEFR, FIELD_KINDS, FONT_PAIRS, LANGS, MARGINS, PAGE_SIZES, PHOTO_SHAPES, SECTION_KINDS, SKILL_DISPLAYS, cefrFromLevel,
   type CV, type Design, type Doc, type EditorMode, type Field, type Item, type Lang, type Letter, type Section,
 } from './types'
 
@@ -104,10 +104,18 @@ const cleanItem = (i: unknown): Item => {
   }
 }
 
+/** Langues : `cefr` valide gardé, sinon l'ancien `level` 1 à 5 est migré ; `level` n'existe plus pour les langues. */
+const cleanLanguage = (i: Item, raw: unknown): Item => {
+  const { level, ...rest } = i
+  const c = obj(raw).cefr
+  const cefr = CEFR.find((x) => x === c) ?? (level ? cefrFromLevel(level) : undefined)
+  return cefr ? { ...rest, cefr } : rest
+}
+
 const cleanSection = (s: Obj): Section => ({
   id: str(s.id) || uid(), kind: s.kind as Section['kind'], title: str(s.title), visible: bool(s.visible, true),
   ...(s.collapsed === true ? { collapsed: true } : {}),
-  items: arr(s.items, MAX.items).filter(isObj).map(cleanItem),
+  items: arr(s.items, MAX.items).filter(isObj).map((i) => (s.kind === 'languages' ? cleanLanguage(cleanItem(i), i) : cleanItem(i))),
 })
 
 /** Un CV toujours valide : langue, champs, sections et items reconstruits un à un (les clés inconnues, dont `__proto__`, sont écartées). */

@@ -3,6 +3,7 @@ import { formatMonthInput, parseMonthInput } from '../model/dates'
 import { datesText } from '../i18n/dates'
 import { cvLabels, sectionTitle } from '../i18n/labels'
 import { extra } from '../i18n/extra'
+import { cefrFieldLabel, cefrText, photoHidden } from '../i18n/cefr'
 import { sectionsText, sectionSummary } from '../i18n/sections'
 import { useSectionDrag } from './sectionDrag'
 import { ui, type UI } from '../i18n/ui'
@@ -14,7 +15,7 @@ import {
 } from '../model/cv'
 import { MAX_PHOTO_FILE_BYTES } from '../model/sanitize'
 import { sampleCV } from '../model/sample'
-import { LANGS, SECTION_KINDS, type CVDoc, type Lang, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
+import { CEFR, LANGS, SECTION_KINDS, type CVDoc, type Lang, type FieldKind, type Item, type Section, type SectionKind } from '../model/types'
 import { deleteWith, useCvDoc, useStore } from '../store'
 import { undoText } from '../i18n/undo'
 import { placeholders } from '../i18n/placeholders'
@@ -104,10 +105,11 @@ export function DesignCard() {
 }
 
 export function PersonalCard() {
-  const cv = useCvDoc().data
+  const { data: cv, design } = useCvDoc()
   const ph = usePlaceholders()
   const update = useStore((s) => s.update)
-  const t = ui[useStore((s) => s.uiLang)]
+  const uiLang = useStore((s) => s.uiLang)
+  const t = ui[uiLang]
   const fileRef = useRef<HTMLInputElement>(null)
   const photoBtn = useRef<HTMLButtonElement>(null)
   const [photoMsg, setPhotoMsg] = useState('')
@@ -130,10 +132,10 @@ export function PersonalCard() {
   return (
       <Card title={t.personal}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={t.firstName}><input className="inp" placeholder={ph.personal.firstName} value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
-          <Field label={t.lastName}><input className="inp" placeholder={ph.personal.lastName} value={cv.personal.lastName} onChange={(e) => setPersonal({ lastName: e.target.value })} autoComplete="family-name" /></Field>
+          <Field label={t.firstName}><input className="inp" dir="auto" placeholder={ph.personal.firstName} value={cv.personal.firstName} onChange={(e) => setPersonal({ firstName: e.target.value })} autoComplete="given-name" /></Field>
+          <Field label={t.lastName}><input className="inp" dir="auto" placeholder={ph.personal.lastName} value={cv.personal.lastName} onChange={(e) => setPersonal({ lastName: e.target.value })} autoComplete="family-name" /></Field>
         </div>
-        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" placeholder={ph.personal.title} value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} autoComplete="organization-title" /></Field></div>
+        <div className="mt-3"><Field label={t.jobTitle}><input className="inp" dir="auto" placeholder={ph.personal.title} value={cv.personal.title} onChange={(e) => setPersonal({ title: e.target.value })} autoComplete="organization-title" /></Field></div>
 
         <div className="mt-3 flex items-center gap-3">
           {cv.personal.photo && <img src={cv.personal.photo} alt="" className="size-14 rounded-full object-cover" />}
@@ -142,16 +144,17 @@ export function PersonalCard() {
           {cv.personal.photo && <button type="button" className="btn btn-ghost" onClick={() => { deleteWith(undoText[useStore.getState().uiLang].photo, 'photo', (c) => ({ ...c, personal: { ...c.personal, photo: '' } })); requestAnimationFrame(() => photoBtn.current?.focus()) }}>{t.removePhoto}</button>}
         </div>
         {photoMsg && <p role="alert" className="mt-2 text-sm text-danger">{photoMsg}</p>}
+        {!getTemplate(design.templateId).photo && <p className="mt-2 text-sm text-muted">{photoHidden[uiLang]}</p>}
 
         <ul className="mt-4 flex flex-col gap-3">
           {cv.personal.fields.map((f) => (
             <li key={f.id} data-rid={f.id} className={`flex items-end gap-1 ${f.visible ? '' : 'opacity-60'}`}>
               {f.kind === 'custom' && (
-                <div className="w-2/5 max-w-48 shrink-0"><Field label={t.customLabel}><input className="inp" value={f.label ?? ''} onChange={(e) => update((c) => patchField(c, f.id, { label: e.target.value }))} /></Field></div>
+                <div className="w-2/5 max-w-48 shrink-0"><Field label={t.customLabel}><input className="inp" dir="auto" value={f.label ?? ''} onChange={(e) => update((c) => patchField(c, f.id, { label: e.target.value }))} /></Field></div>
               )}
               <div className="min-w-0 flex-1">
                 <Field label={fieldLabel(f.kind)}>
-                  <input className="inp" placeholder={ph.personal.fields.find((x) => x.kind === f.kind)?.value} type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
+                  <input className="inp" dir="auto" placeholder={ph.personal.fields.find((x) => x.kind === f.kind)?.value} type={f.kind === 'birthDate' ? 'date' : f.kind === 'email' ? 'email' : f.kind === 'phone' ? 'tel' : 'text'}
                     value={f.value} onChange={(e) => update((c) => patchField(c, f.id, { value: e.target.value }))} autoComplete={AUTOCOMPLETE[f.kind]} />
                 </Field>
               </div>
@@ -272,7 +275,8 @@ export const Card = ({ title, action, children }: { title?: string; action?: Rea
 
 export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, solo, dragging }: { s: Section; i: number; n: number; t: UI; std: string; grab?: (e: PointerEvent<HTMLElement>) => void; dy?: number; onMoved?: (to: number) => void; note?: string; /** Mode guidé : ni repli ni rangement inutile. */ lean?: boolean; /** Seule section affichée : pas de ↑↓. */ solo?: boolean; /** Un glisser est en cours : tout se replie à l'écran, sans toucher à `collapsed`. */ dragging?: boolean }) {
   const update = useStore((st) => st.update)
-  const labels = cvLabels[useCvDoc().data.lang]
+  const cvLang = useCvDoc().data.lang
+  const labels = cvLabels[cvLang]
   const uiLang = useStore((st) => st.uiLang)
   const tv = v2[uiLang]
   const ph = usePlaceholders()
@@ -304,7 +308,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
       <div id={`sec-${s.id}`} hidden={shut}>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
-          <input className="inp" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
+          <input className="inp" dir="auto" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
         </Field>
       </div>
       <ul className="mt-3 flex flex-col gap-3">
@@ -315,17 +319,25 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
           return (
             <li key={it.id} data-rid={it.id} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
               <div className="grid gap-3 sm:grid-cols-2">
-                {ti && <Field label={ti}><input className="inp" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
-                {(s.kind === 'skills' || s.kind === 'languages') && (
-                  <Field label={s.kind === 'languages' ? t.levelOf5 : tv.level}>
+                {ti && <Field label={ti}><input className="inp" dir="auto" placeholder={eg.title} value={it.title} onChange={(e) => set({ title: e.target.value })} /></Field>}
+                {s.kind === 'skills' && (
+                  <Field label={tv.level}>
                     <select className="inp" value={it.level ?? 0} onChange={(e) => set({ level: +e.target.value })}>
                       <option value={0}>{tv.noLevel}</option>
                       {labels.levels.map((l, n) => <option key={n} value={n + 1}>{n + 1} · {l}</option>)}
                     </select>
                   </Field>
                 )}
-                {su && <Field label={su}><input className="inp" placeholder={eg.subtitle} value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
-                {dated && <Field label={t.place}><input className="inp" placeholder={eg.place} value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
+                {s.kind === 'languages' && (
+                  <Field label={cefrFieldLabel[uiLang]}>
+                    <select className="inp" value={it.cefr ?? ''} onChange={(e) => set({ cefr: (e.target.value || undefined) as Item['cefr'] })}>
+                      <option value="">{tv.noLevel}</option>
+                      {CEFR.map((c) => <option key={c} value={c}>{cefrText(c, cvLang)}</option>)}
+                    </select>
+                  </Field>
+                )}
+                {su && <Field label={su}><input className="inp" dir="auto" placeholder={eg.subtitle} value={it.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>}
+                {dated && <Field label={t.place}><input className="inp" dir="auto" placeholder={eg.place} value={it.place} onChange={(e) => set({ place: e.target.value })} /></Field>}
                 {dated && (
                   <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
                     <DatePick legend={t.start} lang={uiLang} value={it.start} onChange={(start) => set({ start })} />
@@ -340,7 +352,7 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, 
               {tx && (
                 <div className="mt-3">
                   <Field label={tx} hint={dated ? t.bulletsHint : undefined}>
-                    <textarea className="inp" rows={dated || s.kind === 'profile' ? 4 : 2} placeholder={eg.text} value={it.text} onChange={(e) => set({ text: e.target.value })} />
+                    <textarea className="inp" dir="auto" rows={dated || s.kind === 'profile' ? 4 : 2} placeholder={eg.text} value={it.text} onChange={(e) => set({ text: e.target.value })} />
                   </Field>
                 </div>
               )}

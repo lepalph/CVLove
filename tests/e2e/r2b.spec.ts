@@ -49,7 +49,7 @@ test('champ personnalisé et niveaux des langues : libellés distincts', async (
   await expect(page.getByLabel('Valeur', { exact: true }).last()).toBeVisible()
   await page.getByRole('button', { name: 'Vente et accueil' }).click()
   await expect(page.getByLabel('Niveau en toutes lettres').first()).toBeVisible()
-  await expect(page.getByLabel('Niveau sur 5').first()).toBeVisible()
+  await expect(page.getByLabel('Niveau (CECRL)').first()).toBeVisible()
 })
 
 test('lettre assortie : trame dans le corps et exemple encore proposé', async ({ page }) => {
@@ -60,4 +60,14 @@ test('lettre assortie : trame dans le corps et exemple encore proposé', async (
   await expect(page.getByRole('group', { name: 'Remplir avec un exemple :' })).toBeVisible()
   await page.getByRole('button', { name: 'Complet' }).click()
   await expect(page.getByLabel('Corps de la lettre')).toHaveAttribute('placeholder', /Pourquoi cette entreprise/)
+})
+
+test('photo : avertissement près du bouton quand le modèle ne l\'affiche pas ; champs libres en dir="auto"', async ({ page }) => {
+  await openFull(page)
+  const warn = page.getByText("Ce modèle n'affiche pas la photo")
+  await page.getByRole('button', { name: /^Grille/ }).first().click()
+  await expect(warn).toBeVisible()
+  await page.getByRole('button', { name: /^Classique/ }).first().click()
+  await expect(warn).toHaveCount(0)
+  await expect(page.getByLabel('Prénom')).toHaveAttribute('dir', 'auto')
 })

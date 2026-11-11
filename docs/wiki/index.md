@@ -32,3 +32,4 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Panel P1](panel-p1.md) — 2026-11-11 : sections repliées pendant le glisser, guidé allégé, sommaire collant du mode complet.
 - Pages : [TRIZ](panel-triz.md), [Edison](panel-edison.md) (mesures), [Engelbart](panel-engelbart.md), [Rams](panel-rams.md) ; captures dans `captures/`.
 - [Stockage et liste des documents](stockage-documents.md) — 2026-11-11 : exemple marqué, storage.persist(), tri, état vide, libellés.
+- [Langues, dir="auto" et photo](langues-photo.md) — 2026-11-11 : niveaux CECRL pour les langues, migration, sens de saisie, avertissement photo.

@@ -37,7 +37,6 @@ export interface UI {
   phone: string
   website: string
   customLabel: string
-  levelOf5: string
   /** Fin du nom accessible d'un bouton de section / d'élément : verbe + ceci, {x} = nom. */
   onSection: string
   onItem: string
@@ -104,7 +103,6 @@ const fr: UI = {
   phone: 'Téléphone',
   website: 'Site web',
   customLabel: 'Nom du champ',
-  levelOf5: 'Niveau sur 5',
   onSection: ' la section {x}',
   onItem: ' : {x}',
   customValue: 'Valeur',
@@ -173,7 +171,6 @@ const en: UI = {
   phone: 'Phone',
   website: 'Website',
   customLabel: 'Field name',
-  levelOf5: 'Level out of 5',
   onSection: ' the {x} section',
   onItem: ': {x}',
   customValue: 'Value',
@@ -242,7 +239,6 @@ const es: UI = {
   phone: 'Teléfono',
   website: 'Sitio web',
   customLabel: 'Nombre del campo',
-  levelOf5: 'Nivel sobre 5',
   onSection: ' la sección {x}',
   onItem: ': {x}',
   customValue: 'Valor',
@@ -311,7 +307,6 @@ const de: UI = {
   phone: 'Telefon',
   website: 'Website',
   customLabel: 'Feldname',
-  levelOf5: 'Niveau von 5',
   onSection: ': Abschnitt {x}',
   onItem: ': {x}',
   customValue: 'Wert',
@@ -380,7 +375,6 @@ const it: UI = {
   phone: 'Telefono',
   website: 'Sito web',
   customLabel: 'Nome del campo',
-  levelOf5: 'Livello su 5',
   onSection: ': sezione {x}',
   onItem: ': {x}',
   customValue: 'Valore',
@@ -449,7 +443,6 @@ const pt: UI = {
   phone: 'Telefone',
   website: 'Site',
   customLabel: 'Nome do campo',
-  levelOf5: 'Nível em 5',
   onSection: ' a secção {x}',
   onItem: ': {x}',
   customValue: 'Valor',
@@ -518,7 +511,6 @@ const ar: UI = {
   phone: 'الهاتف',
   website: 'الموقع الإلكتروني',
   customLabel: 'اسم الحقل',
-  levelOf5: 'المستوى من 5',
   onSection: ': قسم {x}',
   onItem: ': {x}',
   customValue: 'القيمة',

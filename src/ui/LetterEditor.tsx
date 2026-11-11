@@ -88,10 +88,10 @@ const useLetter = () => {
 
 /** `auto` : valeur d'`autocomplete` (1.3.5), seulement pour les champs qui portent sur la personne qui écrit. */
 const Text = ({ label, value, onChange, type = 'text', auto }: { label: string; value: string; onChange: (v: string) => void; type?: string; auto?: string }) => (
-  <Field label={label}><input className="inp" type={type} value={value} autoComplete={auto} onChange={(e) => onChange(e.target.value)} /></Field>
+  <Field label={label}><input className="inp" dir="auto" type={type} value={value} autoComplete={auto} onChange={(e) => onChange(e.target.value)} /></Field>
 )
 const Area = ({ label, value, onChange, rows, hint, placeholder, auto }: { label: string; value: string; onChange: (v: string) => void; rows: number; hint?: string; placeholder?: string; auto?: string }) => (
-  <Field label={label} hint={hint}><textarea className="inp" rows={rows} placeholder={placeholder} value={value} autoComplete={auto} onChange={(e) => onChange(e.target.value)} /></Field>
+  <Field label={label} hint={hint}><textarea className="inp" dir="auto" rows={rows} placeholder={placeholder} value={value} autoComplete={auto} onChange={(e) => onChange(e.target.value)} /></Field>
 )
 
 function LangCard() {
