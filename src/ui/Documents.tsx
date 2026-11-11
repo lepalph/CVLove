@@ -1,21 +1,17 @@
 import { useRef, useState } from 'react'
+import { documentsList } from '../i18n/documentsList'
 import { extra } from '../i18n/extra'
 import { formatDate, importedText, shell } from '../i18n/shell'
 import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
-import { fullName } from '../model/cv'
 import { MAX_IMPORT_BYTES } from '../model/sanitize'
 import { exportDocs } from '../model/documents'
 import { LANGS, type Doc } from '../model/types'
 import { isBlankDraft, useStore, wipeStorage } from '../store'
+import { byRecent, shownName } from './docList'
+import { isExampleCV } from './lib'
 import { LANG_NAMES, LangSelect, Logo, SaveBanner, SkipLink } from './bits'
-
-/** Nom affiché : un nom automatique (« CV », « CV 2 », « Lettre ») est complété par la personne, pour distinguer plusieurs documents. */
-const shownName = (d: Doc) => {
-  const who = d.kind === 'cv' ? fullName(d.data) : d.data.sender.name.trim()
-  return who && /^(CV|Lettre)( \d+)?$/.test(d.name) ? `${d.name} · ${who}` : d.name
-}
 
 const download = (name: string, json: string) => {
   const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
@@ -41,7 +37,8 @@ export function Documents() {
   const { documents, activeId, uiLang, setUiLang, openDoc, createCV, createLetter, duplicate, rename, remove } = useStore()
   const t = v2[uiLang]
   const L = letterUi[uiLang]
-  const cvs = documents.filter((d) => d.kind === 'cv' && !isBlankDraft(d))
+  const listed = byRecent(documents.filter((d) => !isBlankDraft(d))) // brouillon vierge : rien à lister
+  const cvs = listed.filter((d) => d.kind === 'cv')
   const [asking, setAsking] = useState(false)
   const [source, setSource] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
@@ -125,8 +122,9 @@ export function Documents() {
         <p role="status" className="mt-3 text-sm text-muted empty:hidden">{said}</p>
         {err && <p role="alert" className="mt-3 text-sm text-danger">{err}</p>}
 
-        <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs}>
-          {documents.filter((d) => !isBlankDraft(d)).map((d) => ( // brouillon vierge : rien à lister
+        {!listed.length && <p className="mt-8 max-w-[34rem] text-pretty text-muted">{documentsList[uiLang].empty}</p>}
+        <ul className="mt-8 list-none border-t border-line p-0" aria-label={t.docs} hidden={!listed.length}>
+          {listed.map((d) => (
             <li key={d.id} data-doc={d.name} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line py-4">
               <div className="min-w-[12rem] flex-1">
                 {editing === d.id ? (
@@ -137,10 +135,11 @@ export function Documents() {
                       if (e.key === 'Escape') { finishRename(d.id, null); focusRename(d.id) }
                     }} />
                 ) : (
-                  <p className="text-lg font-semibold tracking-tight">{shownName(d)}</p>
+                  <p className="text-lg font-semibold tracking-tight">{shownName(d, uiLang)}</p>
                 )}
                 <p className="mt-0.5 font-mono text-xs text-muted">
                   {d.kind === 'cv' ? t.kindCV : t.kindLetter} · {LANG_NAMES[d.data.lang]} · {t.updated} {formatDate(d.updatedAt, uiLang)}
+                  {d.kind === 'cv' && isExampleCV(d.data) && <> · <span className="text-ink">{documentsList[uiLang].example}</span></>}
                   {d.id === activeId && <> · <span className="text-ink">{t.active}</span></>}
                 </p>
               </div>

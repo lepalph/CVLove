@@ -80,6 +80,14 @@ let booted = false // hydratation initiale faite (voir `merge`)
 let rewrite = false // la relecture a gardé une version locale plus récente : à réécrire
 let lastWrite = 0 // heure de la dernière écriture réussie : un document modifié après n'est pas encore dans le stockage
 let timer: ReturnType<typeof setTimeout>
+let persistAsked = false
+
+/** Une seule demande de stockage durable (iOS purge après 7 jours), au premier vrai document écrit ; refus ou API absente : on continue. */
+const askPersist = () => {
+  if (persistAsked || !useStore.getState().documents.some((d) => !isBlankDraft(d))) return
+  persistAsked = true
+  void Promise.resolve(safe(() => navigator.storage.persist())).catch(() => {})
+}
 
 /** Écrit tout de suite l'état en attente (appelé après 500 ms de calme, à la fermeture de la page et au démarrage). */
 export function flushSave() {
@@ -90,6 +98,7 @@ export function flushSave() {
     localStorage.setItem(name, value)
     pending = null
     lastWrite = Date.now()
+    askPersist()
     localStorage.removeItem('cvlove:v1') // migré : le doublon (photo comprise) ne doit pas remplir le quota
     useSaveStatus.setState({ error: null, savedAt: lastWrite }) // savedAt : sert au témoin « Enregistré » (SavedMark), rien d'autre
   } catch (e) {
