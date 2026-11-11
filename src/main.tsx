@@ -25,8 +25,11 @@ function RouteShell() {
       last = next
       // Attend que App ait monté la nouvelle page (chargée à la demande : le titre peut arriver après quelques essais).
       const before = document.querySelector('h1') // l'ancien titre reste dans la page tant que le chunk de la nouvelle n'est pas monté
+      const was = document.activeElement
       let tries = 0
       const focus = () => {
+        const now = document.activeElement
+        if (now && now !== was && now !== document.body && document.contains(now)) return // l'utilisateur a déjà agi sur la nouvelle page : ne pas lui reprendre le focus
         const h = document.querySelector<HTMLElement>('h1')
         if ((!h || h === before) && ++tries < 40) return void setTimeout(focus, 50)
         const t = h ?? document.getElementById('main')

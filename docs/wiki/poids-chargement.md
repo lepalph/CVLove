@@ -66,3 +66,8 @@ Le dossier de build, lui, grossit : 3,8 Mo gzip (104 fichiers) contre 3,3 Mo, à
 - `src/main.tsx` : le focus sur le titre après un changement de page attend désormais le titre de la nouvelle page (chunk chargé à la demande), au lieu de se poser sur l'ancien.
 - `boutons` A06 et `lot-c` attendaient un canvas sur l'accueil : le hero est maintenant une image, ils acceptent `img`.
 - Suites lancées à la fin : tsc, vitest 230/230, `check:pdf` 535/535, e2e cvlove, boutons, mentions, pages, lot-c : 232 passés (plus filtres-design, p0s, lettre-a11y, apercu-relie, r2a passés avant les derniers correctifs).
+
+## Reprise par le chief of staff (2026-11-11, après `lepalph/CVLove@1cfa0f9`)
+- En CI (pull_request), deux tests de Mes documents ont échoué : le focus de « Renommer » perdu (r2a) et le focus de I01 (boutons). En local, le défaut se reproduisait 2 fois sur 16.
+- Cause : avec les pages chargées à la demande, le focus du titre est retenté toutes les 50 ms jusqu'à ce que la page soit montée. Si l'utilisateur agit entre-temps (clic sur Renommer), ce focus tardif lui prend le champ.
+- Correctif (`src/main.tsx`) : le titre ne prend le focus que si le focus n'a pas bougé depuis le changement de page. 36 passages sur 36, suite complète 239 passés (1 ignoré).
