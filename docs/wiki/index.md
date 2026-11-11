@@ -5,6 +5,7 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 ## Environnement
 - [Builds parallèles](environnement-builds-paralleles.md) — `OUT_DIR` + `E2E_PORT` : un build et un port par agent.
 - [Règles des agents](regles-agents.md) — modèles, fichiers disjoints, commits, langues.
+- [Autopilote du 11 novembre](autopilote-2026-11-11.md) — 2026-11-11 : plan de nuit en vagues, agents, ce qui est écarté.
 
 ## Vérifications
 - [Vérification de la reprise](verification-reprise.md) — 2026-11-02 : 7 affirmations fausses ou dépassées, e2e 50/51 à cause de serve-dist (corrigé).
