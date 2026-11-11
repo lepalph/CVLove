@@ -84,8 +84,9 @@ export function Editor() {
       <main id="main" tabIndex={-1} className="grid min-h-0 flex-1 outline-none lg:grid-cols-[minmax(26rem,32rem)_1fr]">
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>
           <MobileTools doc={doc} mode={mode} onMode={setEditorMode} />
+          {mode !== 'guided' && <Toc />}
           <ExampleTools />
-          {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <><Toc /><Form /></>}
+          {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
         </div>
         <PreviewPane shown={tab === 'preview'} make={() => renderLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
           label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />

@@ -8,14 +8,15 @@ export function Toc() {
   const uiLang = useStore((s) => s.uiLang)
   const labels = cvLabels[cv.lang]
   if (cv.sections.length < 2) return null
+  // sticky : le panneau a 2rem de padding, d'où -top-8 pour coller à son bord
   const go = (id: string) => {
     const li = document.querySelector<HTMLElement>(`li[data-rid="${id}"]`)
     li?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
     li?.querySelector<HTMLElement>('h3')?.focus({ preventScroll: true })
   }
   return (
-    <nav data-toc aria-label={tocLabel[uiLang]} className="sticky top-0 z-10 -mx-8 -mt-8 mb-6 hidden border-b border-line bg-panel px-8 py-2 lg:block">
-      <ul className="m-0 flex list-none gap-1 overflow-x-auto p-0">
+    <nav data-toc aria-label={tocLabel[uiLang]} className="sticky -top-8 z-10 -mx-8 -mt-8 mb-6 hidden border-b border-line bg-panel px-8 py-2 lg:block">
+      <ul className="m-0 flex list-none flex-wrap gap-1 p-0">
         {cv.sections.map((s) => (
           <li key={s.id} className="shrink-0">
             <button type="button" className="min-h-9 whitespace-nowrap rounded-ctl border border-transparent px-2.5 text-start text-[13px] text-muted transition-colors duration-150 hover:border-edge hover:text-ink" onClick={() => go(s.id)}>{sectionTitle(s, labels)}</button>

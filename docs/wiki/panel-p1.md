@@ -23,3 +23,8 @@ Décidé à partir de [Rams 1](panel-rams.md) et de la synthèse, qui a écarté
 
 ## Non vérifié
 Vrai téléphone et vrai tactile (émulé), glisser de sections très hautes avec défilement sur un long CV, rendu du sommaire à plus de 10 sections.
+
+## Reprise par le chief of staff (2026-11-11, après `lepalph/CVLove@3ce1500`)
+- Captures à 1440 px : le sommaire mordait sur l'encart d'exemple, il collait 2rem sous le bord du panneau (le collant se cale sur la boîte de contenu, donc après le padding), et les sections au-delà de la 4e étaient cachées dans un défilement horizontal sans indice.
+- Corrigé : le sommaire passe avant l'encart d'exemple, `-top-8` pour coller au bord, retour à la ligne au lieu du défilement, `scroll-mt-28` sur les sections.
+- Tests : les glissers font défiler la poignée au centre (en haut, elle passait sous le sommaire), et le test du sommaire attend la fin du défilement doux.

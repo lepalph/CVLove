@@ -15,7 +15,7 @@ async function open(page: Page) {
 
 /** Glisse la poignée n vers le milieu de la section cible (souris, ou toucher via CDP : vrais pointer events pointerType=touch). */
 async function dragTo(page: Page, from: number, to: number, how: 'mouse' | 'touch', name?: RegExp) {
-  await handle(page, from, name).evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await handle(page, from, name).evaluate((el) => el.scrollIntoView({ block: 'center' })) // pas sous le sommaire collant
   const b = (await handle(page, from, name).boundingBox())!
   const x = b.x + b.width / 2, y0 = b.y + b.height / 2
   // Les sections se replient dès la prise : la cible se mesure après. On vise le bas de la cible (début de la suivante) : il faut dépasser le milieu de la section survolée.
@@ -63,7 +63,7 @@ test('glisser au toucher', async ({ page }) => {
 test('Échap annule le glisser', async ({ page }) => {
   await open(page)
   const before = await titles(page)
-  await handle(page, 0).evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await handle(page, 0).evaluate((el) => el.scrollIntoView({ block: 'center' })) // pas sous le sommaire collant
   const b = (await handle(page, 0).boundingBox())!
   await page.mouse.move(b.x + 20, b.y + 20)
   await page.mouse.down()
@@ -112,7 +112,7 @@ test('arabe (RTL) : poignée, repli et glisser fonctionnent', async ({ page }) =
   const before = await titles(page)
   await expect(h.first()).toBeVisible()
   await expect((await h.first().boundingBox())!.height).toBeGreaterThanOrEqual(44)
-  await h.first().evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await h.first().evaluate((el) => el.scrollIntoView({ block: 'center' })) // pas sous le sommaire collant
   await dragTo(page, 0, 1, 'mouse', /^اسحب للنقل/)
   expect(await titles(page)).toEqual([before[1], before[0], ...before.slice(2)])
   const c = page.locator('button[aria-expanded=true]').first()
@@ -129,7 +129,7 @@ test('mobile 390 px : pas de débordement horizontal', async ({ page }) => {
 test('défilement automatique près du bord du panneau', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 700 })
   await open(page)
-  await handle(page, 0).evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await handle(page, 0).evaluate((el) => el.scrollIntoView({ block: 'center' })) // pas sous le sommaire collant
   const panel = page.locator('div.overflow-y-auto').first()
   const top0 = await panel.evaluate((e) => e.scrollTop)
   const b = (await handle(page, 0).boundingBox())!

@@ -23,7 +23,7 @@ test('glisser : les sections se replient, puis retrouvent leur état au lâcher 
   const field = page.getByLabel('Titre de la section')
   const n = await field.count()
   await expect(field.locator('visible=true')).toHaveCount(n - 1)
-  await handle(page, 0).evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await handle(page, 0).evaluate((el) => el.scrollIntoView({ block: 'center' })) // pas sous le sommaire collant
   const b = (await handle(page, 0).boundingBox())!
   await page.mouse.move(b.x + 20, b.y + 20)
   await page.mouse.down()
@@ -65,7 +65,8 @@ test('sommaire collant : un clic mène à la section ; caché sur mobile', async
   const h = page.getByRole('heading', { level: 3, name })
   await expect(h).toBeFocused()
   const pane = page.locator('div.overflow-y-auto').first()
-  expect(await pane.evaluate((e) => e.scrollTop)).toBeGreaterThan(300)
+  await expect.poll(() => pane.evaluate((e) => e.scrollTop)).toBeGreaterThan(300) // défilement doux : attendre qu'il soit fini
+  await page.waitForTimeout(400)
   const tb = (await toc.boundingBox())!, hb = (await h.boundingBox())!
   expect(hb.y).toBeGreaterThanOrEqual(tb.y + tb.height - 1) // pas sous le sommaire
   await expect(toc).toBeVisible() // collant
