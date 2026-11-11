@@ -10,6 +10,7 @@ import { SaveBanner, SkipLink, useDownloadAlert } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
 import { ExampleTools } from './ExampleTools'
 import { Form } from './Form'
+import { Toc } from './Toc'
 import { Guided, useGuidedProgress } from './Guided'
 import { isEmptyCV, modelName } from './lib'
 import { UndoBar } from './UndoBar'
@@ -84,7 +85,7 @@ export function Editor() {
         <div className={`${tab === 'edit' ? 'block' : 'hidden'} overflow-y-auto border-line bg-panel p-[var(--m)] lg:block lg:border-e lg:p-8`}>
           <MobileTools doc={doc} mode={mode} onMode={setEditorMode} />
           <ExampleTools />
-          {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
+          {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <><Toc /><Form /></>}
         </div>
         <PreviewPane shown={tab === 'preview'} make={() => renderLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
           label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />

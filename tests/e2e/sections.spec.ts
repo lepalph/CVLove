@@ -17,13 +17,17 @@ async function open(page: Page) {
 async function dragTo(page: Page, from: number, to: number, how: 'mouse' | 'touch', name?: RegExp) {
   await handle(page, from, name).evaluate((el) => el.scrollIntoView({ block: 'start' }))
   const b = (await handle(page, from, name).boundingBox())!
-  // viser le bas de la section cible (début de la suivante) : il faut dépasser le milieu de la section survolée
-  const target = (await page.locator('h3[tabindex="-1"]').nth(to + 1).boundingBox())!
   const x = b.x + b.width / 2, y0 = b.y + b.height / 2
-  const y1 = to > from ? target.y - 5 : (await page.locator('h3[tabindex="-1"]').nth(to).boundingBox())!.y - 10
+  // Les sections se replient dès la prise : la cible se mesure après. On vise le bas de la cible (début de la suivante) : il faut dépasser le milieu de la section survolée.
+  const aim = async () => {
+    const h = page.locator('h3[tabindex="-1"]')
+    return to > from ? (await h.nth(to + 1).boundingBox())!.y - 5 : (await h.nth(to).boundingBox())!.y - 10
+  }
   if (how === 'mouse') {
     await page.mouse.move(x, y0)
     await page.mouse.down()
+    await page.waitForTimeout(300)
+    const y1 = await aim()
     await page.mouse.move(x, (y0 + y1) / 2, { steps: 5 })
     await page.mouse.move(x, y1, { steps: 5 })
     await expect(page.locator('[aria-hidden=true].bg-ink')).toBeVisible() // barre d'insertion pendant le glisser
@@ -33,6 +37,9 @@ async function dragTo(page: Page, from: number, to: number, how: 'mouse' | 'touc
   const cdp = await page.context().newCDPSession(page)
   const touch = (type: string, y: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] })
   await touch('touchStart', y0)
+  await touch('touchMove', y0 + 4)
+  await page.waitForTimeout(300)
+  const y1 = await aim()
   for (let k = 1; k <= 8; k++) await touch('touchMove', y0 + ((y1 - y0) * k) / 8)
   await touch('touchEnd', y1)
 }

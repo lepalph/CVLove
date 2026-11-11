@@ -207,7 +207,7 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
   const ids = shown.map(({ s }) => s.id)
   const anyFolded = shown.some(({ s }) => s.collapsed)
   return (
-      <Card title={title === false ? undefined : (title ?? t.sections)} action={shown.length > 1 && (anyFolded
+      <Card title={title === false ? undefined : (title ?? t.sections)} action={!only && shown.length > 1 && (anyFolded
         ? <button type="button" className="btn btn-ghost text-sm text-muted" onClick={() => update((c) => setCollapsed(c, false, ids))}>{sx.expandAll}</button>
         : <button type="button" className="btn btn-ghost text-sm text-muted" onClick={() => update((c) => setCollapsed(c, true, ids))}>{sx.collapseAll}</button>)}>
         <p role="status" className="sr-only">{said}</p>
@@ -215,7 +215,7 @@ export function SectionsCard({ only, add = SECTION_KINDS, title }: { only?: read
         <div className="relative">
           <ul ref={list} className="flex flex-col gap-6">
             {shown.map(({ s, i }) => (
-              <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} grab={(e) => start(e, s.id)} dy={drag?.id === s.id ? drag.dy : undefined} onMoved={(to) => moved(s.id, to)} note={apart && note?.id === s.id ? note.text : undefined} />
+              <SectionEditor key={s.id} s={s} i={i} n={cv.sections.length} t={t} std={labels.sections[s.kind]} grab={shown.length > 1 ? (e) => start(e, s.id) : undefined} lean={!!only} solo={shown.length < 2} dragging={!!drag} dy={drag?.id === s.id ? drag.dy : undefined} onMoved={(to) => moved(s.id, to)} note={apart && note?.id === s.id ? note.text : undefined} />
             ))}
           </ul>
           {drag && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-20 h-0.5 -translate-y-px bg-ink" style={{ top: drag.bar }} />}
@@ -270,7 +270,7 @@ export const Card = ({ title, action, children }: { title?: string; action?: Rea
   </section>
 )
 
-export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note }: { s: Section; i: number; n: number; t: UI; std: string; grab?: (e: PointerEvent<HTMLElement>) => void; dy?: number; onMoved?: (to: number) => void; note?: string }) {
+export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note, lean, solo, dragging }: { s: Section; i: number; n: number; t: UI; std: string; grab?: (e: PointerEvent<HTMLElement>) => void; dy?: number; onMoved?: (to: number) => void; note?: string; /** Mode guidé : ni repli ni rangement inutile. */ lean?: boolean; /** Seule section affichée : pas de ↑↓. */ solo?: boolean; /** Un glisser est en cours : tout se replie à l'écran, sans toucher à `collapsed`. */ dragging?: boolean }) {
   const update = useStore((st) => st.update)
   const labels = cvLabels[useCvDoc().data.lang]
   const uiLang = useStore((st) => st.uiLang)
@@ -281,26 +281,27 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note }: { s:
   const multi = s.kind !== 'profile'
   const onSec = (verb: string) => verb + t.onSection.replace('{x}', sectionTitle(s, labels))
   const sx = sectionsText[uiLang]
-  const folded = !!s.collapsed
+  const folded = !lean && !!s.collapsed // en guidé, une section repliée en mode complet reste ouverte : pas de chevron pour la rouvrir
+  const shut = folded || !!dragging
   const toggle = () => update((c) => patchSection(c, s.id, { collapsed: folded ? undefined : true }))
   return (
-    <li data-rid={s.id} className={`border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-30 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
+    <li data-rid={s.id} className={`scroll-mt-16 border-t border-line pt-4 first:border-t-0 first:pt-0 ${s.visible ? '' : 'opacity-70'} ${dy === undefined ? '' : 'relative z-30 bg-panel shadow-lg'}`} style={dy === undefined ? undefined : { transform: `translateY(${dy}px)` }}>
       <div className="flex items-center gap-1">
         {/* Titre et résumé : un clic replie ou déplie (raccourci souris) ; le clavier passe par le chevron. */}
-        <div className="min-w-0 flex-1 cursor-pointer py-1" onClick={toggle}>
+        <div className={`min-w-0 flex-1 py-1 ${lean ? '' : 'cursor-pointer'}`} onClick={lean ? undefined : toggle}>
           <h3 tabIndex={-1} className="text-base font-semibold">
             {sectionTitle(s, labels)}
             {!s.visible && <span className="ms-2 text-sm font-normal text-muted">({t.hidden})</span>}
           </h3>
-          {folded && <p className="m-0 truncate text-sm text-muted">{sectionSummary(s, uiLang)}</p>}
+          {shut && <p className="m-0 truncate text-sm text-muted">{sectionSummary(s, uiLang)}</p>}
         </div>
         {grab && <button type="button" className="btn btn-ghost cursor-grab touch-none px-0 text-muted active:cursor-grabbing" aria-label={onSec(sx.drag)} title={onSec(sx.drag)} onPointerDown={grab}><svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className="fill-current">{[4, 8, 12].flatMap((y) => [6, 10].map((x) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.4" />))}</svg></button>}
-        <button type="button" className="btn btn-ghost px-0" aria-expanded={!folded} aria-controls={`sec-${s.id}`} aria-label={onSec(folded ? sx.expand : sx.collapse)} title={onSec(folded ? sx.expand : sx.collapse)} onClick={toggle}>
+        {!lean && <button type="button" className="btn btn-ghost px-0" aria-expanded={!folded} aria-controls={`sec-${s.id}`} aria-label={onSec(folded ? sx.expand : sx.collapse)} title={onSec(folded ? sx.expand : sx.collapse)} onClick={toggle}>
           <svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20" className={`fill-none stroke-current stroke-2 transition-transform duration-150 motion-reduce:transition-none ${folded ? 'rtl:rotate-180' : 'rotate-90'}`}><path d="m6 3.5 4.5 4.5L6 12.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
+        </button>}
       </div>
       {note && <p aria-hidden="true" className="m-0 text-sm text-muted">{note}</p>}
-      <div id={`sec-${s.id}`} hidden={folded}>
+      <div id={`sec-${s.id}`} hidden={shut}>
       <div className="mt-2">
         <Field label={t.sectionTitle} hint={`${t.sectionTitleHint} ${quote(uiLang, std)}`}>
           <input className="inp" placeholder={std} value={s.title} onChange={(e) => update((c) => patchSection(c, s.id, { title: e.target.value }))} />
@@ -357,8 +358,10 @@ export function SectionEditor({ s, i, n, t, std, grab, dy, onMoved, note }: { s:
       {multi && <button type="button" data-add="item" className="btn mt-3" onClick={() => update((c) => addItem(c, s.id))}>+ {t.addItem}</button>}
       {/* Actions de la section : seulement section ouverte, en bas, pour que la ligne repliée reste propre (voir docs/wiki/audit-ux-editeur.md). */}
       <div className="mt-4 flex flex-wrap items-center justify-end gap-1">
-        <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => { update((c) => moveSection(c, s.id, -1)); onMoved?.(i - 1) })} disabled={i === 0}>↑</Icon>
-        <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => { update((c) => moveSection(c, s.id, 1)); onMoved?.(i + 1) })} disabled={i === n - 1}>↓</Icon>
+        {!solo && <>
+          <Icon label={onSec(t.up)} onClick={(e) => moveThenFocus(e, () => { update((c) => moveSection(c, s.id, -1)); onMoved?.(i - 1) })} disabled={i === 0}>↑</Icon>
+          <Icon label={onSec(t.down)} onClick={(e) => moveThenFocus(e, () => { update((c) => moveSection(c, s.id, 1)); onMoved?.(i + 1) })} disabled={i === n - 1}>↓</Icon>
+        </>}
         <button type="button" className="btn btn-ghost" aria-label={onSec(s.visible ? t.hide : t.show)} onClick={() => update((c) => patchSection(c, s.id, { visible: !s.visible }))}>{s.visible ? t.hide : t.show}</button>
         <button type="button" className="btn btn-ghost text-danger" aria-label={onSec(t.remove)} onClick={(e) => removeThenFocus(e, 'section', () => deleteWith(sectionTitle(s, labels), s.id, (c) => removeSection(c, s.id)))}>{t.remove}</button>
       </div>

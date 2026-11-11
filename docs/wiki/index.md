@@ -27,5 +27,6 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 ## Panel d'inventeurs
 - [Brief du panel](panel-brief.md) — question, contraintes et méthode des 4 inventeurs.
 - [Synthèse du panel](panel-synthese.md) — 2026-11-02 : P0 annuler, date en une saisie, 3 corrections S ; P1 aperçu relié au formulaire.
+- [Panel P1](panel-p1.md) — 2026-11-11 : sections repliées pendant le glisser, guidé allégé, sommaire collant du mode complet.
 - Pages : [TRIZ](panel-triz.md), [Edison](panel-edison.md) (mesures), [Engelbart](panel-engelbart.md), [Rams](panel-rams.md) ; captures dans `captures/`.
 - [Stockage et liste des documents](stockage-documents.md) — 2026-11-11 : exemple marqué, storage.persist(), tri, état vide, libellés.
