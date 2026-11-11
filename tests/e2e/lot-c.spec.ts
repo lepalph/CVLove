@@ -26,7 +26,7 @@ test('parcours complet sous CSP : aucune violation ni erreur console', async ({ 
   expect(head.headers()['content-security-policy']).toContain("frame-ancestors 'none'")
 
   await page.goto(origin + '/')
-  await expect(page.locator('canvas').first()).toBeAttached({ timeout: 30_000 }) // catalogue / aperçu
+  await expect(page.locator('figure img').first()).toBeVisible({ timeout: 30_000 }) // hero : image WebP pré-rendue (img-src 'self')
   await page.goto(origin + '/#/editeur')
   await page.getByRole('button', { name: 'Complet' }).click()
   await expect(page.locator('canvas').first()).toBeAttached({ timeout: 30_000 })

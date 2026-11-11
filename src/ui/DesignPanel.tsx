@@ -89,7 +89,7 @@ export function ModelGallery({ tall, only }: { tall?: boolean; only?: string[] }
             <li key={m.id}>
               <button type="button" aria-pressed={on} aria-label={name} tabIndex={m.id === stop ? 0 : -1} onClick={() => updateDesign({ ...m.preset, templateId: m.id })}
                 className="group flex w-full flex-col gap-1.5 rounded-[4px] bg-transparent p-0 text-start">
-                <SamplePage lang={cv.lang} templateId={m.id} custom={design.custom}
+                <SamplePage lang={cv.lang} templateId={m.id} custom={design.custom} afterPreview
                   className="!shadow-none outline outline-1 -outline-offset-1 outline-edge transition-shadow duration-150 group-hover:outline-faint group-aria-pressed:!outline-2 group-aria-pressed:outline-ink" />
                 <span className={`text-xs leading-tight ${on ? 'font-semibold text-ink' : 'text-muted'}`}>{name}</span>
               </button>

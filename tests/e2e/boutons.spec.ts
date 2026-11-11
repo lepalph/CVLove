@@ -193,9 +193,10 @@ for (const vp of VPS) {
       const group = page.getByRole('group', { name: home.fr.demoLabel })
       const btns = group.getByRole('button')
       await expect(btns).toHaveCount(4)
-      await expect(group.locator('xpath=..').locator('canvas').first()).toBeAttached({ timeout: 25_000 })
+      // Le hero affiche l'image WebP pré-rendue au build (docs/wiki/poids-chargement.md) ; sans elle (dev), un canvas.
+      await expect(group.locator('xpath=..').locator('img, canvas').first()).toBeAttached({ timeout: 25_000 })
       // PdfCanvas remplace ses canvas à chaque rendu : on lit l'image depuis le conteneur, stable, en une seule évaluation.
-      const shot = () => group.locator('xpath=..').evaluate((el) => el.querySelector('canvas')?.toDataURL() ?? '')
+      const shot = () => group.locator('xpath=..').evaluate((el) => el.querySelector('img')?.getAttribute('src') ?? el.querySelector('canvas')?.toDataURL() ?? '')
       let prev = await shot()
       for (let i = 1; i < 4; i++) {
         await btns.nth(i).click()

@@ -13,13 +13,13 @@ import { layouts, templates } from '../templates'
 import { GithubIcon, LangSelect, Logo, SkipLink } from './bits'
 import { useModelFilter } from './DesignPanel'
 import { guidedStart } from './Guided'
+import { HOME_LAYOUTS } from './homeLayouts'
 import { SamplePage } from './SamplePage'
 
 const H2 = 'text-balance text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.04em] sm:text-[2rem]'
 const SECTION = 'py-14 sm:py-20'
 const EDITOR = '#/editeur'
 // La démo du hero garde les 4 mises en page d'origine (légende « quatre mises en page ») ; le catalogue en dessous liste tout le registre.
-const HOME_LAYOUTS = ['classique', 'moderne', 'minimal', 'creatif']
 const homeTemplates = layouts.filter((l) => HOME_LAYOUTS.includes(l.layoutId))
 
 export function Home() {

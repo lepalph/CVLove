@@ -23,12 +23,17 @@ function RouteShell() {
       const next = readRoute()
       if (next === last) return
       last = next
-      // Attend que App ait monté la nouvelle page.
-      requestAnimationFrame(() => setTimeout(() => {
-        const h = document.querySelector<HTMLElement>('h1') ?? document.getElementById('main')
-        h?.setAttribute('tabindex', '-1')
-        h?.focus({ preventScroll: true })
-      }, 0))
+      // Attend que App ait monté la nouvelle page (chargée à la demande : le titre peut arriver après quelques essais).
+      const before = document.querySelector('h1') // l'ancien titre reste dans la page tant que le chunk de la nouvelle n'est pas monté
+      let tries = 0
+      const focus = () => {
+        const h = document.querySelector<HTMLElement>('h1')
+        if ((!h || h === before) && ++tries < 40) return void setTimeout(focus, 50)
+        const t = h ?? document.getElementById('main')
+        t?.setAttribute('tabindex', '-1')
+        t?.focus({ preventScroll: true })
+      }
+      requestAnimationFrame(() => setTimeout(focus, 0))
     }
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)

@@ -39,3 +39,4 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Tenir sur 1 page](tenir-une-page.md) — 2026-11-11 : option Design `fitPage` (marges, interligne, texte à 0,9) pour les 36 modèles, visible dès qu'un CV déborde.
 - [Guidé allégé](guide-allege.md) — 2026-11-11 : étape Modèle à 6 vignettes + « Voir les 36 », étapes Design et Télécharger fusionnées.
 - [Réglages dans l'aperçu mobile](reglages-apercu-mobile.md) — 2026-11-11 : tiroir « Réglages » (modèle, couleur, police, taille, 1 page) sous l'aperçu, sous 1024 px.
+- [Poids et chargement](poids-chargement.md) — 2026-11-11 : mesures avant/après, hero pré-rendu en WebP au build, polices en sous-ensembles, vignettes de l'éditeur après l'aperçu, React.lazy.

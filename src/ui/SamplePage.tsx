@@ -3,8 +3,10 @@ import { DEFAULT_DESIGN } from '../model/cv'
 import { sampleCV } from '../model/sample'
 import type { Design, Lang } from '../model/types'
 import { renderLazy } from '../pdf/lazy'
+import { usePreviewPages } from '../pdf/pageCount'
 import { PdfCanvas } from '../pdf/PdfCanvas'
 import { getTemplate } from '../templates'
+import { HOME_LAYOUTS } from './homeLayouts'
 import { SAMPLE_PHOTO } from './samplePhoto'
 
 /** PDF d'exemple mis en cache (hero, grille, vignettes de l'éditeur ne fabriquent chacun qu'une fois), LRU : au-delà de MAX, la plus ancienne est jetée. */
@@ -53,10 +55,10 @@ const sampleBytes = (lang: Lang, templateId: string, custom: Design['custom'], s
 /**
  * Feuille A4 réelle (rendu PDF de l'exemple avec le preset du modèle). Le cadre a ses dimensions finales dès le premier rendu,
  * avec un squelette dessous ; le PDF n'est fabriqué que pour une vignette à l'écran (ou presque), en file, et le canvas est
- * libéré quand elle en sort. `eager` : tout de suite, hors file. Un changement de couleur ou de police attend 400 ms de calme.
+ * libéré quand elle en sort. `eager` : tout de suite, hors file. `afterPreview` : après l'aperçu du CV (éditeur). Un changement de couleur ou de police attend 400 ms de calme.
  * Décorative : le nom du modèle est porté par le bouton ou le texte autour.
  */
-export function SamplePage({ lang, templateId, custom, eager, className = '' }: { lang: Lang; templateId: string; custom?: Design['custom']; eager?: boolean; className?: string }) {
+export function SamplePage({ lang, templateId, custom, eager, afterPreview, className = '' }: { lang: Lang; templateId: string; custom?: Design['custom']; eager?: boolean; afterPreview?: boolean; className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const [near, setNear] = useState(!!eager)
   useEffect(() => {
@@ -71,10 +73,27 @@ export function SamplePage({ lang, templateId, custom, eager, className = '' }: 
     const t = setTimeout(() => setLook((l) => (l?.accent === custom?.accent && l?.fontPair === custom?.fontPair ? l : custom)), 400)
     return () => clearTimeout(t)
   }, [custom?.accent, custom?.fontPair]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Réglages d'origine d'une des 4 mises en page du hero : image pré-rendue au build (scripts/make-vignettes.ts), sans react-pdf ni polices.
+  // Absente (pnpm dev sans le script) ou couleur / police changée : rendu PDF comme avant.
+  // afterPreview (vignettes de l'éditeur) : on attend que l'aperçu du CV soit peint (ou 10 s), pour que les vignettes ne lui prennent pas la bande passante.
+  const previewed = usePreviewPages() > 0
+  const [late, setLate] = useState(false)
+  useEffect(() => {
+    if (!afterPreview) return
+    const t = setTimeout(() => setLate(true), 10_000)
+    return () => clearTimeout(t)
+  }, [afterPreview])
+  const go = !afterPreview || previewed || late
+  const [noImage, setNoImage] = useState(false)
+  const image = !noImage && !look?.accent && !look?.fontPair && templateId.endsWith('-1') && HOME_LAYOUTS.includes(getTemplate(templateId).layoutId)
   return (
     <div ref={ref} aria-hidden="true" className={`relative aspect-[1/1.414] overflow-hidden bg-white shadow-sheet ${className}`}>
       <div className="skeleton motion-safe:animate-pulse" />
-      {near && (
+      {image && go && (
+        <img src={`/vignettes/${lang}-${templateId}.webp`} alt="" width={800} height={1131} decoding="async" onError={() => setNoImage(true)}
+          fetchPriority={eager ? 'high' : undefined} loading={eager ? undefined : 'lazy'} className="relative block h-full w-full" />
+      )}
+      {near && go && !image && (
         <PdfCanvas className="relative" maxPages={1} deps={[lang, templateId, look?.accent, look?.fontPair]}
           make={(signal) => sampleBytes(lang, templateId, look, eager ? undefined : signal)} />
       )}
