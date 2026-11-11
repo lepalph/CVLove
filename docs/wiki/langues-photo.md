@@ -18,3 +18,8 @@ Si `getTemplate(design.templateId).photo` est faux, une ligne sous le bouton pho
 
 ## Non vérifié
 Rendu visuel des 7 crans dans les 36 modèles (seulement extraction de texte par `check:pdf`) ; arabe en saisie réelle.
+
+## Reprise par le chief of staff (2026-11-11)
+- Sur les captures, le niveau sortait deux fois dans les exemples : « Courant (C1) » puis « C1 · Avancé », et « Langue maternelle » deux fois.
+- Le texte libre des langues est donc vidé dans les exemples (`sample.ts`, `sampleProfiles.ts`), puisque le niveau CECRL s'imprime seul. Un CV de l'utilisateur garde son texte.
+- Les textes de langue encore présents dans les tuples de `sampleProfiles.ts` ne servent plus. On les a laissés pour ne pas toucher ces données.
