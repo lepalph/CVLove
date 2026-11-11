@@ -71,9 +71,10 @@ for (const c of configs) {
     test('Ctrl+Z hors champ annule ; dans un champ de texte il garde son effet natif', async ({ page }) => {
       await open(page)
       const n = await sections(page).count()
+      await page.locator('input.inp').first().fill('x') // champ déjà saisi : son Ctrl+Z natif a une histoire (un champ vierge laisse Ctrl+Z annuler, voir limites-ouvertes.spec.ts)
       await removeIn(page, 0).click()
       await expect(sections(page)).toHaveCount(n - 1)
-      // le focus est sur un champ voisin : Ctrl+Z n'annule pas la suppression
+      // le focus est sur un champ saisi : Ctrl+Z n'annule pas la suppression
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))) // le × rend le focus dans une frame : ne pas le laisser reprendre celui du champ
       await page.locator('input.inp').first().focus()
       await page.keyboard.press('Control+z')

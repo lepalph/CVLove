@@ -33,3 +33,10 @@ Changement fait sur la base `lepalph/CVLove@eb3cc4b`.
 - Le test Ctrl+Z était instable : il a échoué 1 fois sur 4. La cause : le × rend le focus dans un `requestAnimationFrame`, qui pouvait arriver après le `focus()` du test. Le test attend maintenant deux frames.
 - Les autres limites restent : Ctrl+Z natif juste après un ×, et un délai de 8 s qui ne se met pas en pause.
 
+
+## 2026-11-11 : limites rouvertes (base `21d928e`)
+Décisions de l'agent, sans question à l'auteur. Preuves : `tests/e2e/limites-ouvertes.spec.ts` (écrits d'abord, en échec avant le correctif) et `tests/e2e/undo.spec.ts`.
+- **Délai suspendu** (`src/ui/UndoBar.tsx`) : tant que le pointeur est sur le bandeau ou que le focus y est, le minuteur de 8 s ne tourne pas (WCAG 2.2.1). À la sortie il repart de zéro (8 s pleines). Un nouveau bandeau remet l'état à « libre ».
+- **Ctrl+Z après un ×** : c'était un défaut. Le focus passe sur un champ voisin qui n'a rien reçu, donc Ctrl+Z natif n'y fait rien et l'utilisateur croit que l'annulation n'existe pas. Correction : `UndoBar` note (écouteur `input` en capture, `WeakSet`) les champs où l'on a déjà saisi. Ctrl+Z annule la suppression seulement dans un champ jamais saisi ; dans un champ déjà saisi il reste natif, donc l'annulation native n'est jamais volée. Le test e2e « Ctrl+Z hors champ » de `undo.spec.ts` saisit d'abord dans le champ.
+- **Limite restante** : une valeur changée par code (exemple, import) n'est pas une saisie, donc le champ reste « vierge » pour cette règle ; sans conséquence, le natif n'avait rien à défaire non plus.
+- Les deux limites « Ctrl+Z natif juste après un ×» et « délai sans pause » ci-dessus ne sont donc plus d'actualité.

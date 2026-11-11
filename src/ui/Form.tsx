@@ -382,6 +382,8 @@ function DatePick({ legend, lang, value, onChange, disabled, notBefore }: { lege
   const id = useId()
   const [draft, setDraft] = useState<string | null>(null) // texte en cours de saisie ; null = on affiche la valeur gardée
   const [typed, setError] = useState('') // erreur de la dernière saisie
+  const [seen, setSeen] = useState(value)
+  if (value !== seen) { setSeen(value); setDraft(null); setError('') } // la valeur gardée a changé ailleurs (annulation, import, exemple, autre onglet) : le brouillon est périmé
   const before = (v: string) => { const n = Math.min(v.length, notBefore?.length ?? 0); return !!n && v.slice(0, n) < notBefore!.slice(0, n) }
   const commit = () => {
     if (draft === null) return

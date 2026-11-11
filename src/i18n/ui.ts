@@ -37,8 +37,6 @@ export interface UI {
   phone: string
   website: string
   customLabel: string
-  month: string
-  year: string
   levelOf5: string
   /** Fin du nom accessible d'un bouton de section / d'élément : verbe + ceci, {x} = nom. */
   onSection: string
@@ -106,8 +104,6 @@ const fr: UI = {
   phone: 'Téléphone',
   website: 'Site web',
   customLabel: 'Nom du champ',
-  month: 'Mois',
-  year: 'Année',
   levelOf5: 'Niveau sur 5',
   onSection: ' la section {x}',
   onItem: ' : {x}',
@@ -177,8 +173,6 @@ const en: UI = {
   phone: 'Phone',
   website: 'Website',
   customLabel: 'Field name',
-  month: 'Month',
-  year: 'Year',
   levelOf5: 'Level out of 5',
   onSection: ' the {x} section',
   onItem: ': {x}',
@@ -248,8 +242,6 @@ const es: UI = {
   phone: 'Teléfono',
   website: 'Sitio web',
   customLabel: 'Nombre del campo',
-  month: 'Mes',
-  year: 'Año',
   levelOf5: 'Nivel sobre 5',
   onSection: ' la sección {x}',
   onItem: ': {x}',
@@ -319,8 +311,6 @@ const de: UI = {
   phone: 'Telefon',
   website: 'Website',
   customLabel: 'Feldname',
-  month: 'Monat',
-  year: 'Jahr',
   levelOf5: 'Niveau von 5',
   onSection: ': Abschnitt {x}',
   onItem: ': {x}',
@@ -390,8 +380,6 @@ const it: UI = {
   phone: 'Telefono',
   website: 'Sito web',
   customLabel: 'Nome del campo',
-  month: 'Mese',
-  year: 'Anno',
   levelOf5: 'Livello su 5',
   onSection: ': sezione {x}',
   onItem: ': {x}',
@@ -461,8 +449,6 @@ const pt: UI = {
   phone: 'Telefone',
   website: 'Site',
   customLabel: 'Nome do campo',
-  month: 'Mês',
-  year: 'Ano',
   levelOf5: 'Nível em 5',
   onSection: ' a secção {x}',
   onItem: ': {x}',
@@ -532,8 +518,6 @@ const ar: UI = {
   phone: 'الهاتف',
   website: 'الموقع الإلكتروني',
   customLabel: 'اسم الحقل',
-  month: 'الشهر',
-  year: 'السنة',
   levelOf5: 'المستوى من 5',
   onSection: ': قسم {x}',
   onItem: ': {x}',
