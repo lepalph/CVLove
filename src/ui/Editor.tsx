@@ -8,6 +8,7 @@ import { getTemplate } from '../templates'
 import { ACCENTS } from '../templates/types'
 import { SaveBanner, SkipLink, useDownloadAlert } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
+import { PreviewSettings } from './PreviewSettings'
 import { ExampleTools } from './ExampleTools'
 import { Form } from './Form'
 import { Toc } from './Toc'
@@ -107,7 +108,7 @@ export function Editor() {
           {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
         </div>
         <PreviewPane shown={tab === 'preview'} make={(signal) => previewLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design, signal)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
-          label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} pick={pick} />
+          label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} pick={pick} settings={<PreviewSettings />} />
       </main>
       <UndoBar hidden={tab === 'preview'} />
       <EdFooter doc={doc} />

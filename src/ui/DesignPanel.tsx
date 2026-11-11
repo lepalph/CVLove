@@ -111,8 +111,8 @@ export function DesignPanel() {
   )
 }
 
-/** Réglages du document actif : couleur, police, taille, interligne, marges, format, photo, niveaux. `letter` : ceux de la lettre (mise en page au lieu de photo et niveaux). */
-export function DesignSettings({ letter }: { letter?: boolean }) {
+/** Réglages du document actif (`quick` : seulement couleur, police, taille du texte et « Tenir sur 1 page », pour le tiroir de l'aperçu mobile) : couleur, police, taille, interligne, marges, format, photo, niveaux. `letter` : ceux de la lettre (mise en page au lieu de photo et niveaux). */
+export function DesignSettings({ letter, quick }: { letter?: boolean; quick?: boolean }) {
   const cvDesign = useCvDoc().design
   const letterDesign = useLetterDoc()?.design
   const design = (letter && letterDesign) || cvDesign
@@ -152,27 +152,27 @@ export function DesignSettings({ letter }: { letter?: boolean }) {
         </select>
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={`grid gap-4 ${quick ? '' : 'sm:grid-cols-2'}`}>
         <Field label={`${t.fontScale} : ${Math.round(design.fontScale * 100)} %`}>
           <input type="range" min={0.9} max={1.15} step={0.05} value={design.fontScale} onChange={(e) => set('fontScale', +e.target.value)} aria-valuetext={`${Math.round(design.fontScale * 100)} %`} className="h-11 w-full accent-ink" />
         </Field>
-        <Field label={`${t.lineHeight} : ${design.lineHeight.toFixed(2)}`}>
+        {!quick && <Field label={`${t.lineHeight} : ${design.lineHeight.toFixed(2)}`}>
           <input type="range" min={1.2} max={1.6} step={0.05} value={design.lineHeight} onChange={(e) => set('lineHeight', +e.target.value)} aria-valuetext={design.lineHeight.toFixed(2)} className="h-11 w-full accent-ink" />
-        </Field>
+        </Field>}
       </div>
 
       <div className="grid gap-4">
-        <div><p className="mb-1 text-sm font-medium">{t.margins}</p>
-          <Seg label={t.margins} value={design.margins} onChange={(v) => set('margins', v)} options={[['compact', t.marginOpts.compact], ['normal', t.marginOpts.normal], ['large', t.marginOpts.large]]} /></div>
-        <div><p className="mb-1 text-sm font-medium">{t.pageSize}</p>
-          <Seg label={t.pageSize} value={design.pageSize} onChange={(v) => set('pageSize', v)} options={[['A4', 'A4'], ['LETTER', 'Letter']]} /></div>
+        {!quick && <div><p className="mb-1 text-sm font-medium">{t.margins}</p>
+          <Seg label={t.margins} value={design.margins} onChange={(v) => set('margins', v)} options={[['compact', t.marginOpts.compact], ['normal', t.marginOpts.normal], ['large', t.marginOpts.large]]} /></div>}
+        {!quick && <div><p className="mb-1 text-sm font-medium">{t.pageSize}</p>
+          <Seg label={t.pageSize} value={design.pageSize} onChange={(v) => set('pageSize', v)} options={[['A4', 'A4'], ['LETTER', 'Letter']]} /></div>}
         {!letter && (pages > 1 || design.fitPage) && (
           <label className="flex min-h-11 items-start gap-3 text-sm">
             <input type="checkbox" checked={!!design.fitPage} onChange={(e) => set('fitPage', e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-ink" />
             <span><span className="block font-medium">{ft.label}</span><span className="block text-muted">{ft.hint}</span></span>
           </label>
         )}
-        {!letter && <><div><p className="mb-1 text-sm font-medium">{t.photoShape}</p>
+        {!letter && !quick && <><div><p className="mb-1 text-sm font-medium">{t.photoShape}</p>
           <Seg label={t.photoShape} value={design.photoShape} onChange={(v) => set('photoShape', v)} options={[['circle', t.shapes.circle], ['rounded', t.shapes.rounded], ['square', t.shapes.square]]} /></div>
         <div><p className="mb-1 text-sm font-medium">{t.skillDisplay}</p>
           <Seg label={t.skillDisplay} value={design.skillDisplay} onChange={(v) => set('skillDisplay', v)} options={[['text', t.displays.text], ['bars', t.displays.bars], ['dots', t.displays.dots]]} /></div></>}

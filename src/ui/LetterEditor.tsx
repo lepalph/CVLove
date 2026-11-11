@@ -11,6 +11,7 @@ import { useLetterDoc, useStore } from '../store'
 import { getLetterLayout } from '../templates/letterTemplates'
 import { Field, LangSelect, SaveBanner, SkipLink, useDownloadAlert } from './bits'
 import { EdFooter, EdHeader, MobileTools, PreviewPane } from './EditorParts'
+import { PreviewSettings } from './PreviewSettings'
 import { DesignSettings } from './DesignPanel'
 import { LetterExampleTools } from './ExampleTools'
 import { sampleProfileOf } from './lib'
@@ -72,7 +73,7 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>
         <PreviewPane shown={tab === 'preview'} make={(signal) => previewLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design, signal)} deps={[letter, design]} empty={empty} sample said={said} quiet={dl.pdfFailed}
-          label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
+          label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} settings={<PreviewSettings letter />} />
       </main>
       <EdFooter doc={doc!} />
     </div>

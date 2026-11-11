@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { letterUi } from '../i18n/letter'
@@ -203,7 +203,7 @@ function Chevron({ next }: { next?: boolean }) {
   )
 }
 
-export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet, pick }: {
+export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet, pick, settings }: {
   make: (signal: AbortSignal) => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
   /** Document vide : `make` rend l'exemple, signalé par une étiquette au lieu du message centré. */
   sample?: boolean
@@ -214,6 +214,8 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
    * Raccourci souris et doigt seulement : la feuille ne prend pas le focus, le clavier passe par le formulaire.
    */
   pick?: (pages: TextLine[][], page: number, i: number) => (() => void) | null
+  /** Tiroir de réglages (mobile), posé en bas de la colonne. */
+  settings?: ReactNode
 }) {
   const uiLang = useStore((s) => s.uiLang)
   const t = ui[uiLang]
@@ -299,6 +301,7 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample, qui
         {state === 'error'
           ? <p role={quiet ? undefined : 'alert'} className="mt-3 text-center text-sm text-danger">{t.previewError}</p>
           : <p aria-hidden="true" className="mt-3 text-center text-sm text-muted">{state === 'busy' ? t.previewBusy : ' '}</p>}
+        {settings}
       </div>
       {/* Hors du panneau : masqué (display:none) sur mobile quand l'onglet Modifier est actif, il ne serait pas annoncé. */}
       <p role="status" className="sr-only">{said}</p>
