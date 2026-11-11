@@ -17,6 +17,7 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Aperçu multipage](apercu-multipage.md) — 2026-11-02 : plafond 30 pages annoncé, page courante, précédente/suivante, défilement gardé.
 - [Performance de l'aperçu](performance-apercu.md) — 2026-11-11 : PDF de l'aperçu dans un Web Worker ; à CPU ×4, tâches longues pendant la frappe 2 s → 0, frappes > 100 ms 6/20 → 0/20.
 - [Aperçu relié au formulaire](apercu-relie.md) — 2026-11-11 : un clic sur une ligne de l'aperçu met le focus sur son champ ; texte de pdf.js rapproché du CV, PDF inchangé.
+- [Colonne latérale sur la bonne page](colonne-laterale-pages.md) — 2026-11-11 : `moderne` dessinait sa colonne sur la dernière page d’un CV long ; cause react-pdf, correctif, règle « page 1 » de `check:pdf`.
 - [Nouvelles sections](nouvelles-sections.md) — 2026-11-11 : bénévolat, certifications, publications ; 7 langues, `apart`, `SideEntry`, nettoyage, règle « ordre » étendue.
 
 - [Lettre et accessibilité](lettre-accessibilite.md) — 2026-11-11 : lettre vierge suit la langue, alerte vide retraduite, échec PDF une seule fois, « exemple » annoncé ; allemand 401 px déjà réglé.

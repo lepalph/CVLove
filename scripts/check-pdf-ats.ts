@@ -79,11 +79,11 @@ for (const t of templates) {
 }
 
 // ---- 2. Pagination : CV long, Letter, 115 %, marges larges, accent très clair ----
-function longCV(): CV {
+function longCV(n = 6): CV {
   const cv = withNewSections(sampleCV('fr', 'dev'))
   const exp = cv.sections.find((s) => s.kind === 'experience')!
   const bullet = (j: number, k: number) => `- Poste${j}×${k} Pilotage de l’équipe commerciale et définition de la stratégie d’offre ; coût réduit de 12 € par dossier, taux de réussite à 87 %, œuvre à l’efficacité des échanges.`
-  exp.items = Array.from({ length: 6 }, (_, j) => ({ ...exp.items[0], id: `p${j}`, title: `Poste ${j + 1} Responsable développement`, text: [1, 2, 3, 4, 5].map((k) => bullet(j + 1, k)).join('\n'), current: false, start: `20${10 + j}-01`, end: `20${11 + j}-12` }))
+  exp.items = Array.from({ length: n }, (_, j) => ({ ...exp.items[0], id: `p${j}`, title: `Poste ${j + 1} Responsable développement`, text: [1, 2, 3, 4, 5].map((k) => bullet(j + 1, k)).join('\n'), current: false, start: `20${10 + j}-01`, end: `20${11 + j}-12` }))
   return cv
 }
 const MAX_PAGES = 7
@@ -102,6 +102,16 @@ for (const t of templates.filter((x: { id: string }) => x.id.endsWith('-1'))) {
     for (const job of page.filter((l) => /^Poste \d Responsable/.test(l.text.trim())))
       if (page.filter((l) => l !== job && l.y < job.y - 3).length < 2) fail(`${t.id}/pagination`, `intitulé « ${job.text.trim()} » en bas de la page ${p}, sans son contenu`)
   }
+}
+
+// Page 1 : nom et contact (colonne latérale comprise) sur la première page d'un CV de 3 pages ou plus, pas sur la dernière.
+for (const t of templates) {
+  const cv = longCV(9)
+  const email = cv.personal.fields.find((f) => f.kind === 'email' && f.visible)!.value
+  const { lines, pages } = await extract(await renderPdf(cv, designOf(t), fonts))
+  const flat = (p: number) => lines.filter((l) => l.page === p).map((l) => l.text).join('').replace(/\s+/g, '').toLowerCase() // sans espaces : noms espacés (executif)
+  if (pages < 3) fail(`${t.id}/page-1`, `${pages} page(s) : le CV long ne teste plus rien`)
+  for (const w of [cv.personal.firstName, email]) if (!flat(1).includes(w.replace(/\s+/g, '').toLowerCase())) fail(`${t.id}/page-1`, `« ${w} » absent de la page 1 (${pages} pages)`)
 }
 
 // ---- 3. Arabe sous une langue latine : chaque glyphe arabe doit avoir une police ----

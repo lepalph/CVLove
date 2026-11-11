@@ -101,10 +101,7 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
           <Text style={{ fontFamily: t.head, fontWeight: 700, fontSize: t.s(26), lineHeight: 1.15 }}>{fullName(cv)}</Text>
           {!!personal.title.trim() && <Text style={{ fontSize: t.s(12.5), color: acc, marginTop: 4 }}>{personal.title}</Text>}
         </View>
-        {mainSections.map((s) => (
-          <SectionFlow key={s.id} gap={t.m(18)} title={mainTitle(s)}>{mainBody(s)}</SectionFlow>
-        ))}
-        {/* Déclarée en dernier : le nom et le poste sortent avant la colonne dans le texte extrait (ATS) ; position absolue = rendu inchangé. */}
+        {/* Juste après le nom (texte extrait : nom d'abord, ATS) et AVANT le flux : react-pdf pose un enfant absolu sur la page où il tombe dans le flux, donc déclaré en dernier il finissait sur la dernière page. */}
         <View style={{ position: 'absolute', top: t.m(38), [sideAt]: 0, width: SIDE, paddingHorizontal: 20, color: fg }}>
           {!!personal.photo && <View style={{ alignItems: 'center', marginBottom: 14 }}><Image src={personal.photo} style={t.photo(100)} /></View>}
           {contacts.length > 0 && (
@@ -120,6 +117,9 @@ export function Component({ cv, design, labels, variant }: LayoutProps) {
             </View>
           ))}
         </View>
+        {mainSections.map((s) => (
+          <SectionFlow key={s.id} gap={t.m(18)} title={mainTitle(s)}>{mainBody(s)}</SectionFlow>
+        ))}
       </Page>
     </Document>
   )
