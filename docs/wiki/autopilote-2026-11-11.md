@@ -20,3 +20,11 @@ Lancé le 2026-11-11 par l'auteur : « fais évoluer la solution vers les object
 - Serveur MCP : son architecture est à décider avec l'auteur (REPRISE).
 - Nouvelles sections (certifications, bénévolat, publications) : elles touchent les 12 mises en page et le modèle de données, on les garde pour une passe à part.
 - Fusion dans `main` et déploiement : ils reviennent à l'auteur.
+
+## Déroulé (ajouté le 2026-11-11 dans la journée)
+- La nuit n'a pas servi : les agents n'ont démarré qu'au réveil du Mac, vers 9 h 30. Cause probable : Mac fermé ou sur batterie, et `caffeinate` n'empêche pas cette veille-là. À l'avenir, laisser le Mac branché et ouvert.
+- Vague 1 reprise et poussée : `33f3174`, `7253a57`, `c1ef9ee`, `7cbaef6`, `463d31a`, `3ce1500`, `8c47a72`. Corrections du chief of staff : délai du bandeau (survol et focus séparés), langue de la lettre vierge alignée dans le store, test à deux onglets qui dépendait du temps, sommaire mal placé (vu sur capture).
+- Vague 2 : panneau Design (`33ddefc`) et aperçu dans un Web Worker (`b96d7f1`), poussés.
+- Vague 3 : mentions légales (`fb774e5`), niveaux CECRL, `dir="auto"` et avertissement photo (`62184c4`), exemples sans niveau en double (`ab9ba40`), poussés. Suite complète à `ab9ba40` : 225 e2e passés (1 ignoré), 222 unitaires, `check:pdf` 499/499.
+- Vague 4, à partir de `ab9ba40` : aperçu relié au formulaire (Opus, port 4409), mode guidé avec 6 modèles et étape Télécharger fusionnée (Sonnet, 4407), option « Tenir sur 1 page » (Sonnet, 4408).
+- Pour l'auteur : les 3 `[À REMPLACER]` des mentions légales (voir [mentions-legales](mentions-legales.md)).
