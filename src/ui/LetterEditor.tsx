@@ -3,7 +3,7 @@ import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { letterUi, type LetterUI } from '../i18n/letter'
 import { ui } from '../i18n/ui'
-import { alignBlankLetter, isBlankLetter, isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
+import { isBlankLetter, isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
 import { LANGS, type LetterDoc } from '../model/types'
 import { sampleLetter } from '../model/sample'
 import { renderLetterLazy } from '../pdf/lazy'
@@ -36,9 +36,6 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
   const [said, setSaid] = useState('')
   const layoutName = getLetterLayout(design.templateId).name[uiLang]
   const dl = useDownloadAlert(isBlankLetter(letter) ? 0 : letter) // vierge : l’alerte « vide » reste quand la langue s’aligne
-  const updateLetter = useStore((s) => s.updateLetter)
-  // Lettre vierge : elle prend la langue de l'interface (comme le CV vierge) ; ni à chaque frappe ni après un choix de langue fait ici.
-  useEffect(() => { if (alignBlankLetter(letter, uiLang) !== letter) updateLetter((l) => alignBlankLetter(l, uiLang)) }, [uiLang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const download = async () => {
     if (downloading) return

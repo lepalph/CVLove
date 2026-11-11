@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { detectLang } from './i18n/ui'
 import { DEFAULT_DESIGN, applyDesignPatch, emptyCV, sameRendered } from './model/cv'
 import { blankCV, draftCVDoc, duplicateDoc, followName, freeName, migrateV1, newCVDoc, parseImport, patchDoc, untitledName } from './model/documents'
-import { blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
+import { alignBlankLetter, blankLetter, letterDesignFrom, letterFromCV, newLetterDoc } from './model/letter'
 import { sampleCV, type SampleProfile } from './model/sample'
 import { sanitizeState } from './model/sanitize'
 import { restoreSnap, type Snap } from './model/undo'
@@ -55,7 +55,7 @@ const dropBlankDrafts = (docs: Doc[]) => {
 
 /** Le brouillon vierge suit la langue de l'interface (sinon : interface en français, sections « Work experience »). Un CV choisi garde la sienne. */
 const alignBlank = (docs: Doc[], lang: Lang) =>
-  docs.map((d) => (d.kind === 'cv' && d.data.lang !== lang && isBlankDraft(d) ? { ...d, data: { ...d.data, lang } } : d))
+  docs.map((d) => (d.kind === 'cv' ? (d.data.lang !== lang && isBlankDraft(d) ? { ...d, data: { ...d.data, lang } } : d) : (alignBlankLetter(d.data, lang) === d.data ? d : { ...d, data: alignBlankLetter(d.data, lang) })))
 
 /** CV du document actif ; si c'est une lettre, le premier CV (l'éditeur de CV ne gère que les CV). */
 export const selectCvDoc = (s: Pick<State, 'documents' | 'activeId'>): CVDoc =>

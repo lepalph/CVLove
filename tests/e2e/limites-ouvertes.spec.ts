@@ -67,6 +67,7 @@ test('un brouillon de date invalide disparaît quand la valeur change ailleurs (
   await start.fill('13/45')
   await start.blur()
   await expect(start).toHaveAttribute('aria-invalid', 'true')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('cvlove:v2')?.includes('Camille'))).toBe(true) // l'exemple est écrit (après 500 ms de calme) avant d'ouvrir l'autre onglet
   const other = await context.newPage()
   await other.goto('/#/editeur')
   await other.getByRole('button', { name: 'Complet', exact: true }).click()
