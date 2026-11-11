@@ -78,6 +78,7 @@ export function cleanDesign(d: unknown): Design {
   }
   return {
     ...(Object.keys(custom).length ? { custom } : {}),
+    ...(o.fitPage === true ? { fitPage: true } : {}),
     templateId: str(o.templateId).slice(0, 64) || DEFAULT_DESIGN.templateId,
     accent: typeof o.accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(o.accent) ? o.accent : DEFAULT_DESIGN.accent,
     fontPair: oneOf(FONT_PAIRS, o.fontPair, DEFAULT_DESIGN.fontPair),

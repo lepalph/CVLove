@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { setPreviewPages } from './pageCount'
 import type { PDFDocumentLoadingTask, RenderTask } from 'pdfjs-dist'
 
 let pdfjs: Promise<typeof import('pdfjs-dist')> | undefined
@@ -31,6 +32,7 @@ interface Props {
  */
 export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, className, onState }: Props) {
   const host = useRef<HTMLDivElement>(null)
+  useEffect(() => () => { if (maxPages > 1) setPreviewPages(0) }, [maxPages])
 
   useEffect(() => {
     const abort = new AbortController()
@@ -69,6 +71,7 @@ export function PdfCanvas({ make, deps, maxPages = MAX_PAGES, debounce = 0, clas
         host.current?.replaceChildren(...canvases)
         kept.forEach(([el, top]) => el.scrollTop !== top && (el.scrollTop = top)) // seulement si elle a bougé : écrire la même valeur coupe un défilement animé
         if (scrollY !== y) scrollTo({ top: y, behavior: 'instant' })
+        if (maxPages > 1) setPreviewPages(doc.numPages)
         onState?.('ready', doc.numPages)
       } catch (e) {
         if (!dead && (e as Error).name !== 'RenderingCancelledException') {

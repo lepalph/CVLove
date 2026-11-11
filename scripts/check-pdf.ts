@@ -15,7 +15,7 @@ import { DEFAULT_DESIGN, visibleSections } from '../src/model/cv'
 import { letterLabels } from '../src/i18n/letter'
 import { formatDay, formatMonth } from '../src/model/dates'
 import { letterFromCV } from '../src/model/letter'
-import { sampleCV } from '../src/model/sample'
+import { SAMPLE_PROFILES, sampleCV } from '../src/model/sample'
 import { FONT_PAIRS, LANGS, type CV, type Design, type Lang, type Letter } from '../src/model/types'
 import { startLoader } from './vite-load'
 
@@ -197,6 +197,28 @@ for (const l of letterLayouts) {
 for (const fontPair of FONT_PAIRS)
   for (const lang of ['fr', 'es', 'pt', 'de', 'it', 'en'] as const)
     jobs.push({ name: `police ${fontPair}/${lang}`, run: () => check(longCV(lang), { ...DEFAULT_DESIGN, templateId: 'classique-1', fontPair, skillDisplay: 'bars' }, { minPages: 2, png: lang === 'fr' ? `font-${fontPair}` : undefined }) })
+
+// Tenir sur 1 page : l'exemple le plus long, avec l'option, fait une page de moins ou reste à 1 page, sans texte sous 8 pt (le texte de base est déjà >= 8 pt)
+const textLen = (cv: CV) => JSON.stringify(cv.sections).length
+const longest = SAMPLE_PROFILES.map((p) => sampleCV('fr', p)).sort((a, b) => textLen(b) - textLen(a))[0]
+async function measure(cv: CV, design: Design) {
+  const doc = await getDocument({ data: (await renderPdf(cv, design, fonts)).slice(), useSystemFonts: false, verbosity: 0 }).promise
+  let min = Infinity
+  for (let p = 1; p <= doc.numPages; p++)
+    for (const i of (await (await doc.getPage(p)).getTextContent()).items as any[]) if (i.str?.trim()) min = Math.min(min, Math.hypot(i.transform[2], i.transform[3]))
+  return { pages: doc.numPages, min }
+}
+for (const t of templates)
+  jobs.push({
+    name: `${t.id}/fr tenir sur 1 page`,
+    run: async () => {
+      const [a, b] = [await measure(longest, designOf(t)), await measure(longest, designOf(t, { fitPage: true }))]
+      const problems: string[] = []
+      if (b.pages > a.pages || (b.pages > 1 && b.pages === a.pages)) problems.push(`${a.pages} p sans l'option, ${b.pages} p avec : aucun gain`)
+      if (b.min < Math.min(8, a.min) - 0.05) problems.push(`texte à ${b.min.toFixed(1)} pt (< 8 pt)`)
+      return { problems, info: `${a.pages} p -> ${b.pages} p, texte min ${b.min.toFixed(1)} pt` }
+    },
+  })
 
 let ko = 0
 for (const [i, job] of jobs.entries()) {

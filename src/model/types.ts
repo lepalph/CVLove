@@ -94,6 +94,8 @@ export interface Design {
   pageSize: PageSize
   photoShape: PhotoShape
   skillDisplay: SkillDisplay
+  /** « Tenir sur 1 page » : resserre marges, interligne et texte (~0,9). Absent = désactivé. */
+  fitPage?: boolean
   /** Choix faits à la main dans Design : ils survivent au changement de modèle (le preset du style ne s'applique que sans eux). */
   custom?: { accent?: string; fontPair?: FontPair }
 }

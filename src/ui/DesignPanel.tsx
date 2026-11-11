@@ -2,10 +2,12 @@ import { useId, useMemo, useState } from 'react'
 import { modelName } from './lib'
 import { extra } from '../i18n/extra'
 import { filtersText } from '../i18n/filters'
+import { fitPageText } from '../i18n/fitpage'
 import { letterUi } from '../i18n/letter'
 import { ui } from '../i18n/ui'
 import { v2 } from '../i18n/v2'
 import { FONT_PAIR_DEFS } from '../pdf/fontPairs'
+import { usePreviewPages } from '../pdf/pageCount'
 import { FONT_PAIRS, type Design } from '../model/types'
 import { isRtl } from '../model/dates'
 import { useCvDoc, useLetterDoc, useStore } from '../store'
@@ -117,6 +119,8 @@ export function DesignSettings({ letter }: { letter?: boolean }) {
   const t = v2[uiLang]
   const names = extra[uiLang].colors
   const set = <K extends keyof Design>(k: K, v: Design[K]) => updateDesign({ [k]: v })
+  const pages = usePreviewPages()
+  const ft = fitPageText[uiLang]
 
   return (
     <div className="flex flex-col gap-5">
@@ -160,6 +164,12 @@ export function DesignSettings({ letter }: { letter?: boolean }) {
           <Seg label={t.margins} value={design.margins} onChange={(v) => set('margins', v)} options={[['compact', t.marginOpts.compact], ['normal', t.marginOpts.normal], ['large', t.marginOpts.large]]} /></div>
         <div><p className="mb-1 text-sm font-medium">{t.pageSize}</p>
           <Seg label={t.pageSize} value={design.pageSize} onChange={(v) => set('pageSize', v)} options={[['A4', 'A4'], ['LETTER', 'Letter']]} /></div>
+        {!letter && (pages > 1 || design.fitPage) && (
+          <label className="flex min-h-11 items-start gap-3 text-sm">
+            <input type="checkbox" checked={!!design.fitPage} onChange={(e) => set('fitPage', e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-ink" />
+            <span><span className="block font-medium">{ft.label}</span><span className="block text-muted">{ft.hint}</span></span>
+          </label>
+        )}
         {!letter && <><div><p className="mb-1 text-sm font-medium">{t.photoShape}</p>
           <Seg label={t.photoShape} value={design.photoShape} onChange={(v) => set('photoShape', v)} options={[['circle', t.shapes.circle], ['rounded', t.shapes.rounded], ['square', t.shapes.square]]} /></div>
         <div><p className="mb-1 text-sm font-medium">{t.skillDisplay}</p>
