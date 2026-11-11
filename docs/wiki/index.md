@@ -34,3 +34,4 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Stockage et liste des documents](stockage-documents.md) — 2026-11-11 : exemple marqué, storage.persist(), tri, état vide, libellés.
 - [Langues, dir="auto" et photo](langues-photo.md) — 2026-11-11 : niveaux CECRL pour les langues, migration, sens de saisie, avertissement photo.
 - [Tenir sur 1 page](tenir-une-page.md) — 2026-11-11 : option Design `fitPage` (marges, interligne, texte à 0,9) pour les 36 modèles, visible dès qu'un CV déborde.
+- [Guidé allégé](guide-allege.md) — 2026-11-11 : étape Modèle à 6 vignettes + « Voir les 36 », étapes Design et Télécharger fusionnées.

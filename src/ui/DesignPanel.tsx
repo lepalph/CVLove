@@ -59,12 +59,14 @@ export function useModelFilter(wide?: boolean) {
 }
 
 /** Modèles : filtres + vignettes (vrais rendus). `tall` = sans hauteur maximale (étape « Modèle » du mode guidé). */
-export function ModelGallery({ tall }: { tall?: boolean }) {
+export function ModelGallery({ tall, only }: { tall?: boolean; only?: string[] }) {
   const { data: cv, design } = useCvDoc()
   const updateDesign = useStore((s) => s.updateDesign)
   const uiLang = useStore((s) => s.uiLang)
   const t = v2[uiLang]
-  const { shown, filters } = useModelFilter()
+  const { shown: all, filters } = useModelFilter()
+  // `only` : liste courte (mode guidé), sans filtres.
+  const shown = only ? all.filter((m) => only.includes(m.id)) : all
   const rtl = isRtl(uiLang)
   // Une seule tabulation pour toute la grille (le modèle choisi, sinon le premier) ; les flèches déplacent le focus, Entrée ou Espace choisit.
   const stop = shown.some((m) => m.id === design.templateId) ? design.templateId : shown[0]?.id
@@ -78,7 +80,7 @@ export function ModelGallery({ tall }: { tall?: boolean }) {
   return (
     <div className="flex flex-col gap-3" role="group" aria-label={t.models}>
       <p className="font-mono text-xs uppercase tracking-wide text-muted">{t.models}</p>
-      {filters}
+      {!only && filters}
       <ul onKeyDown={onKeys} className={`m-0 grid list-none grid-cols-3 gap-3 p-1 ${tall ? '' : 'max-h-[28rem] overflow-y-auto'}`}>
         {shown.map((m) => {
           const on = design.templateId === m.id

@@ -397,7 +397,7 @@ for (const vp of VPS) {
         await sel.selectOption({ label: '05 Formation' })
       }
       await expect(title).toHaveText('Formation')
-      await expect(page.getByText('Étape 5 sur 9').first()).toBeAttached()
+      await expect(page.getByText('Étape 5 sur 8').first()).toBeAttached()
     })
 
     test(`[C02] guidé : bascule en Complet puis retour garde l'étape et les données (${vp.name})`, async ({ page }) => {
@@ -422,6 +422,7 @@ for (const vp of VPS) {
       // un modèle choisi sur un CV encore vierge crée le document (choix de design = première saisie)
       await poll(page, (d) => d.design.templateId).toMatch(/^minimal/)
       // filtres : la catégorie réduit la grille, Tous la rétablit
+      await page.getByRole('button', { name: 'Voir les 36 modèles' }).click() // l'étape ne montre d'abord que 6 modèles
       const items = gallery.locator('ul > li')
       const all = await items.count()
       await gallery.getByRole('button', { name: 'Filtres' }).click() // filtres repliés dans l'éditeur
@@ -463,8 +464,8 @@ for (const vp of VPS) {
       await page.goto('/#/editeur')
       await page.getByRole('button', { name: ui.fr.samples.dev }).click()
       await expect(page.getByRole('button', { name: guide.fr.next })).toBeVisible()
-      for (let i = 0; i < 8; i++) await page.getByRole('button', { name: guide.fr.next }).click()
-      await expect(page.locator('#step-title')).toHaveText('Télécharger')
+      for (let i = 0; i < 7; i++) await page.getByRole('button', { name: guide.fr.next }).click()
+      await expect(page.locator('#step-title')).toHaveText('Design et téléchargement')
       await expect(page.getByRole('button', { name: guide.fr.next })).toHaveCount(0)
       await expect(page.getByRole('button', { name: guide.fr.skip })).toHaveCount(0)
       const main = page.locator('section[aria-labelledby="step-title"]') // le corps de l'étape (sur mobile, <main> contient aussi le menu Fichier)
@@ -494,7 +495,7 @@ for (const vp of VPS) {
       await poll(page, (d) => d.kind).toBe('letter')
       // Mes documents (depuis le guidé de la lettre, étape Télécharger)
       await page.goto('/#/editeur')
-      for (let i = 0; i < 8; i++) await page.getByRole('button', { name: guide.fr.next }).click()
+      for (let i = 0; i < 7; i++) await page.getByRole('button', { name: guide.fr.next }).click()
       await main.getByRole('link', { name: guide.fr.docsLink }).click()
       await expect(page).toHaveURL(/#\/documents$/)
     })
@@ -520,7 +521,7 @@ for (const vp of VPS) {
       await poll(page, (d) => kinds(d).includes('custom')).toBe(true)
       await expect(page.getByRole('button', { name: `+ ${ui.fr.kinds.custom}` })).toBeVisible() // une section libre se rajoute toujours
       await go(1) // Design
-      await expect(title).toHaveText('Design')
+      await expect(title).toHaveText('Design et téléchargement')
       const target = (await active(page)).design.accent === ACCENTS[4] ? 5 : 4
       await page.getByRole('button', { name: extra.fr.colors[target], exact: true }).click()
       await poll(page, (d) => d.design.accent).toBe(ACCENTS[target])
@@ -1240,7 +1241,7 @@ test.describe('anglais, bureau', () => {
     expect(JSON.parse(readFileSync((await j.path())!, 'utf8')).documents[0].data.personal.firstName).toBe('Zoe')
     // lettre assortie puis documents
     await page.getByRole('button', { name: 'Guided' }).click()
-    for (let i = 0; i < 8; i++) await page.getByRole('button', { name: e.g.next }).click()
+    for (let i = 0; i < 7; i++) await page.getByRole('button', { name: e.g.next }).click()
     await page.locator('main').getByRole('button', { name: e.l.matching }).click()
     await expect(page).toHaveURL(/#\/lettre$/)
     await expect(page).toHaveTitle(/Cover letter/)
