@@ -202,7 +202,7 @@ function Chevron({ next }: { next?: boolean }) {
 }
 
 export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet }: {
-  make: () => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
+  make: (signal: AbortSignal) => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
   /** Document vide : `make` rend l'exemple, signalé par une étiquette au lieu du message centré. */
   sample?: boolean
   /** Le téléchargement vient d'annoncer le même échec : l'aperçu ne le répète pas aux lecteurs d'écran. */

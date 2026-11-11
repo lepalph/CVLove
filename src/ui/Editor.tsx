@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { extra } from '../i18n/extra'
 import { tips } from '../i18n/tips'
 import { fullName, pdfFileName, sameRendered } from '../model/cv'
-import { renderLazy } from '../pdf/lazy'
+import { previewLazy, renderLazy } from '../pdf/lazy'
 import { useCvDoc, useStore } from '../store'
 import { getTemplate } from '../templates'
 import { ACCENTS } from '../templates/types'
@@ -88,7 +88,7 @@ export function Editor() {
           <ExampleTools />
           {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
+        <PreviewPane shown={tab === 'preview'} make={(signal) => previewLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design, signal)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
           label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />
       </main>
       <UndoBar hidden={tab === 'preview'} />

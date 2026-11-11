@@ -6,7 +6,7 @@ import { ui } from '../i18n/ui'
 import { isBlankLetter, isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
 import { LANGS, type LetterDoc } from '../model/types'
 import { sampleLetter } from '../model/sample'
-import { renderLetterLazy } from '../pdf/lazy'
+import { previewLetterLazy, renderLetterLazy } from '../pdf/lazy'
 import { useLetterDoc, useStore } from '../store'
 import { getLetterLayout } from '../templates/letterTemplates'
 import { Field, LangSelect, SaveBanner, SkipLink, useDownloadAlert } from './bits'
@@ -71,7 +71,7 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
           <LetterExampleTools />
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design)} deps={[letter, design]} empty={empty} sample said={said} quiet={dl.pdfFailed}
+        <PreviewPane shown={tab === 'preview'} make={(signal) => previewLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design, signal)} deps={[letter, design]} empty={empty} sample said={said} quiet={dl.pdfFailed}
           label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
       </main>
       <EdFooter doc={doc!} />

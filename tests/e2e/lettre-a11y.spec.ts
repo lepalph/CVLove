@@ -43,7 +43,7 @@ test('aperçu d’exemple : annoncé aux lecteurs d’écran dans le nom de l’
 })
 
 test('échec du PDF : une seule alerte (téléchargement et aperçu ensemble)', async ({ page }) => {
-  await page.route('**/assets/render-*.js', (r) => r.abort())
+  await page.route('**/assets/render*.js', (r) => r.abort()) // render-*.js (fil principal) et render.worker-*.js (aperçu)
   await newLetter(page)
   await page.getByLabel(letterUi.fr.subject, { exact: true }).fill('Candidature')
   await page.getByLabel(letterUi.fr.recName).fill('Mme Martin')
