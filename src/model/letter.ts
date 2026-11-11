@@ -82,3 +82,13 @@ export const newLetterDoc = (name: string, data: Letter, design: Design = { ...D
 
 /** Rien d'écrit dans la lettre (même test que l'aperçu vide de l'éditeur). */
 export const isEmptyLetter = (l: Letter) => ![l.sender.name, l.recipient.name, l.recipient.company, l.subject, l.body].some((v) => v.trim())
+
+/** Rien de saisi, formules encore celles par défaut de sa langue (la date du jour ne compte pas). */
+export const isBlankLetter = (l: Letter) => {
+  const d = letterLabels[l.lang]
+  return isEmptyLetter(l) && !l.place.trim() && !l.signature.trim() && !l.sender.title.trim() && !l.sender.email.trim() && !l.sender.phone.trim() && !l.sender.address.trim() && !l.recipient.address.trim()
+    && (!l.salutation.trim() || l.salutation === d.salutation) && (!l.closing.trim() || l.closing === d.closing)
+}
+
+/** Une lettre vierge prend la langue de l'interface (comme le CV vierge) ; une lettre commencée garde la sienne. */
+export const alignBlankLetter = (l: Letter, lang: Lang): Letter => (l.lang !== lang && isBlankLetter(l) ? setLetterLang(l, lang) : l)

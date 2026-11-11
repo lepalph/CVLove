@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { extra } from '../i18n/extra'
+import { ui } from '../i18n/ui'
 import { exportDocs } from '../model/documents'
 import { LANGS, type Lang } from '../model/types'
 import { useSaveStatus, useStore } from '../store'
@@ -119,16 +120,19 @@ export function SaveBanner() {
 }
 
 /**
- * Échec ou refus du téléchargement : `fail(texte)` pose un message role="alert" sous la barre collante de l'éditeur (`node`, voir `.edalert`).
- * Il est ré-annoncé à chaque essai (la clé change) et s'efface quand `content` change : la personne a corrigé.
+ * Échec ou refus du téléchargement : `fail(kind)` pose un message role="alert" sous la barre collante de l'éditeur (`node`, voir `.edalert`).
+ * Le texte est choisi au rendu : il suit la langue de l'interface. Il est ré-annoncé à chaque essai (la clé change) et s'efface quand `content` change : la personne a corrigé.
+ * `kind` : `empty` (document vide) ou `pdf` (rendu en échec ; l'aperçu, qui échoue pour la même raison, se tait alors : voir `quiet` de PreviewPane).
  */
 export function useDownloadAlert(content: unknown) {
-  const [a, setA] = useState<{ text: string; n: number }>()
+  const [a, setA] = useState<{ kind: 'empty' | 'pdf'; n: number }>()
   const n = useRef(0)
+  const uiLang = useStore((s) => s.uiLang)
   useEffect(() => setA(undefined), [content])
   return {
-    fail: (text: string) => setA({ text, n: ++n.current }),
+    fail: (kind: 'empty' | 'pdf') => setA({ kind, n: ++n.current }),
     clear: () => setA(undefined),
-    node: a && <p key={a.n} role="alert" className="edalert m-0 border-b border-danger bg-desk px-[var(--m)] py-2 text-sm font-medium text-danger">{a.text}</p>,
+    pdfFailed: a?.kind === 'pdf',
+    node: a && <p key={a.n} role="alert" className="edalert m-0 border-b border-danger bg-desk px-[var(--m)] py-2 text-sm font-medium text-danger">{a.kind === 'empty' ? extra[uiLang].emptyDownload : ui[uiLang].previewError}</p>,
   }
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { extra } from '../i18n/extra'
 import { tips } from '../i18n/tips'
-import { ui } from '../i18n/ui'
 import { fullName, pdfFileName, sameRendered } from '../model/cv'
 import { renderLazy } from '../pdf/lazy'
 import { useCvDoc, useStore } from '../store'
@@ -52,7 +51,7 @@ export function Editor() {
 
   const download = async () => {
     if (downloading) return
-    if (isEmptyCV(cv)) return dl.fail(x.emptyDownload) // l'aperçu montre l'exemple : sans ce refus, le PDF sortirait blanc
+    if (isEmptyCV(cv)) return dl.fail('empty') // l'aperçu montre l'exemple : sans ce refus, le PDF sortirait blanc
     dl.clear()
     setSaid('') // vidées avant d'être remplies : un 2e téléchargement du même fichier est annoncé de nouveau
     setSaved('')
@@ -68,7 +67,7 @@ export function Editor() {
       setSaved(tips[uiLang].saved.replace('{file}', file))
     } catch (e) {
       console.error(e)
-      dl.fail(ui[uiLang].previewError)
+      dl.fail('pdf')
     } finally {
       setDownloading(false)
     }
@@ -87,7 +86,7 @@ export function Editor() {
           <ExampleTools />
           {mode === 'guided' ? <Guided progress={progress} onDownload={download} downloading={downloading} saved={saved} /> : <Form />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said}
+        <PreviewPane shown={tab === 'preview'} make={() => renderLazy(isEmptyCV(cv) ? sampleCV(cv.lang) : cv, design)} deps={[shownCv.current, design]} empty={isEmptyCV(cv)} sample said={said} quiet={dl.pdfFailed}
           label={x.previewAlt.replace('{model}', mName).replace('{who}', who)} />
       </main>
       <UndoBar hidden={tab === 'preview'} />

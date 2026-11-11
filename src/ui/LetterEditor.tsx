@@ -3,7 +3,7 @@ import { extra } from '../i18n/extra'
 import { guide } from '../i18n/guide'
 import { letterUi, type LetterUI } from '../i18n/letter'
 import { ui } from '../i18n/ui'
-import { isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
+import { alignBlankLetter, isBlankLetter, isEmptyLetter, letterFileName, patchRecipient, patchSender, setLetterLang } from '../model/letter'
 import { LANGS, type LetterDoc } from '../model/types'
 import { sampleLetter } from '../model/sample'
 import { renderLetterLazy } from '../pdf/lazy'
@@ -35,11 +35,14 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
   const [downloading, setDownloading] = useState(false)
   const [said, setSaid] = useState('')
   const layoutName = getLetterLayout(design.templateId).name[uiLang]
-  const dl = useDownloadAlert(letter)
+  const dl = useDownloadAlert(isBlankLetter(letter) ? 0 : letter) // vierge : l’alerte « vide » reste quand la langue s’aligne
+  const updateLetter = useStore((s) => s.updateLetter)
+  // Lettre vierge : elle prend la langue de l'interface (comme le CV vierge) ; ni à chaque frappe ni après un choix de langue fait ici.
+  useEffect(() => { if (alignBlankLetter(letter, uiLang) !== letter) updateLetter((l) => alignBlankLetter(l, uiLang)) }, [uiLang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const download = async () => {
     if (downloading) return
-    if (isEmptyLetter(letter)) return dl.fail(x.emptyDownload) // l'aperçu montre l'exemple : sans ce refus, le PDF sortirait blanc
+    if (isEmptyLetter(letter)) return dl.fail('empty') // l'aperçu montre l'exemple : sans ce refus, le PDF sortirait blanc
     dl.clear()
     setSaid('') // vidée avant d'être remplie : un 2e téléchargement du même fichier est annoncé de nouveau
     setDownloading(true)
@@ -52,7 +55,7 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
       setSaid(x.downloaded.replace('{file}', file))
     } catch (e) {
       console.error(e)
-      dl.fail(ui[uiLang].previewError)
+      dl.fail('pdf')
     } finally {
       setDownloading(false)
     }
@@ -71,7 +74,7 @@ function LetterEditorFor({ doc }: { doc: LetterDoc }) {
           <LetterExampleTools />
           {mode === 'guided' ? <LetterGuided doc={doc} progress={progress} onDownload={download} downloading={downloading} /> : <LetterForm />}
         </div>
-        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design)} deps={[letter, design]} empty={empty} sample said={said}
+        <PreviewPane shown={tab === 'preview'} make={() => renderLetterLazy(empty ? sampleLetter(letter.lang, sampleProfileOf(letter.sender.name)) : letter, design)} deps={[letter, design]} empty={empty} sample said={said} quiet={dl.pdfFailed}
           label={x.previewAlt.replace('{model}', layoutName).replace('{who}', [letter.sender.name, letter.subject].filter(Boolean).join(', '))} />
       </main>
       <EdFooter doc={doc!} />

@@ -201,10 +201,12 @@ function Chevron({ next }: { next?: boolean }) {
   )
 }
 
-export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
+export function PreviewPane({ make, deps, label, shown, empty, said, sample, quiet }: {
   make: () => Promise<Uint8Array>; deps: unknown[]; label: string; shown: boolean; empty: boolean; said: string
   /** Document vide : `make` rend l'exemple, signalé par une étiquette au lieu du message centré. */
   sample?: boolean
+  /** Le téléchargement vient d'annoncer le même échec : l'aperçu ne le répète pas aux lecteurs d'écran. */
+  quiet?: boolean
 }) {
   const uiLang = useStore((s) => s.uiLang)
   const t = ui[uiLang]
@@ -256,7 +258,7 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
           <div className={`relative mx-auto ${zoom ? 'w-[200%]' : 'w-full max-w-[46rem]'}`}>
             {empty && sample && <p aria-hidden="true" className="mb-3 text-center text-sm text-muted text-balance">{x.samplePreview}</p>}
             {/* Les pages sont séparées par du fond (gap) ; la feuille blanche d'attente n'est là que tant qu'aucune page n'a été rendue. */}
-            <div ref={sheet} role="img" aria-label={label} className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'}`}>
+            <div ref={sheet} role="img" aria-label={empty && sample ? `${label} ${x.samplePreview}` : label} className={`relative min-h-[20rem] ${pages ? '' : 'bg-white shadow-sheet'}`}>
               {(wide || shown) && <PdfCanvas className="grid gap-4 [&_canvas]:shadow-sheet [&_canvas]:scroll-mt-16" make={make} deps={[...deps, zoom]} debounce={300} onState={onState} />}
               {empty && !sample && <p aria-hidden="true" className="absolute inset-x-0 top-1/3 m-0 px-10 text-center text-sm text-neutral-500">{x.emptyPreview}</p>}
             </div>
@@ -265,7 +267,7 @@ export function PreviewPane({ make, deps, label, shown, empty, said, sample }: {
         {pages > MAX_PAGES && <p className="mt-3 text-center text-sm text-muted text-balance">{pt.limited.replace('{shown}', String(MAX_PAGES)).replace('{total}', String(pages))}</p>}
         {/* « En cours » n'est que visuel (il changerait à chaque frappe) ; l'échec, lui, est annoncé. */}
         {state === 'error'
-          ? <p role="alert" className="mt-3 text-center text-sm text-danger">{t.previewError}</p>
+          ? <p role={quiet ? undefined : 'alert'} className="mt-3 text-center text-sm text-danger">{t.previewError}</p>
           : <p aria-hidden="true" className="mt-3 text-center text-sm text-muted">{state === 'busy' ? t.previewBusy : ' '}</p>}
       </div>
       {/* Hors du panneau : masqué (display:none) sur mobile quand l'onglet Modifier est actif, il ne serait pas annoncé. */}

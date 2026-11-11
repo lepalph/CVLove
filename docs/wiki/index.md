@@ -15,6 +15,8 @@ Mémoire du chantier « éditeur fiable et maniable » (lancé le 2026-11-02 par
 - [Glisser-déposer et repli des sections](sections-glisser-replier.md) — 2026-11-02 : poignée pointer events, moveSectionTo, repli gardé par document, limites.
 - [Aperçu multipage](apercu-multipage.md) — 2026-11-02 : plafond 30 pages annoncé, page courante, précédente/suivante, défilement gardé.
 
+- [Lettre et accessibilité](lettre-accessibilite.md) — 2026-11-11 : lettre vierge suit la langue, alerte vide retraduite, échec PDF une seule fois, « exemple » annoncé ; allemand 401 px déjà réglé.
+
 ## P0 du panel (2026-11-02)
 - [Annuler une suppression](annuler-suppression.md) — bandeau 8 s et Ctrl/Cmd+Z ; depuis le 2026-11-02, ne rétablit que l'élément supprimé.
 - [Audit UX de l'éditeur](audit-ux-editeur.md) — 2026-11-02 : sections épurées (chevron › à droite, actions en bas), témoin dans le pied, ordre des dates ; Nielsen 26 → 31/40.
